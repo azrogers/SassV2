@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>{{#title}}{{title}} - {{/title}}BRANBOT</title>
+    <style>
+	    body
+	    {
+		    font-family: 'Consolas', 'Courier New', monospace;
+		    color: black;
+	    }
+	    a
+	    {
+		    color: blue;
+		    text-decoration: none;
+	    }
+	    a:hover
+	    {
+		    text-decoration: underline;
+	    }
+	    h1
+	    {
+		    font-weight: normal;
+		    margin: 0;
+	    }
+    </style>
+</head>
+<body>
+    {{#title}}
+        <h1>{{title}}</h1>
+    {{/title}}
+    <p>
+        {{{message}}}
+    </p>
+</body>
+</html>
