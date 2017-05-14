@@ -15,7 +15,7 @@ namespace SassV2.Commands
 		private static Regex _disambRegex = new Regex(".+? may refer to:");
 
 		[Command(name: "define", desc: "look that shit up.", usage: "define <thing>", category: "Useful")]
-		public static string WikipediaDefine(DiscordBot bot, Message msg, string args)
+		public static string WikipediaDefine(DiscordBot bot, IMessage msg, string args)
 		{
 			var url = "https://en.wikipedia.org/w/api.php?format=json&redirects&action=query&prop=extracts&exintro=&explaintext=&titles=";
 			url += Uri.EscapeUriString(args.Trim());

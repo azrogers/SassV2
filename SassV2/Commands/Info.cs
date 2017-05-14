@@ -15,7 +15,7 @@ namespace SassV2.Commands
 		private static Regex _htmlRegex = new Regex("<.*?>", RegexOptions.Compiled);
 
 		[Command(name: "info", desc: "get some info on something", usage: "info", category: "Useful")]
-		public async static Task<string> Info(DiscordBot bot, Message msg, string args)
+		public async static Task<string> Info(DiscordBot bot, IMessage msg, string args)
 		{
 			var result = await Util.GetURLAsync("http://api.duckduckgo.com/?q=" + Uri.EscapeUriString(args) + "&format=json");
 			var data = JObject.Parse(result);

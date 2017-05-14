@@ -20,7 +20,7 @@ namespace SassV2.Commands
 			desc: "convert one unit to another unit (not in the cloud).", 
 			usage: "convert <thing> (to|in|at|as|=) <thing>", 
 			category: "Useful")]
-		public static string ConvertUnits(DiscordBot bot, Message msg, string args)
+		public static string ConvertUnits(DiscordBot bot, IMessage msg, string args)
 		{
 			return _unitConverter.ConvertUnit(args);
 		}
@@ -30,7 +30,7 @@ namespace SassV2.Commands
 			desc: "convert one unit to another unit, kinda in the cloud.",
 			usage: "convert currency <from> (to|in|at|as|=) <to>",
 			category: "Useful")]
-		public async static Task<string> ConvertCurrency(DiscordBot bot, Message msg, string args)
+		public async static Task<string> ConvertCurrency(DiscordBot bot, IMessage msg, string args)
 		{
 			return await _unitConverter.ConvertCurrency(args);
 		}
@@ -41,7 +41,7 @@ namespace SassV2.Commands
 			usage: "convert timezone <time> <timezone> (to|in|at|as|=) <timezone>",
 			category: "Useful"	
 		)]
-		public static string ConvertTimezone(DiscordBot bot, Message msg, string args)
+		public static string ConvertTimezone(DiscordBot bot, IMessage msg, string args)
 		{
 			return _unitConverter.ConvertTimezone(args);
 		}

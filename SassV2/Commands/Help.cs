@@ -10,7 +10,7 @@ namespace SassV2.Commands
 	public class HelpCommand
 	{
 		[Command(name: "help", desc: "help.", usage: "help\nhelp <command>")]
-		public static string Help(DiscordBot bot, Message msg, string args)
+		public static string Help(DiscordBot bot, IMessage msg, string args)
 		{
 			var message = "Remi 06 Scripted Automated Speech System (SASS)\n";
 

@@ -11,11 +11,11 @@ namespace SassV2.Commands
 	public static class UnifrogCommand
 	{
 		[Command(names: new string[] { "unifrog", "dat boi" }, desc: "o shit", usage: "unifrog", hidden: true)]
-		public static async Task<string> Unifrog(DiscordBot bot, Message msg, string args)
+		public static async Task<string> Unifrog(DiscordBot bot, IMessage msg, string args)
 		{
 			var frame = 0;
 			var count = 0;
-			var newMsg = await msg.Channel.SendMessage("```" + _frames[frame] + "```");
+			var newMsg = await (msg.Channel as IMessageChannel).SendMessageAsync("```" + _frames[frame] + "```");
 
 			var timer = new Timer();
 			timer.Elapsed += async (s, e) => {
@@ -26,11 +26,11 @@ namespace SassV2.Commands
 				{
 					frame = 0;
 				}
-				await newMsg.Edit("```" + _frames[frame] + "```");
+				await newMsg.ModifyAsync((m) => m.Content = "```" + _frames[frame] + "```");
 				if(count > 5)
 				{
 					timer.Enabled = false;
-					await newMsg.Delete();
+					await newMsg.DeleteAsync();
 				}
 			};
 
@@ -40,11 +40,11 @@ namespace SassV2.Commands
 		}
 
 		[Command(names: new string[] { "aaron" }, hidden: true)]
-		public static async Task<string> Aaron(DiscordBot bot, Message msg, string args)
+		public static async Task<string> Aaron(DiscordBot bot, IMessage msg, string args)
 		{
 			var frame = 0;
 			var count = 0;
-			var newMsg = await msg.Channel.SendMessage("```" + _aaronFrames[frame] + "```");
+			var newMsg = await (msg.Channel as IMessageChannel).SendMessageAsync("```" + _aaronFrames[frame] + "```");
 
 			var timer = new Timer();
 			timer.Elapsed += async (s, e) => {
@@ -55,7 +55,7 @@ namespace SassV2.Commands
 				{
 					frame = 0;
 				}
-				await newMsg.Edit("```" + _aaronFrames[frame] + "```");
+				await newMsg.ModifyAsync((m) => m.Content = "```" + _aaronFrames[frame] + "```");
 
 				if(count > 10)
 				{

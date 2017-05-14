@@ -1,5 +1,5 @@
 ﻿using Discord;
-using Discord.Audio;
+using Discord.WebSocket;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace SassV2
 		public const string BotName = "sass";
 #endif
 
-		private DiscordClient _client;
+		private DiscordSocketClient _client;
 		private Logger _logger;
 		private Config _config;
 		private CommandHandler _commandHandler;
@@ -29,7 +29,7 @@ namespace SassV2
 
 		public Config Config => _config;
 		public CommandHandler CommandHandler => _commandHandler;
-		public DiscordClient Client => _client;
+		public IDiscordClient Client => _client;
 		public List<ulong> ServerIds => _serverDatabases.Keys.ToList();
 
 		public static Logger StaticLogger;
@@ -37,7 +37,7 @@ namespace SassV2
 		public DiscordBot(Config config)
 		{
 			StaticLogger = _logger = LogManager.GetCurrentClassLogger();
-			_client = new DiscordClient();
+			_client = new DiscordSocketClient();
 			_config = config;
 			_commandHandler = new CommandHandler();
 			_serverDatabases = new Dictionary<ulong, KeyValueDatabase>();
@@ -49,50 +49,46 @@ namespace SassV2
 			}
 		}
 
-		public void Start()
+		public async Task Start()
 		{
 			_logger.Info("starting bot");
 
-			_client.Log.Message += (s, e) => _logger.Log(Util.SeverityToLevel(e.Severity), e.Message);
-			_client.ServerAvailable += OnServerAvailable;
+			_client.Log += (m) => Task.Run(() =>
+			{
+				if (m.Exception != null)
+					throw m.Exception;
+				_logger.Log(Util.SeverityToLevel(m.Severity), m.Message);
+			});
+			_client.GuildAvailable += OnGuildAvailable;
 			_client.MessageReceived += OnMessageReceived;
-			_client.Ready += (s, e) => {
-				_logger.Info("client ready");
-			};
+			_client.Ready += () => Task.Run(() => _logger.Info("client ready"));
 
-			_client.UsingAudio(x =>
-			{
-				x.Mode = AudioMode.Outgoing;
-				x.EnableEncryption = false;
-			});
-
-			_client.ExecuteAndWait(async () =>
-			{
-				await _client.Connect(_config.Token, TokenType.Bot);
-			});
+			await _client.LoginAsync(TokenType.Bot, _config.Token);
+			await _client.StartAsync();
+			await Task.Delay(-1);
 		}
 
-		private async void OnServerAvailable(object sender, ServerEventArgs e)
+		private async Task OnGuildAvailable(SocketGuild guild)
 		{
-			var dbPath = Path.Combine("Servers", e.Server.Id.ToString());
+			var dbPath = Path.Combine("Servers", guild.Id.ToString());
 			if(!Directory.Exists(dbPath))
 			{
 				Directory.CreateDirectory(dbPath);
 			}
-			_serverDatabases[e.Server.Id] = new KeyValueDatabase(Path.Combine(dbPath, "server2.db"));
-			await _serverDatabases[e.Server.Id].Open();
+			_serverDatabases[guild.Id] = new KeyValueDatabase(Path.Combine(dbPath, "server2.db"));
+			await _serverDatabases[guild.Id].Open();
 
-			_serverRelationalDatabases[e.Server.Id] = new RelationalDatabase(Path.Combine(dbPath, "relational.db"));
-			await _serverRelationalDatabases[e.Server.Id].Open();
+			_serverRelationalDatabases[guild.Id] = new RelationalDatabase(Path.Combine(dbPath, "relational.db"));
+			await _serverRelationalDatabases[guild.Id].Open();
 
-			_serverResponders[e.Server.Id] = new Responder();
+			_serverResponders[guild.Id] = new Responder();
 
-			foreach(var kv in _serverDatabases[e.Server.Id].GetKeysOfNamespace<string>("filter"))
+			foreach(var kv in _serverDatabases[guild.Id].GetKeysOfNamespace<string>("filter"))
 			{
 				_responderFilters[kv.Key.Substring(0, "filter:".Length)] = SassLisp.Compile(kv.Value);
 			}
 
-			_logger.Info("joined " + e.Server.Name + " (" + e.Server.Id + ")");
+			_logger.Info("joined " + guild.Name + " (" + guild.Id + ")");
 		}
 
 		/// <summary>
@@ -120,46 +116,40 @@ namespace SassV2
 			_responderFilters[name] = SassLisp.Compile(filter);
 		}
 
-		private async void OnMessageReceived(object sender, MessageEventArgs e)
+		private async Task OnMessageReceived(SocketMessage message)
 		{
 			// ignore messages we send
-			if(e.Message.IsAuthor) return;
+			if(message.Author == _client.CurrentUser) return;
 
-			_logger.Debug("message from " + e.Message.User.Name + ": " + e.Message.Text);
+			_logger.Debug("message from " + message.Author.Username + ": " + message.Content);
 
 			// if they mention sass, send a rude message
-			if(e.Message.IsMentioningMe())
+			if(message.MentionedUsers.Contains(_client.CurrentUser))
 			{
-				await SendMessage(e.Channel, Util.AssembleRudeMessage());
-				return;
-			}
-
-			if(
-				e.Server.Id == 218854860508889092 && 
-				e.Channel.Id == 234035536971563010 && 
-				e.Message.Text.IndexOf("rust", StringComparison.CurrentCultureIgnoreCase) != -1)
-			{
-				await SendMessage(e.Channel, "SHUT THE FUCK UP ABOUT RUST");
+				await SendMessage(message.Channel, Util.AssembleRudeMessage());
 				return;
 			}
 			
 			// check if the command starts with the bot name
-			if(!e.Message.Text.StartsWith(BotName, StringComparison.CurrentCultureIgnoreCase))
+			if(!message.Content.StartsWith(BotName, StringComparison.CurrentCultureIgnoreCase))
 			{
 				return;
 			}
 
-			// check if the user is banned
-			bool banned = (e.Channel.IsPrivate ? false : Database(e.Server.Id).GetObject<bool>("ban:" + e.User.Id));
+			var guild = (message.Channel as SocketGuildChannel)?.Guild;
 
-			if(banned && !e.User.ServerPermissions.Administrator && Config.GetRole(e.User.Id) != "admin")
+			// check if the user is banned
+			bool banned = (message.Channel is ISocketPrivateChannel ? false : Database(guild.Id).GetObject<bool>("ban:" + message.Author.Id));
+
+			var permissions = (message.Author as SocketGuildUser)?.GuildPermissions;
+			if(banned && (!permissions.HasValue || !permissions.Value.Administrator) && Config.GetRole(message.Author.Id) != "admin")
 			{
-				await SendMessage(e.Channel, Util.Locale("error.banned"));
+				await SendMessage(message.Channel as ISocketMessageChannel, Util.Locale("error.banned"));
 				return;
 			}
 
 			// find the command
-			var commandMaybe = _commandHandler.FindCommand(e.Message.Text.Substring(BotName.Length).Trim(), e.Message.Channel.IsPrivate);
+			var commandMaybe = _commandHandler.FindCommand(message.Content.Substring(BotName.Length).Trim(), message.Channel is ISocketPrivateChannel);
 			if(commandMaybe.HasValue)
 			{
 				var command = commandMaybe.Value;
@@ -168,11 +158,11 @@ namespace SassV2
 					string result;
 					if(command.IsAsync)
 					{
-						result = await command.AsyncDelegate(this, e.Message, command.Arguments);
+						result = await command.AsyncDelegate(this, message, command.Arguments);
 					}
 					else
 					{
-						result = command.Delegate(this, e.Message, command.Arguments);
+						result = command.Delegate(this, message, command.Arguments);
 					}
 
 					if(string.IsNullOrWhiteSpace(result))
@@ -180,40 +170,38 @@ namespace SassV2
 						return;
 					}
 
-					await SendMessage(e.Channel, result);
+					await SendMessage(message.Channel, result);
 				}
 				// a command exception is one that the user should know about
 				catch(CommandException commandEx)
 				{
-					await SendMessage(e.Channel, commandEx.Message);
+					await SendMessage(message.Channel, commandEx.Message);
 					return;
 				}
-#if !DEBUG
 				// this is an exception the user shouldn't know about
 				catch(Exception ex)
 				{
-					await SendMessage(e.Channel, Util.AssembleRudeErrorMessage());
+					await SendMessage(message.Channel, Util.AssembleRudeErrorMessage());
 					_logger.Error(ex);
 					return;
 				}
-#endif
 			}
 			else
 			{
-				await SendMessage(e.Channel, Util.Locale("error.noCommand"));
+				await SendMessage(message.Channel, Util.Locale("error.noCommand"));
 			}
 		}
 
-		private Task<Message> SendMessage(Channel channel, string message)
+		private Task SendMessage(ISocketMessageChannel channel, string message)
         {
             _logger.Debug("sent message on " + channel.Name + ": " + message);
-            return channel.SendMessage(message);
+			return channel.SendMessageAsync(message);
         }
 
-        private Task<Message> ReplyToPM(Message pm, string message)
+        private Task ReplyToPM(SocketMessage pm, string message)
         {
-            _logger.Debug("sent pm to " + pm.User.Name + ": " + message);
-            return pm.User.SendMessage(message);
+            _logger.Debug("sent pm to " + pm.Author.Username + ": " + message);
+			return pm.Channel.SendMessageAsync(message);
         }
 	}
 }

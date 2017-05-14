@@ -10,9 +10,9 @@ namespace SassV2.Commands
 	public class Responder
 	{
 		[Command(name: "add filter", desc: "add a responder filter", usage: "add filter <server id> <name> <lisp>", isPM: true)]
-		public static string AddFilter(DiscordBot bot, Message msg, string args)
+		public static string AddFilter(DiscordBot bot, IMessage msg, string args)
 		{
-			if(bot.Config.GetRole(msg.User.Id) != "admin")
+			if(bot.Config.GetRole(msg.Author.Id) != "admin")
 			{
 				throw new CommandException("You're not allowed to use this command.");
 			}
@@ -47,9 +47,9 @@ namespace SassV2.Commands
 		}
 
 		[Command(name: "list filters", desc: "list filters", usage: "list filters <server id>", isPM: true)]
-		public static string ListFilters(DiscordBot bot, Message msg, string args)
+		public static string ListFilters(DiscordBot bot, IMessage msg, string args)
 		{
-			if(bot.Config.GetRole(msg.User.Id) != "admin")
+			if(bot.Config.GetRole(msg.Author.Id) != "admin")
 			{
 				throw new CommandException("You're not allowed to use this command.");
 			}
@@ -72,9 +72,9 @@ namespace SassV2.Commands
 		}
 
 		/*[Command(name: "add response", desc: "add a response to a filter", usage: "add filter <server id> <name> response", isPM: true)]
-		public static string AddResponse(DiscordBot bot, Message msg, string args)
+		public static string AddResponse(DiscordBot bot, IMessage msg string args)
 		{
-			if(bot.Config.GetRole(msg.User.Id) != "admin")
+			if(bot.Config.GetRole(msg.Author.Id) != "admin")
 			{
 				throw new CommandException("You're not allowed to use this command.");
 			}

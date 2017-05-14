@@ -18,13 +18,13 @@ namespace SassV2.Commands
 		private static Regex _urlRegex = new Regex(@"(i\.)?imgur\.com\/(.+?)\.(jpg|png|gif|jpeg)", RegexOptions.IgnoreCase);
 
 		[Command(name: "images", desc: "list images.", usage: "images")]
-		public static string ListImages(DiscordBot bot, Message msg, string args)
+		public static string ListImages(DiscordBot bot, IMessage msg, string args)
 		{
-			return bot.Config.URL + "images/" + msg.Server.Id;
+			return bot.Config.URL + "images/" + msg.ServerId();
 		}
 
 		[Command(name: "image", desc: "gets the image for the thing you asked for.", usage: "image <thing>")]
-		public static string Image(DiscordBot bot, Message msg, string args)
+		public static string Image(DiscordBot bot, IMessage msg, string args)
 		{
 			var match = _forRegex.Match(args.Trim().ToLower());
 			if(!match.Success || match.Groups.Count < 4)
@@ -33,7 +33,7 @@ namespace SassV2.Commands
 			}
 
 			var thing = match.Groups[3].Value.ToLower();
-			string image = bot.Database(msg.Server.Id).GetObject<string>("image:" + thing);
+			string image = bot.Database(msg.ServerId()).GetObject<string>("image:" + thing);
 			if(image == null)
 			{
 				throw new CommandException("There's no image for " + thing + " (yet).");
@@ -43,7 +43,7 @@ namespace SassV2.Commands
 		}
 
 		[Command(name: "set image", desc: "sets the image for the thing you told it to set it for.", usage: "set image <thing> <imgur url>")]
-		public async static Task<string> SetImage(DiscordBot bot, Message msg, string args)
+		public async static Task<string> SetImage(DiscordBot bot, IMessage msg, string args)
 		{
 			var match = _forRegex.Match(args.Trim());
 			if(!match.Success || match.Groups.Count < 4)
@@ -73,7 +73,7 @@ namespace SassV2.Commands
 				string.Join(" ", parts.Take(parts.Count() - 1))).ToLower();
 			var finalUrl = "http://i.imgur.com/" + imageId + "." + extension;
 
-			bot.Database(msg.Server.Id).InsertObject<string>("image:" + thing, finalUrl);
+			bot.Database(msg.ServerId()).InsertObject<string>("image:" + thing, finalUrl);
 
 			return "Image set.";
 		}

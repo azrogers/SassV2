@@ -12,7 +12,7 @@ namespace SassV2.Commands
 	public static class NowPlayingCommand
 	{
 		[Command(name: "now playing", desc: "print the currently playing song on remi radio", usage: "now playing")]
-		public async static Task<string> NowPlaying(DiscordBot bot, Message msg, string args)
+		public async static Task<string> NowPlaying(DiscordBot bot, IMessage msg, string args)
 		{
 			var xml = await Util.GetURLAsync("http://radio.anime.lgbt:8000/mpd.ogg.xspf");
 			var reader = XmlReader.Create(new StringReader(xml));

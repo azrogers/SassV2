@@ -26,21 +26,21 @@ namespace SassV2
 		/// <param name="msg">The message to populate variables from.</param>
 		/// <param name="program">The program to run.</param>
 		/// <returns>The final value.</returns>
-		public static LispSandbox.LispValue Run(Message msg, string program)
+		public static LispSandbox.LispValue Run(IMessage msg, string program)
 		{
 			var sandbox = new LispSandbox();
-			sandbox.SetVariable("nickname", msg.User.NicknameOrDefault());
-			sandbox.SetVariable("userid", msg.User.Id.ToString());
+			sandbox.SetVariable("name", msg.Author.Username);
+			sandbox.SetVariable("userid", msg.Author.Id.ToString());
 			sandbox.SetVariable("channel", msg.Channel.Name);
 			sandbox.SetVariable("channelid", msg.Channel.Id.ToString());
-			sandbox.SetVariable("message", msg.Text);
+			sandbox.SetVariable("message", msg.Content);
 			return sandbox.Run(program);
 		}
 
 		public static LispSandbox.LispAction Compile(string program)
 		{
 			var sandbox = new LispSandbox();
-			sandbox.SetVariable("nickname", "");
+			sandbox.SetVariable("name", "");
 			sandbox.SetVariable("userid", "");
 			sandbox.SetVariable("channel", "");
 			sandbox.SetVariable("channelid", "");

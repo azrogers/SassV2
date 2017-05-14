@@ -14,15 +14,15 @@ namespace SassV2.Commands
 
 		static RantCommand()
 		{
-			_engine.LoadPackage(RantPackage.Load("rantionary.rantpkg"));
+			_engine.LoadPackage("rantionary.rantpkg");
 		}
 
 		[Command(name: "rant", desc: "run a rant pattern (http://berkin.me/rantdocs/)", usage: "rant <pattern>", category: "Useful")]
-		public static string Rant(DiscordBot bot, Message msg, string args)
+		public static string Rant(DiscordBot bot, IMessage msg, string args)
 		{
 			try
 			{
-				return ": " + _engine.Do(args, 1000, 5.0).Main;
+				return ": " + _engine.Do(RantProgram.CompileString(args), 1000, 5.0).Main;
 			}
 			catch(RantRuntimeException rex)
 			{

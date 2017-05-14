@@ -13,7 +13,7 @@ namespace SassV2.Commands
 	public class ImgurCommand
 	{
 		[Command(name: "imgur", desc: "get a random image from an imgur subreddit", usage: "imgur <subreddit>", category: "Spam")]
-		public async static Task<string> Imgur(DiscordBot bot, Message msg, string args)
+		public async static Task<string> Imgur(DiscordBot bot, IMessage msg, string args)
 		{
 			if(string.IsNullOrWhiteSpace(args))
 			{

@@ -11,7 +11,7 @@ namespace SassV2.Commands
 	public class StackCommand
 	{
 		[Command(name: "stack", desc: "add something to the stack of requests or print it out.", usage: "stack\nstack <thing>")]
-		public static string Stack(DiscordBot bot, Message msg, string args)
+		public static string Stack(DiscordBot bot, IMessage msg, string args)
 		{
 			if(args.Trim().Length == 0)
 			{

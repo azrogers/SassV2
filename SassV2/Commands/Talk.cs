@@ -21,10 +21,10 @@ namespace SassV2.Commands
 		}
 
 		[Command(name: "talk", desc: "engage in a turing test.", usage: "talk <things>", category: "Spam")]
-		public static async Task<string> Talk(DiscordBot bot, Message msg, string args)
+		public static async Task<string> Talk(DiscordBot bot, IMessage msg, string args)
 		{
 			var session = GetOrCreateSession();
-			await msg.Channel.SendIsTyping();
+			await (msg.Channel as IMessageChannel).TriggerTypingAsync();
 			return session.Think(args);
 		}
 

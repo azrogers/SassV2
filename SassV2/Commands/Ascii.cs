@@ -22,7 +22,7 @@ namespace SassV2.Commands
 		}
 
 		[Command(name: "ascii", desc: "generate some sweet ascii text, yo", usage: "ascii <font> <text>", category: "Spam")]
-		public static string AsciiText(DiscordBot bot, Message msg, string args)
+		public static string AsciiText(DiscordBot bot, IMessage msg, string args)
 		{
 			if(string.IsNullOrWhiteSpace(args))
 			{
@@ -46,7 +46,7 @@ namespace SassV2.Commands
 		}
 
 		[Command(name: "ascii fonts", desc: "list some ascii fonts yo.", usage: "ascii fonts", category: "Spam")]
-		public static string AsciiFonts(DiscordBot bot, Message msg, string args)
+		public static string AsciiFonts(DiscordBot bot, IMessage msg, string args)
 		{
 			return bot.Config.URL + "fonts";
 		}

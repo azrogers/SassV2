@@ -13,14 +13,14 @@ namespace SassV2.Commands
 	public class PMCommands
 	{
 		[Command(name: "servers", desc: "list servers", usage: "servers", isPM: true)]
-		public static string ListServers(DiscordBot bot, Message msg, string args)
+		public static async Task<string> ListServers(DiscordBot bot, IMessage msg, string args)
 		{
+			var clientServers = await bot.Client.GetGuildsAsync();
+
 			var servers =
 				bot.ServerIds
 				.Select(i =>
-					bot.Client.Servers
-					.Where(s => s.Id == i)
-					.First()
+					clientServers.Where(s => s.Id == i).First()
 				)
 				.OrderBy(s => s.Name)
 				.Select(s =>
@@ -31,9 +31,9 @@ namespace SassV2.Commands
 		}
 
 		[Command(name: "import quotes", desc: "import quotes from csv attachment", usage: "sass import quotes <server> <attachment>\nattachment must be a CSV file with the columns Quote,Author,Source", isPM: true)]
-		public async static Task<string> ImportQuotes(DiscordBot bot, Message msg, string args)
+		public async static Task<string> ImportQuotes(DiscordBot bot, IMessage msg, string args)
 		{
-			if(bot.Config.GetRole(msg.User.Id) != "admin")
+			if(bot.Config.GetRole(msg.Author.Id) != "admin")
 			{
 				throw new CommandException("You're not allowed to use this command.");
 			}

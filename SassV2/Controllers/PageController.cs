@@ -37,16 +37,16 @@ namespace SassV2.Controllers
 		}
 
 		[WebApiHandler(HttpVerbs.Get, new string[] { "/servers", "/images", "/quotes" })]
-		public bool ListServers(WebServer server, HttpListenerContext context)
+		public async Task<bool> ListServers(WebServer server, HttpListenerContext context)
 		{
+			var botGuilds = await _bot.Client.GetGuildsAsync();
+
 			var servers =
 				_bot.ServerIds
 				.Select(i =>
-					_bot.Client.Servers
-					.Where(s => s.Id == i)
-					.FirstOrDefault()
+					botGuilds.Where(s => s.Id == i).FirstOrDefault()
 				)
-				.Where(s => s != default(Server))
+				.Where(s => s != default(IGuild))
 				.OrderBy(s => s.Name)
 				.Select(s =>
 				{
@@ -61,12 +61,12 @@ namespace SassV2.Controllers
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/images/*")]
-		public bool GetImages(WebServer server, HttpListenerContext context)
+		public async Task<bool> GetImages(WebServer server, HttpListenerContext context)
 		{
 			var urlId = context.Request.Url.Segments.Last();
 			if(urlId == "images/")
 			{
-				return ListServers(server, context);
+				return await ListServers(server, context);
 			}
 
 			ulong serverId;
@@ -90,12 +90,12 @@ namespace SassV2.Controllers
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/quotes/*")]
-		public bool GetQuotes(WebServer server, HttpListenerContext context)
+		public async Task<bool> GetQuotes(WebServer server, HttpListenerContext context)
 		{
 			var urlId = context.Request.Url.Segments.Last();
 			if(urlId == "quotes/")
 			{
-				return ListServers(server, context);
+				return await ListServers(server, context);
 			}
 
 			ulong serverId;

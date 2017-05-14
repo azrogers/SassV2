@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
 
 namespace SassV2
 {
@@ -24,9 +25,9 @@ namespace SassV2
 		/// Returns the user's nickname, or their name if they have no nickname set.
 		/// </summary>
 		/// <returns>The user's nickname.</returns>
-		public static string NicknameOrDefault(this User user)
+		public static string NicknameOrDefault(this IGuildUser user)
 		{
-			return user.Nickname == null ? user.Name : user.Nickname;
+			return user.Nickname == null ? user.Username : user.Nickname;
 		}
 
 		/// <summary>
@@ -38,6 +39,16 @@ namespace SassV2
 			context.Response.ContentType = "text/html";
 			context.Response.OutputStream.Write(buffer, 0, buffer.Length);
 			return true;
+		}
+
+		public static ulong ServerId(this IMessage msg)
+		{
+			return (msg.Channel as IGuildChannel).GuildId;
+		}
+
+		public static GuildPermissions AuthorPermissions(this IMessage msg)
+		{
+			return (msg.Author as IGuildUser).GuildPermissions;
 		}
 	}
 }

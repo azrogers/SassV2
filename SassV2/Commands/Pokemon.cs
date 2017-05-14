@@ -14,7 +14,7 @@ namespace SassV2.Commands
 		private static PokemonDatabase _database = new PokemonDatabase();
 
 		[Command(name: "pokemon", desc: "gotta catch 'em all.", usage: "pokemon <name> or pokemon #<number>", category: "Useful")]
-		public static string Pokemon(DiscordBot bot, Message msg, string args)
+		public static string Pokemon(DiscordBot bot, IMessage msg, string args)
 		{
 			var builder = new StringBuilder();
 			

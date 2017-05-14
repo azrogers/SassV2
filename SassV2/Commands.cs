@@ -5,14 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 using Discord;
+using Discord.WebSocket;
 using Functional.Maybe;
 
 namespace SassV2
 {
 	public class CommandHandler
 	{
-		public delegate string CommandDelegate(DiscordBot bot, Message msg, string args);
-		public delegate Task<string> AsyncCommandDelegate(DiscordBot bot, Message msg, string args);
+		public delegate string CommandDelegate(DiscordBot bot, IMessage msg, string args);
+		public delegate Task<string> AsyncCommandDelegate(DiscordBot bot, IMessage msg, string args);
 
 		private List<string> _commands;
 		private List<string> _pmCommands;

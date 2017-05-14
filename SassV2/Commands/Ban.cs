@@ -11,14 +11,15 @@ namespace SassV2.Commands
 	public class Ban
 	{
 		[Command(name: "ban", desc: "bans a user from SASS", usage: "ban <name>", category: "Administration")]
-		public static string BanUser(DiscordBot bot, Message msg, string args)
+		public static async Task<string> BanUser(DiscordBot bot, IMessage msg, string args)
 		{
-			if(!msg.User.ServerPermissions.Administrator && bot.Config.GetRole(msg.User.Id) != "admin")
+			var permissions = (msg.Author as IGuildUser).GuildPermissions;
+			if(!permissions.Administrator && bot.Config.GetRole(msg.Author.Id) != "admin")
 			{
 				throw new CommandException(Util.Locale("ban.notAdmin"));
 			}
 
-			var foundUsers = Util.FindWithName(args, msg);
+			var foundUsers = await Util.FindWithName(args, msg);
 			if(!foundUsers.Any())
 			{
 				throw new CommandException(Util.Locale("ban.noneFound"));
@@ -27,25 +28,28 @@ namespace SassV2.Commands
 			{
 				throw new CommandException(Util.Locale("ban.moreFound"));
 			}
+
 			var target = foundUsers.First();
-			if(target.ServerPermissions.Administrator || bot.Config.GetRole(target.Id) == "admin")
+			var targetPermissions = (target as IGuildUser).GuildPermissions;
+			if(targetPermissions.Administrator || bot.Config.GetRole(target.Id) == "admin")
 			{
 				throw new CommandException(Util.Locale("ban.foundAdmin"));
 			}
 
-			bot.Database(msg.Server.Id).InsertObject<bool>("ban:" + target.Id, true);
+			bot.Database(msg.ServerId()).InsertObject<bool>("ban:" + target.Id, true);
 			return Util.Locale("ban.sure");
 		}
 
 		[Command(name: "unban", desc: "unbans a user from SASS", usage: "unban <name>", category: "Administration")]
-		public static string UnbanUser(DiscordBot bot, Message msg, string args)
+		public static async Task<string> UnbanUser(DiscordBot bot, IMessage msg, string args)
 		{
-			if(!msg.User.ServerPermissions.Administrator && bot.Config.GetRole(msg.User.Id) != "admin")
+			var authorPermissions = (msg.Author as IGuildUser).GuildPermissions;
+			if(!authorPermissions.Administrator && bot.Config.GetRole(msg.Author.Id) != "admin")
 			{
 				throw new CommandException(Util.Locale("unban.notAdmin"));
 			}
 
-			var foundUsers = Util.FindWithName(args, msg);
+			var foundUsers = await Util.FindWithName(args, msg);
 			if(!foundUsers.Any())
 			{
 				throw new CommandException(Util.Locale("unban.noneFound"));
@@ -55,7 +59,7 @@ namespace SassV2.Commands
 				throw new CommandException(Util.Locale("unban.moreFound"));
 			}
 			
-			bot.Database(msg.Server.Id).InvalidateObject<bool>("ban:" + foundUsers.First().Id);
+			bot.Database(msg.ServerId()).InvalidateObject<bool>("ban:" + foundUsers.First().Id);
 			return Util.Locale("unban.sure");
 		}
 	}

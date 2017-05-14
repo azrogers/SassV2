@@ -10,7 +10,7 @@ namespace SassV2.Commands
 	public class Choice
 	{
 		[Command(name: "choice", desc: "gives you a random thing out of the options you give it.", usage: "choice <a whole bunch of things>", category: "Useful")]
-		public static string Choices(DiscordBot bot, Message msg, string args)
+		public static string Choices(DiscordBot bot, IMessage msg, string args)
 		{
 			if(args.Trim() == "meme")
 			{

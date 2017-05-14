@@ -33,7 +33,7 @@ namespace SassV2
 			});
 			server.RunAsync();
 
-			bot.Start();
+			bot.Start().GetAwaiter().GetResult();
 		}
 	}
 

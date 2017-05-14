@@ -11,7 +11,7 @@ namespace SassV2.Commands
 	public class MathCommand
 	{
 		[Command(name: "math", desc: "calc.exe, but in the cloud!", usage: "math <some math stuff>", category: "Useful")]
-		public static string Math(DiscordBot bot, Message msg, string args)
+		public static string Math(DiscordBot bot, IMessage msg, string args)
 		{
 			try
 			{

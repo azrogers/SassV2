@@ -11,7 +11,7 @@ namespace SassV2.Commands
 	public class PiCommand
 	{
 		[Command(name: "pi", desc: "gets the nth digit of pi, up to the millionth.", usage: "pi <number>", category: "Dumb")]
-		public static string Pi(DiscordBot bot, Message msg, string args)
+		public static string Pi(DiscordBot bot, IMessage msg, string args)
 		{
 			int numPosition;
 			if(!int.TryParse(args, out numPosition))

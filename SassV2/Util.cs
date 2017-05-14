@@ -120,22 +120,24 @@ namespace SassV2
 		/// <param name="name">The search term.</param>
 		/// <param name="message">The user's message.</param>
 		/// <returns>A list of users matching the search.</returns>
-		public static IEnumerable<User> FindWithName(string name, Message message)
+		public static async Task<IEnumerable<IUser>> FindWithName(string name, IMessage message)
 		{
+			var users = await (message.Channel as IGuildChannel).Guild.GetUsersAsync();
+
 			Regex mentionRegex = new Regex(@"<@(\d+)>");
 			if(mentionRegex.IsMatch(name))
 			{
 				Match match = mentionRegex.Match(name);
 				string id = match.Groups[1].Value;
-				return message.Channel.Server.Users.Where(u => u.Id.ToString() == id);
+				return users.Where(u => u.Id.ToString() == id);
 			}
 
 			string userToFind = name.ToLower().Trim();
 			bool exactly = userToFind.Substring(0, 1) == "!";
 			if(exactly)
 				userToFind = userToFind.Substring(1);
-
-			return message.Channel.Server.Users.Where(u =>
+			
+			return users.Where(u =>
 			{
 				if(exactly)
 					return u.NicknameOrDefault().ToLower() == userToFind;
@@ -284,11 +286,6 @@ namespace SassV2
 				default:
 					return LogLevel.Info;
 			}
-		}
-
-		public static float LogVolume(float x)
-		{
-			return (Math.Exp(x) - 1) / (Math.E - 1);
 		}
 	}
 }

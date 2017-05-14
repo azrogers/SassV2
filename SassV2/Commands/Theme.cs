@@ -15,9 +15,9 @@ namespace SassV2.Commands
 		private static Regex _setThemeRegex = new Regex(@"(for\s|)(\s+)?(.+?)$");
 
 		[Command(name: "theme", desc: "gets the theme for the current chat room.", usage: "theme", category: "Dumb")]
-		public static string Theme(DiscordBot bot, Message msg, string args)
+		public static string Theme(DiscordBot bot, IMessage msg, string args)
 		{
-			string theme = bot.Database(msg.Server.Id).GetObject<string>("theme:" + msg.Channel.Id);
+			string theme = bot.Database(msg.ServerId()).GetObject<string>("theme:" + msg.Channel.Id);
 			if(theme == null)
 			{
 				throw new CommandException("There's no theme for " + msg.Channel.Name + " (yet).");
@@ -27,7 +27,7 @@ namespace SassV2.Commands
 		}
 
 		[Command(name: "set theme", desc: "sets the theme for the current chat room.", usage: "set theme <youtube URL>", category: "Dumb")]
-		public static string SetTheme(DiscordBot bot, Message msg, string args)
+		public static string SetTheme(DiscordBot bot, IMessage msg, string args)
 		{
 			var match = _setThemeRegex.Match(args.Trim());
 			if(!match.Success || match.Groups.Count < 4)
@@ -50,7 +50,7 @@ namespace SassV2.Commands
 
 			var videoId = urlMatch.Groups[5].Value;
 			var finalUrl = "https://youtu.be/" + videoId;
-			bot.Database(msg.Server.Id).InsertObject<string>("theme:" + msg.Channel.Id, finalUrl);
+			bot.Database(msg.ServerId()).InsertObject<string>("theme:" + msg.Channel.Id, finalUrl);
 			return "Theme set.";
 		}
 	}
