@@ -26,7 +26,7 @@ namespace SassV2.Commands
 				var page = info["query"]["pages"][pageKey];
 				if(page["missing"] != null)
 				{
-					throw new CommandException("Nothing found.");
+					throw new CommandException(Util.Locale("define.nothing"));
 				}
 				var parts = page["extract"].Value<string>().Split('\n');
 				var str = parts.First();
@@ -40,7 +40,7 @@ namespace SassV2.Commands
 				}
 				return str;
 			}
-			return "Nothing found.";
+			return Util.Locale("define.nothing");
 		}
 
 		private static string DefineDisambg(string args)
@@ -62,12 +62,12 @@ namespace SassV2.Commands
 
 			if(!names.Any())
 			{
-				throw new CommandException("Nothing found.");
+				throw new CommandException(Util.Locale("define.nothing"));
 			}
 
 			if(names.Count > 20)
 			{
-				throw new CommandException("Be less ambiguous.");
+				throw new CommandException(Util.Locale("define.ambiguous"));
 			}
 
 			string str = "";
@@ -76,7 +76,7 @@ namespace SassV2.Commands
 				str += names[i] + ", ";
 			}
 			str += "or " + names.Last();
-			return "Did you mean " + str + "?";
+			return Util.Locale("define.dym", new { options = str });
 		}
 	}
 }

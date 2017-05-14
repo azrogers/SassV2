@@ -17,7 +17,7 @@ namespace SassV2.Commands
 		{
 			if(string.IsNullOrWhiteSpace(args))
 			{
-				throw new CommandException("specify a subreddit");
+				throw new CommandException(Util.Locale("imgur.needsubreddit"));
 			}
 
 			var client = new HttpClient();
@@ -28,7 +28,7 @@ namespace SassV2.Commands
 			var images = data["data"] as JArray;
 			if(images.Count == 0)
 			{
-				throw new CommandException("subreddit not found");
+				throw new CommandException(Util.Locale("imgur.notfound"));
 			}
 			return images[new Random().Next(0, images.Count)]["link"].Value<string>();
 		}

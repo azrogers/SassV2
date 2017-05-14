@@ -12,7 +12,7 @@ namespace SassV2.Commands
 		[Command(name: "42nd digit of pi", hidden: true)]
 		public static string ConroPi(DiscordBot bot, IMessage msg, string args)
 		{
-			return "According to Yahoo Answers user Vampz, the 42nd digit of Pi is a 9.";
+			return Util.Locale("dumb.pi");
 		}
 
 		[Command(
@@ -27,7 +27,7 @@ namespace SassV2.Commands
 		[Command(name: "thanks", hidden: true)]
 		public static string Thanks(DiscordBot bot, IMessage msg, string args)
 		{
-			return "you're welcome bby ;)";
+			return Util.Locale("dumb.thanks");
 		}
 
 		[Command(name: "seinfeld", desc: "seinfeld theme", usage: "seinfeld", category: "Dumb")]
@@ -41,7 +41,7 @@ namespace SassV2.Commands
 		{
 			if(msg.Author.Id == 101100871227543552)
 			{
-				return "love u too jenelle";
+				return Util.Locale("dumb.ilyjenelle");
 			}
 			return Util.Locale("dumb.ily");
 		}

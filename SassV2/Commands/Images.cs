@@ -29,17 +29,17 @@ namespace SassV2.Commands
 			var match = _forRegex.Match(args.Trim().ToLower());
 			if(!match.Success || match.Groups.Count < 4)
 			{
-				throw new CommandException("That doesn't make any sense.");
+				throw new CommandException(Util.Locale("images.nonsense"));
 			}
 
 			var thing = match.Groups[3].Value.ToLower();
 			string image = bot.Database(msg.ServerId()).GetObject<string>("image:" + thing);
 			if(image == null)
 			{
-				throw new CommandException("There's no image for " + thing + " (yet).");
+				throw new CommandException(Util.Locale("images.noimage", new { thing = thing }));
 			}
 
-			return "Image for " + thing + ": " + image;
+			return Util.Locale("images.image", new { image = image, thing = thing });
 		}
 
 		[Command(name: "set image", desc: "sets the image for the thing you told it to set it for.", usage: "set image <thing> <imgur url>")]
@@ -48,13 +48,13 @@ namespace SassV2.Commands
 			var match = _forRegex.Match(args.Trim());
 			if(!match.Success || match.Groups.Count < 4)
 			{
-				throw new CommandException("That doesn't make any sense.");
+				throw new CommandException(Util.Locale("images.nonsense"));
 			}
 			
 			var parts = match.Groups[3].Value.Split(' ');
 			if(parts.Length < 2 && !msg.Attachments.Any())
 			{
-				throw new CommandException("You need to provide a thing and an image URL.");
+				throw new CommandException(Util.Locale("images.needparts"));
 			}
 
 			var url = (msg.Attachments.Any() ? msg.Attachments.First().Url : parts.Last());
@@ -75,7 +75,7 @@ namespace SassV2.Commands
 
 			bot.Database(msg.ServerId()).InsertObject<string>("image:" + thing, finalUrl);
 
-			return "Image set.";
+			return Util.Locale("images.set");
 		}
 
 		private async static Task<string> UploadImage(string url, string clientID)
@@ -93,7 +93,7 @@ namespace SassV2.Commands
 			var data = JObject.Parse(await result.Content.ReadAsStringAsync());
 			if(!data["success"].Value<bool>())
 			{
-				throw new CommandException("I was unable to move your image to a better home.");
+				throw new CommandException(Util.Locale("images.cantmove"));
 			}
 			return data["data"]["link"].Value<string>();
 		}
