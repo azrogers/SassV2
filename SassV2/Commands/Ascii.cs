@@ -42,7 +42,7 @@ namespace SassV2.Commands
 			var fig = new Figlet();
 			fig.LoadFont(_fonts[parts[0]]);
 			var text = string.Join(" ", parts.Skip(1).ToArray());
-			return "```\n" + fig.ToAsciiArt(text) + "\n```";
+			return "```\n" + fig.ToAsciiArt(text).TrimEnd() + "\n```";
 		}
 
 		[Command(name: "ascii fonts", desc: "list some ascii fonts yo.", usage: "ascii fonts", category: "Spam")]

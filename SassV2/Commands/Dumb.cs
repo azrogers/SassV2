@@ -45,5 +45,17 @@ namespace SassV2.Commands
 			}
 			return Util.Locale("dumb.ily");
 		}
+
+		[Command(name: "crippling debt", hidden: true)]
+		public static string CripplingDebt(DiscordBot bot, Message msg, string args)
+		{
+			return "http://i.imgur.com/JxRGHO0.jpg";
+		}
+
+		[Command(name: "harambe", hidden: true)]
+		public static string Harambe(DiscordBot bot, Message msg, string args)
+		{
+			return "shut the fuck up chloe\nhttps://66.media.tumblr.com/b4befe07adbd872f7c7a734ada8acd9a/tumblr_oc3a77ZplG1tgdhtio1_500.gif";
+		}
 	}
 }

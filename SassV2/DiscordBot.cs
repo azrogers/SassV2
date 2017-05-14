@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Audio;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -23,20 +24,25 @@ namespace SassV2
 		private CommandHandler _commandHandler;
 		private Dictionary<ulong, KeyValueDatabase> _serverDatabases;
 		private Dictionary<ulong, RelationalDatabase> _serverRelationalDatabases;
+		private Dictionary<ulong, Responder> _serverResponders;
+		private Dictionary<string, LispSandbox.LispAction> _responderFilters;
 
 		public Config Config => _config;
 		public CommandHandler CommandHandler => _commandHandler;
 		public DiscordClient Client => _client;
 		public List<ulong> ServerIds => _serverDatabases.Keys.ToList();
 
+		public static Logger StaticLogger;
+
 		public DiscordBot(Config config)
 		{
-			_logger = LogManager.GetCurrentClassLogger();
+			StaticLogger = _logger = LogManager.GetCurrentClassLogger();
 			_client = new DiscordClient();
 			_config = config;
 			_commandHandler = new CommandHandler();
 			_serverDatabases = new Dictionary<ulong, KeyValueDatabase>();
 			_serverRelationalDatabases = new Dictionary<ulong, RelationalDatabase>();
+			_serverResponders = new Dictionary<ulong, Responder>();
 			if(!Directory.Exists("Servers"))
 			{
 				Directory.CreateDirectory("Servers");
@@ -47,19 +53,26 @@ namespace SassV2
 		{
 			_logger.Info("starting bot");
 
+			_client.Log.Message += (s, e) => _logger.Log(Util.SeverityToLevel(e.Severity), e.Message);
 			_client.ServerAvailable += OnServerAvailable;
 			_client.MessageReceived += OnMessageReceived;
 			_client.Ready += (s, e) => {
 				_logger.Info("client ready");
 			};
 
+			_client.UsingAudio(x =>
+			{
+				x.Mode = AudioMode.Outgoing;
+				x.EnableEncryption = false;
+			});
+
 			_client.ExecuteAndWait(async () =>
 			{
-				await _client.Connect(_config.Token);
+				await _client.Connect(_config.Token, TokenType.Bot);
 			});
 		}
 
-		private void OnServerAvailable(object sender, ServerEventArgs e)
+		private async void OnServerAvailable(object sender, ServerEventArgs e)
 		{
 			var dbPath = Path.Combine("Servers", e.Server.Id.ToString());
 			if(!Directory.Exists(dbPath))
@@ -67,10 +80,17 @@ namespace SassV2
 				Directory.CreateDirectory(dbPath);
 			}
 			_serverDatabases[e.Server.Id] = new KeyValueDatabase(Path.Combine(dbPath, "server2.db"));
-			_serverDatabases[e.Server.Id].Open();
+			await _serverDatabases[e.Server.Id].Open();
 
 			_serverRelationalDatabases[e.Server.Id] = new RelationalDatabase(Path.Combine(dbPath, "relational.db"));
-			_serverRelationalDatabases[e.Server.Id].Open();
+			await _serverRelationalDatabases[e.Server.Id].Open();
+
+			_serverResponders[e.Server.Id] = new Responder();
+
+			foreach(var kv in _serverDatabases[e.Server.Id].GetKeysOfNamespace<string>("filter"))
+			{
+				_responderFilters[kv.Key.Substring(0, "filter:".Length)] = SassLisp.Compile(kv.Value);
+			}
 
 			_logger.Info("joined " + e.Server.Name + " (" + e.Server.Id + ")");
 		}
@@ -90,6 +110,16 @@ namespace SassV2
 			return _serverRelationalDatabases[serverId];
 		}
 
+		public Responder Responder(ulong serverId)
+		{
+			return _serverResponders[serverId];
+		}
+
+		public void AddResponderFilter(string name, string filter)
+		{
+			_responderFilters[name] = SassLisp.Compile(filter);
+		}
+
 		private async void OnMessageReceived(object sender, MessageEventArgs e)
 		{
 			// ignore messages we send
@@ -101,6 +131,15 @@ namespace SassV2
 			if(e.Message.IsMentioningMe())
 			{
 				await SendMessage(e.Channel, Util.AssembleRudeMessage());
+				return;
+			}
+
+			if(
+				e.Server.Id == 218854860508889092 && 
+				e.Channel.Id == 234035536971563010 && 
+				e.Message.Text.IndexOf("rust", StringComparison.CurrentCultureIgnoreCase) != -1)
+			{
+				await SendMessage(e.Channel, "SHUT THE FUCK UP ABOUT RUST");
 				return;
 			}
 			

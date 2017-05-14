@@ -80,7 +80,7 @@ namespace SassV2
 			var commandName = "";
 			foreach(var name in (isPrivate ? _pmCommands : _commands))
 			{
-				if(message.Trim() == name || message.StartsWith(name + " ", StringComparison.CurrentCultureIgnoreCase))
+				if(message.ToLower().Trim() == name.ToLower() || message.StartsWith(name + " ", StringComparison.CurrentCultureIgnoreCase))
 				{
 					commandFound = true;
 					commandName = name;

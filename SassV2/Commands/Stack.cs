@@ -24,7 +24,7 @@ namespace SassV2.Commands
 			}
 			else
 			{
-				File.AppendAllText("requests.txt", args);
+				File.AppendAllText("requests.txt", args + "\n");
 				return "It's on the stack now.";
 			}
 		}

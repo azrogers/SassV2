@@ -44,8 +44,9 @@ namespace SassV2.Controllers
 				.Select(i =>
 					_bot.Client.Servers
 					.Where(s => s.Id == i)
-					.First()
+					.FirstOrDefault()
 				)
+				.Where(s => s != default(Server))
 				.OrderBy(s => s.Name)
 				.Select(s =>
 				{

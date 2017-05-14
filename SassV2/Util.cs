@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Net;
 using System.Net.Http;
+using NLog;
 
 namespace SassV2
 {
@@ -236,6 +237,58 @@ namespace SassV2
 				.Cast<Match>()
 				.Select(m => m.Value.Trim('"'))
 				.ToArray();
+		}
+
+		public static bool ParseDouble(string value, out double number)
+		{
+			number = 0;
+			if(string.IsNullOrWhiteSpace(value)) return false;
+			value = value.Trim();
+			if(!Char.IsLetter(value[value.Length - 1]))
+				return Double.TryParse(value, out number);
+			char power = value[value.Length - 1];
+			value = value.Substring(0, value.Length - 1);
+			if(string.IsNullOrWhiteSpace(value)) return false;
+			double n;
+			if(!Double.TryParse(value, out n)) return false;
+			switch(power)
+			{
+				case 'k': // Thousand
+					number = (int)(n * 1000);
+					return true;
+				case 'M': // Million
+					number = (int)(n * 1000000);
+					return true;
+				case 'B': // Billion
+					number = (int)(n * 1000000000);
+					return true;
+				default:
+					return false;
+			}
+		}
+		
+		public static LogLevel SeverityToLevel(LogSeverity s)
+		{
+			switch(s)
+			{
+				case LogSeverity.Debug:
+					return LogLevel.Debug;
+				case LogSeverity.Error:
+					return LogLevel.Error;
+				case LogSeverity.Info:
+					return LogLevel.Info;
+				case LogSeverity.Verbose:
+					return LogLevel.Trace;
+				case LogSeverity.Warning:
+					return LogLevel.Warn;
+				default:
+					return LogLevel.Info;
+			}
+		}
+
+		public static float LogVolume(float x)
+		{
+			return (Math.Exp(x) - 1) / (Math.E - 1);
 		}
 	}
 }

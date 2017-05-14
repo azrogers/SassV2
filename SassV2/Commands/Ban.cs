@@ -54,8 +54,8 @@ namespace SassV2.Commands
 			{
 				throw new CommandException(Util.Locale("unban.moreFound"));
 			}
-
-			bot.Database(msg.Server.Id).InvalidateObject<bool>("ban:" + msg.User.Id);
+			
+			bot.Database(msg.Server.Id).InvalidateObject<bool>("ban:" + foundUsers.First().Id);
 			return Util.Locale("unban.sure");
 		}
 	}

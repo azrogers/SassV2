@@ -28,6 +28,10 @@ namespace SassV2.Commands
 
 				return _database.FindPokemon(pokemonId);
 			}
+			else if(string.IsNullOrEmpty(args))
+			{
+				return _database.RandomPokemon();
+			}
 			else
 			{
 				return _database.FindPokemon(args);
@@ -46,6 +50,17 @@ namespace SassV2.Commands
 		{
 			_connection = new SqliteConnection("Data Source=pokedex.sqlite;Version=3;");
 			_connection.Open();
+		}
+
+		public string RandomPokemon()
+		{
+			var cmd = new SqliteCommand("SELECT species_id FROM pokemon GROUP BY species_id ORDER BY RANDOM() LIMIT 1;", _connection);
+			var reader = cmd.ExecuteReader();
+			if(!reader.HasRows)
+				return "No pokemon???";
+			reader.Read();
+			var pokemonId = reader.GetInt32(0);
+			return FindPokemon((int)pokemonId);
 		}
 
 		public string FindPokemon(string name)
