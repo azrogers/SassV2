@@ -1,0 +1,40 @@
+﻿@using RazorEngine
+@inherits RazorEngine.Templating.TemplateBase
+
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>
+        @if (ViewBag.Title != null)
+        {
+            @(ViewBag.Title + " - ")
+        }
+        SASS
+    </title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: black;
+        }
+
+        a {
+            color: blue;
+            text-decoration: none;
+        }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+        h1 {
+            font-weight: normal;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="body">
+        @RenderBody()
+    </div>
+</body>
+</html>

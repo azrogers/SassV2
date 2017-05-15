@@ -30,5 +30,10 @@ namespace SassV2
 		{
 			return new SqliteCommand(query, _connection);
 		}
+
+		public async Task<int> BuildAndExecute(string query)
+		{
+			return await new SqliteCommand(query, _connection).ExecuteNonQueryAsync();
+		}
 	}
 }

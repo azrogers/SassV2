@@ -31,16 +31,16 @@ namespace SassV2.Commands
 			else
 			{
 				var command = bot.CommandHandler.FindCommand(args.Trim(), false);
-				if(!command.HasValue)
+				if (command == null)
 				{
 					throw new CommandException("Command not found.");
 				}
-				if(command.Value.Attribute.Hidden)
+				if(command.Attribute.Hidden)
 				{
 					throw new CommandException("shhh");
 				}
-				message += "\t**Usage**\n\t\t sass " + command.Value.Attribute.Usage + "\n";
-				message += "\t**Description**\n\t\t " + command.Value.Attribute.Description;
+				message += "\t**Usage**\n\t\t sass " + command.Attribute.Usage + "\n";
+				message += "\t**Description**\n\t\t " + command.Attribute.Description;
 			}
 
 			return message;

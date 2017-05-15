@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Net;
+using Unosquare.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -33,7 +34,7 @@ namespace SassV2
 		/// <summary>
 		/// Outputs an HTML response given an HTML string.
 		/// </summary>
-		public static bool HtmlReponse(this HttpListenerContext context, string html)
+		public static bool HtmlResponse(this HttpListenerContext context, string html)
 		{
 			var buffer = Encoding.UTF8.GetBytes(html);
 			context.Response.ContentType = "text/html";

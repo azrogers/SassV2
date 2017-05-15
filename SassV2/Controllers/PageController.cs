@@ -4,10 +4,9 @@ using System.Linq;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using System.Net;
 using Unosquare.Labs.EmbedIO;
+using Unosquare.Net;
 using Unosquare.Labs.EmbedIO.Modules;
-using Nustache.Core;
 using Discord;
 using System.Reactive.Linq;
 using System.Web;
@@ -19,24 +18,70 @@ namespace SassV2.Controllers
 	{
 		private DiscordBot _bot;
 		private Logger _logger;
+		private ViewManager _viewManager;
 
-		public PageController(DiscordBot bot)
+		public PageController(DiscordBot bot, ViewManager viewManager)
 		{
 			_bot = bot;
 			_logger = LogManager.GetCurrentClassLogger();
+			_viewManager = viewManager;
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/")]
-		public bool Index(WebServer server, HttpListenerContext context)
+		[WebApiHandler(HttpVerbs.Get, "/images/{urlId}")]
+		public bool GetImages(WebServer server, HttpListenerContext context, string urlId)
 		{
-			var inviteUrl = "https://discordapp.com/oauth2/authorize?client_id=" + _bot.Config.ClientID + "&scope=bot&permissions=104061952";
-			return context.HtmlReponse(Render.FileToString("template.html", new
+			ulong serverId;
+			if(!ulong.TryParse(urlId, out serverId) || !_bot.ServerIds.Contains(serverId))
 			{
-				message = "BRANBOT TWO POINT DOH<br/>If you want SASS on your server, <a href='" + inviteUrl + "'>click here</a>."
-			}));
+				return Error(context, "That server doesn't exist.");
+			}
+
+			var imageKeyValues = _bot.Database(serverId).GetKeysOfNamespace<string>("image");
+			var images = imageKeyValues.OrderBy(k => k.Key);
+
+			return context.HtmlResponse(_viewManager.RenderView("images", new { Title = "Images", Images = images }));
 		}
 
-		[WebApiHandler(HttpVerbs.Get, new string[] { "/servers", "/images", "/quotes" })]
+		[WebApiHandler(HttpVerbs.Get, "/quotes/{urlId}")]
+		public async Task<bool> GetQuotes(WebServer server, HttpListenerContext context, string urlId)
+		{
+			ulong serverId;
+			if (!ulong.TryParse(urlId, out serverId) || !_bot.ServerIds.Contains(serverId))
+			{
+				return Error(context, "That server doesn't exist.");
+			}
+
+			var db = _bot.RelDatabase(serverId);
+			await Commands.QuoteCommand.InitializeDatabase(db);
+			var cmd = db.BuildCommand("SELECT id,quote,author,source FROM quotes;");
+			var reader = cmd.ExecuteReader();
+
+			var quoteList = new List<Quote>();
+			while(reader.Read())
+			{
+				var id = reader.GetInt64(0);
+				var quote = reader.GetString(1);
+				var author = reader.GetString(2);
+				var source = reader.GetString(3);
+
+				quoteList.Add(new Quote { Id = id, Content = quote, Author = author, Source = source });
+			}
+
+			return context.HtmlResponse(_viewManager.RenderView<List<Quote>>("quotes", quoteList, new { Title = "Quotes" }));
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/fonts")]
+		public bool GetFonts(WebServer server, HttpListenerContext context)
+		{
+			var files = Directory.EnumerateFiles("Fonts").Select(f =>
+			{
+				return Path.GetFileNameWithoutExtension(f.ToLower().Replace(' ', '_'));
+			});
+
+			return context.HtmlResponse(_viewManager.RenderView("fonts", new { Title = "Fonts", Fonts = files }));
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/servers")]
 		public async Task<bool> ListServers(WebServer server, HttpListenerContext context)
 		{
 			var botGuilds = await _bot.Client.GetGuildsAsync();
@@ -47,98 +92,34 @@ namespace SassV2.Controllers
 					botGuilds.Where(s => s.Id == i).FirstOrDefault()
 				)
 				.Where(s => s != default(IGuild))
-				.OrderBy(s => s.Name)
-				.Select(s =>
-				{
-					return $"<li>{WebUtility.HtmlEncode(s.Name)} - <a href='/images/{s.Id}'>images</a> / <a href='/quotes/{s.Id}'>quotes</a></li>";
-				});
+				.OrderBy(s => s.Name);
 
-			return context.HtmlReponse(Render.FileToString("template.html", new
-			{
-				title = "Servers",
-				message = "<ul>" + string.Join("\n", servers) + "</ul>"
-			}));
+			return context.HtmlResponse(_viewManager.RenderView("servers", new { Title = "Servers", Servers = servers }));
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/images/*")]
-		public async Task<bool> GetImages(WebServer server, HttpListenerContext context)
+		[WebApiHandler(HttpVerbs.Get, new string[] { "/images", "/quotes" })]
+		public bool ImageQuotesRedirect(WebServer server, HttpListenerContext context)
 		{
-			var urlId = context.Request.Url.Segments.Last();
-			if(urlId == "images/")
-			{
-				return await ListServers(server, context);
-			}
-
-			ulong serverId;
-			if(!ulong.TryParse(urlId, out serverId))
-			{
-				throw new Exception("THE NOZZLE");
-			}
-
-			var imageKeyValues = _bot.Database(serverId).GetKeysOfNamespace<string>("image");
-			var images = imageKeyValues
-				.OrderBy(k => k.Key)
-				.Select(kv => "<li>" + 
-					WebUtility.HtmlEncode(kv.Key.Substring("image:".Length)) + 
-					" - <a target='_blank' href='" + kv.Value + "'>" + kv.Value + "</a></li>");
-
-			return context.HtmlReponse(Render.FileToString("template.html", new
-			{
-				title = "Images",
-				message = "<ul>" + string.Join("\n", images) + "</ul>"
-			}));
+			return context.Redirect("/servers");
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/quotes/*")]
-		public async Task<bool> GetQuotes(WebServer server, HttpListenerContext context)
+		[WebApiHandler(HttpVerbs.Get, "/")]
+		public bool Index(WebServer server, HttpListenerContext context)
 		{
-			var urlId = context.Request.Url.Segments.Last();
-			if(urlId == "quotes/")
-			{
-				return await ListServers(server, context);
-			}
-
-			ulong serverId;
-			if(!ulong.TryParse(urlId, out serverId))
-			{
-				throw new Exception("THE NOZZLE");
-			}
-
-			var db = _bot.RelDatabase(serverId);
-			var cmd = db.BuildCommand("SELECT id,quote,author,source FROM quotes;");
-			var reader = cmd.ExecuteReader();
-
-			var quoteList = new List<string>();
-			while(reader.Read())
-			{
-				var id = reader.GetInt64(0);
-				var quote = WebUtility.HtmlEncode(reader.GetString(1));
-				var author = WebUtility.HtmlEncode(reader.GetString(2));
-				var source = WebUtility.HtmlEncode(reader.GetString(3));
-
-				quoteList.Add($"<li>#{id}: \"{quote}\" - {author}, {source}</li>");
-			}
-
-			return context.HtmlReponse(Render.FileToString("template.html", new
-			{
-				title = "Quotes",
-				message = "<ul>" + string.Join("\n", quoteList) + "</ul>"
-			}));
+			return context.HtmlResponse(_viewManager.RenderView("index", new { ClientID = _bot.Config.ClientID }));
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/fonts")]
-		public bool GetFonts(WebServer server, HttpListenerContext context)
+		private bool Error(HttpListenerContext context, string message)
 		{
-			var files = Directory.EnumerateFiles("Fonts").Select(f =>
-			{
-				return "<li>" + Path.GetFileNameWithoutExtension(f.ToLower().Replace(' ', '_')) + "</li>";
-			});
+			return context.HtmlResponse(_viewManager.RenderView("error", new { Title = "Error!", Message = message }));
+		}
 
-			return context.HtmlReponse(Render.FileToString("template.html", new
-			{
-				title = "Fonts",
-				message = "<ul>" + string.Join("\n", files) + "</ul>"
-			}));
+		public class Quote
+		{
+			public long Id;
+			public string Content;
+			public string Author;
+			public string Source;
 		}
 	}
 }

@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Net;
 using System.Net.Http;
 using NLog;
+using RazorEngine.Templating;
 
 namespace SassV2
 {
@@ -177,7 +178,7 @@ namespace SassV2
 			var argsDict = new Dictionary<string, string>();
 			if(args != null)
 			{
-				argsDict = AnonymousObjectToDictionary(args);
+				argsDict = AnonymousObjectToDictionary<string>(args);
 			}
 
 			JToken entry = _localeCache[name];
@@ -207,14 +208,14 @@ namespace SassV2
 		/// </summary>
 		/// <param name="anon">Anonymous object.</param>
 		/// <returns>A dictionary of the fields in the object.</returns>
-		public static Dictionary<string, string> AnonymousObjectToDictionary(object anon)
+		public static Dictionary<string, T> AnonymousObjectToDictionary<T>(object anon)
 		{
 			var type = anon.GetType();
 			var props = type.GetProperties();
-			var kv = new Dictionary<string, string>();
+			var kv = new Dictionary<string, T>();
 			foreach(PropertyInfo prop in props)
 			{
-				kv[prop.Name] = prop.GetValue(anon, null).ToString();
+				kv[prop.Name] = (T)prop.GetValue(anon, null);
 			}
 			return kv;
 		}
@@ -286,6 +287,11 @@ namespace SassV2
 				default:
 					return LogLevel.Info;
 			}
+		}
+
+		public static DynamicViewBag ViewBagFromAnonObject(object anon)
+		{
+			return new DynamicViewBag(AnonymousObjectToDictionary<object>(anon));
 		}
 	}
 }

@@ -1,0 +1,10 @@
+﻿@{
+    Layout = "_layout.html";
+}
+
+<ul>
+    @foreach(var image in ViewBag.Images)
+    {
+        <li>@(image.Key.Substring(6)) - <a target="_blank" href=@image.Value>@image.Value</a></li>
+    }
+</ul>

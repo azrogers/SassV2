@@ -149,10 +149,9 @@ namespace SassV2
 			}
 
 			// find the command
-			var commandMaybe = _commandHandler.FindCommand(message.Content.Substring(BotName.Length).Trim(), message.Channel is ISocketPrivateChannel);
-			if(commandMaybe.HasValue)
+			var command = _commandHandler.FindCommand(message.Content.Substring(BotName.Length).Trim(), message.Channel is ISocketPrivateChannel);
+			if(command != null)
 			{
-				var command = commandMaybe.Value;
 				try
 				{
 					string result;

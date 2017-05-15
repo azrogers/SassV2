@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Reflection;
 using Discord;
 using Discord.WebSocket;
-using Functional.Maybe;
 
 namespace SassV2
 {
@@ -75,7 +74,7 @@ namespace SassV2
 		/// </summary>
 		/// <param name="message">The message to find a command for.</param>
 		/// <returns>A Maybe representing the command or nothing.</returns>
-		public Maybe<Command> FindCommand(string message, bool isPrivate)
+		public Command FindCommand(string message, bool isPrivate)
 		{
 			var commandFound = false;
 			var commandName = "";
@@ -91,7 +90,7 @@ namespace SassV2
 
 			if(!commandFound)
 			{
-				return Maybe<Command>.Nothing;
+				return null;
 			}
 
 			var args = message.Substring(commandName.Length).Trim();
@@ -110,7 +109,7 @@ namespace SassV2
 			command.Attribute = _commandAttributes.Where(c => c.Names.Where(n => n.ToLower() == commandName).Any()).First();
 			command.Arguments = args;
 
-			return command.ToMaybe();
+			return command;
 		}
 
 		public class Command
