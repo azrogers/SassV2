@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
 using Unosquare.Net;
 using Unosquare.Labs.EmbedIO.Modules;
+using NLog;
 
 namespace SassV2.Web.Controllers
 {
@@ -16,6 +17,22 @@ namespace SassV2.Web.Controllers
 		public BaseController(ViewManager viewManager)
 		{
 			_viewManager = viewManager;
+		}
+
+		protected bool Redirect(WebServer server, HttpListenerContext context, string path)
+		{
+			var url = context.Request.Url.OriginalString;
+			string baseUrl;
+#if DEBUG
+			baseUrl = context.Request.Url.Scheme + "://" + context.Request.Url.Authority;
+#else
+			baseUrl = context.Request.Url.Scheme + "://" + context.Request.Url.Host;
+#endif
+			var newUrl = baseUrl + path;
+			context.Response.StatusCode = 302;
+			context.Response.AppendHeader("Location", newUrl);
+			LogManager.GetCurrentClassLogger().Debug("redirecting to " + newUrl);
+			return true;
 		}
 
 		protected bool Error(WebServer server, HttpListenerContext context, string message)

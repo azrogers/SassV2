@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using Discord;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace SassV2.Web
 {
@@ -17,6 +18,8 @@ namespace SassV2.Web
 		/// </summary>
 		private const int TokenDuration = 30 * 60;
 
+		private static Logger _logger = LogManager.GetCurrentClassLogger();
+
 		public static async Task<string> GetURL(string after, IUser user, DiscordBot bot)
 		{
 			return bot.Config.URL + "auth?code=" +
@@ -26,6 +29,7 @@ namespace SassV2.Web
 
 		public static async Task InvalidateCode(string code, RelationalDatabase db)
 		{
+			_logger.Debug("invalidating code " + code);
 			var command = db.BuildCommand("DELETE FROM auth_codes WHERE code=:code;");
 			command.Parameters.AddWithValue("code", code);
 			await command.ExecuteNonQueryAsync();
@@ -35,6 +39,8 @@ namespace SassV2.Web
 		{
 			await CreateTables(db);
 			await PruneCodes(db);
+
+			_logger.Debug("checking code " + code);
 
 			var command = db.BuildCommand("SELECT data FROM auth_codes WHERE code=:code LIMIT 1;");
 			command.Parameters.AddWithValue("code", code);
@@ -47,7 +53,7 @@ namespace SassV2.Web
 			reader.Read();
 			var data = reader.GetString(0);
 
-			await InvalidateCode(code, db);
+			//await InvalidateCode(code, db);
 			return await bot.Client.GetUserAsync(ulong.Parse(data));
 		}
 
@@ -55,6 +61,8 @@ namespace SassV2.Web
 		{
 			await CreateTables(db);
 			await PruneCodes(db);
+
+			_logger.Debug("generating code for " + user.Username);
 
 			var authCmd = db.BuildCommand($"SELECT code FROM auth_codes WHERE data=:data LIMIT 1;");
 			authCmd.Parameters.AddWithValue("data", user.Id.ToString());

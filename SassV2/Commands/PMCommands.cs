@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using Discord;
 using CsvHelper;
+using SassV2.Web;
 
 namespace SassV2.Commands
 {
@@ -74,6 +75,24 @@ namespace SassV2.Commands
 			}
 
 			return "ok";
+		}
+
+		[Command("impersonate", Description = "impersonate a user to edit their bio for them", Usage = "impersonate <user id>", Hidden = true, IsPM = true)]
+		public static async Task<string> ImpersonateUser(DiscordBot bot, IMessage msg, string args)
+		{
+			if (bot.Config.GetRole(msg.Author.Id) != "admin")
+			{
+				throw new CommandException("You're not allowed to use this command.");
+			}
+
+			ulong userId;
+			if(!ulong.TryParse(args, out userId))
+			{
+				throw new CommandException("Invalid user ID.");
+			}
+
+			var user = await bot.Client.GetUserAsync(userId);
+			return await AuthCodeManager.GetURL("/bio/edit", user, bot);
 		}
 	}
 }

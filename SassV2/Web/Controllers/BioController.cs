@@ -35,7 +35,7 @@ namespace SassV2.Web.Controllers
 			}
 
 			var id = await Bio.CreateBio(await AuthManager.GetUser(server, context, _bot), _bot.GlobalDatabase);
-			return context.Redirect("/bio/edit/" + id);
+			return Redirect(server, context, "/bio/edit/" + id);
 		}
 
 		[WebApiHandler(HttpVerbs.Post, "/bio/edit/{id}")]
@@ -81,7 +81,7 @@ namespace SassV2.Web.Controllers
 
 			await Bio.SaveBio(bio, _bot.GlobalDatabase);
 
-			return context.Redirect("/bio/edit");
+			return Redirect(server, context, "/bio/edit");
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/bio/edit/{id}")]

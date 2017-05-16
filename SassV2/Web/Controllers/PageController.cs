@@ -28,7 +28,7 @@ namespace SassV2.Web.Controllers
 		public bool Logout(WebServer server, HttpListenerContext context)
 		{
 			AuthManager.Logout(server, context);
-			return context.Redirect("/");
+			return Redirect(server, context, "/");
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/auth")]
@@ -36,7 +36,7 @@ namespace SassV2.Web.Controllers
 		{
 			if(AuthManager.IsAuthenticated(server, context))
 			{
-				return context.Redirect(context.QueryString("after"));
+				return Redirect(server, context, context.QueryString("after"));
 			}
 
 			var code = context.QueryString("code");
@@ -52,7 +52,7 @@ namespace SassV2.Web.Controllers
 			}
 
 			AuthManager.SaveUser(server, context, user);
-			return context.Redirect(context.QueryString("after"));
+			return Redirect(server, context, context.QueryString("after"));
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/images/{urlId}")]
@@ -128,7 +128,7 @@ namespace SassV2.Web.Controllers
 		[WebApiHandler(HttpVerbs.Get, new string[] { "/images", "/quotes" })]
 		public bool ImageQuotesRedirect(WebServer server, HttpListenerContext context)
 		{
-			return context.Redirect("/servers");
+			return Redirect(server, context, "/servers");
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/")]

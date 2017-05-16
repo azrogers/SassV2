@@ -16,7 +16,7 @@ namespace SassV2.Commands
 			new BioField("email", "Email"),
 			new BioField("paypal", "PayPal Email"),
 			new BioField("steam_id", "Steam ID", "Steam", "Find it at <a href='http://steamid.co/' target='_blank'>steamid.co</a>. Use the Steam 64 ID.") {
-				Formatter = (v) => $"https://steamcommunity.com/id/{v}"
+				Formatter = (v) => $"https://steamcommunity.com/profiles/{v}"
 			},
 			new BioField("twitter", "Twitter Username", "Twitter", "") {
 				Formatter = (v) => $"https://twitter.com/{v}"
@@ -252,7 +252,7 @@ namespace SassV2.Commands
 				}
 			}
 
-			var fieldSpecs = new List<BioField>(_fields);
+			var fieldSpecs = new List<BioField>(_fields.Select(f => f.Clone()));
 			var fields = new List<BioField>();
 			if(full)
 			{
@@ -267,8 +267,12 @@ namespace SassV2.Commands
 					if (spec == null)
 						continue;
 					fieldSpecs.Remove(spec);
-					spec.Value = value;
-					fields.Add(spec);
+					var newField = new BioField(spec.Name, spec.FriendlyName, spec.DisplayName, spec.Info)
+					{
+						Formatter = spec.Formatter,
+						Value = value
+					};
+					fields.Add(newField);
 				}
 
 				fields.AddRange(fieldSpecs);
@@ -337,6 +341,20 @@ namespace SassV2.Commands
 			public string Info = "";
 			public string Value = "";
 			public Func<string, string> Formatter;
+
+			public BioField Clone()
+			{
+				var newField = new BioField(Name)
+				{
+					FriendlyName = FriendlyName,
+					DisplayName = DisplayName,
+					Info = Info,
+					Value = Value,
+					Formatter = Formatter
+				};
+
+				return newField;
+			}
 
 			public BioField(string name)
 				: this(name, name, name, "")
