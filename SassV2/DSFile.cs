@@ -30,7 +30,7 @@ namespace SassV2
 
 		~DSFile()
 		{
-			_reader.Close();
+			_reader.Dispose();
 		}
 
 		private void ReadFile()

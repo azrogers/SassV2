@@ -67,7 +67,15 @@ namespace SassV2.Web.Controllers
 			
 			if(data.ContainsKey("servers"))
 			{
-				var servers = (data["servers"] as List<string>).Select(s => new KeyValuePair<ulong, string>(ulong.Parse(s), null));
+				IEnumerable<KeyValuePair<ulong, string>> servers;
+				if (data["servers"] is string)
+				{
+					servers = new KeyValuePair<ulong, string>[] { new KeyValuePair<ulong, string>(ulong.Parse(data["servers"].ToString()), null) };
+				}
+				else
+				{
+					servers = (data["servers"] as List<string>).Select(s => new KeyValuePair<ulong, string>(ulong.Parse(s), null));
+				}
 				bio.SharedServers = servers.ToList();
 			}
 

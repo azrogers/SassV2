@@ -33,8 +33,8 @@ namespace SassV2
 			var commandNamespace = typeof(CommandHandler).Namespace + ".Commands";
 			// find all command methods
 			var methodInfo =
-				Assembly.GetExecutingAssembly().GetTypes()
-				.Where(t => t.IsClass && t.Namespace == commandNamespace)
+				typeof(CommandHandler).GetTypeInfo().Assembly.GetTypes()
+				.Where(t => t.GetTypeInfo().IsClass && t.Namespace == commandNamespace)
 				.Select(t => t.GetTypeInfo().DeclaredMethods)
 				.SelectMany(m => m)
 				.ToArray();
@@ -99,12 +99,12 @@ namespace SassV2
 			var commandMethod = (isPrivate ? _pmCommandMap[commandName] : _commandMap[commandName]);
 			if(commandMethod.ReturnType == typeof(string))
 			{
-				command.Delegate = (CommandDelegate)Delegate.CreateDelegate(typeof(CommandDelegate), commandMethod);
+				command.Delegate = (CommandDelegate)commandMethod.CreateDelegate(typeof(CommandDelegate));
 			}
 			else
 			{
 				command.IsAsync = true;
-				command.AsyncDelegate = (AsyncCommandDelegate)Delegate.CreateDelegate(typeof(AsyncCommandDelegate), commandMethod);
+				command.AsyncDelegate = (AsyncCommandDelegate)commandMethod.CreateDelegate(typeof(AsyncCommandDelegate));
 			}
 			command.Attribute = _commandAttributes.Where(c => c.Names.Where(n => n.ToLower() == commandName).Any()).First();
 			command.Arguments = args;

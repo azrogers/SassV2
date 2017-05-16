@@ -53,13 +53,22 @@ namespace SassV2.Commands
 			return null;
 		}
 
-		[Command("bio", Description = "see a user's bio", Usage = "bio <user>", Category = "bio")]
+		[Command("bio", Description = "see a user's bio", Usage = "bio <user>", Category = "Bio")]
 		public static async Task<string> ShowBio(DiscordBot bot, IMessage msg, string args)
 		{
-			var users = await Util.FindWithName(args, msg);
+			IEnumerable<IUser> users;
+			if (string.IsNullOrWhiteSpace(args))
+			{
+				users = new IUser[] { msg.Author };
+			}
+			else
+			{
+				users = await Util.FindWithName(args, msg);
+			}
+
 			if(!users.Any())
 			{
-				throw new CommandException("Whose bio do you want me to get?");
+				throw new CommandException("I don't know who that is.");
 			}
 
 			var user = users.First() as IGuildUser;

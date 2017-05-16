@@ -1,17 +1,17 @@
 ﻿using Discord;
 using Newtonsoft.Json.Linq;
+using NLog;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
-using System.Threading.Tasks;
 using System.Linq;
-using System.Text.RegularExpressions;
-using System.Reflection;
 using System.Net;
 using System.Net.Http;
-using NLog;
-using RazorEngine.Templating;
+using System.Reflection;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SassV2
 {
@@ -221,9 +221,9 @@ namespace SassV2
 			return kv;
 		}
 
-		public static string GetURL(string url)
+		public static async Task<string> GetURL(string url)
 		{
-			return new WebClient().DownloadString(url);
+			return await new HttpClient().GetStringAsync(url);
 		}
 
 		public async static Task<string> GetURLAsync(string url)
@@ -290,9 +290,9 @@ namespace SassV2
 			}
 		}
 
-		public static DynamicViewBag ViewBagFromAnonObject(object anon)
+		public static ExpandoObject ViewBagFromAnonObject(object anon)
 		{
-			return new DynamicViewBag(AnonymousObjectToDictionary<object>(anon));
+			return AnonymousObjectToDictionary<object>(anon).ToExpando();
 		}
 
 		/// <summary>
@@ -300,7 +300,7 @@ namespace SassV2
 		/// </summary>
 		public static string RandomString()
 		{
-			using (var rng = new RNGCryptoServiceProvider())
+			using (var rng = RandomNumberGenerator.Create())
 			{
 				var tokenData = new byte[32];
 				rng.GetBytes(tokenData);

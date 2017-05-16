@@ -9,7 +9,6 @@ using Unosquare.Net;
 using Unosquare.Labs.EmbedIO.Modules;
 using Discord;
 using System.Reactive.Linq;
-using System.Web;
 using NLog;
 
 namespace SassV2.Web.Controllers

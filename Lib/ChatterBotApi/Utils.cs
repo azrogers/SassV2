@@ -67,11 +67,11 @@ namespace ChatterBotAPI
             CookieContainer container = new CookieContainer();
             var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
-            request.Headers.Add("UserAgent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0;");
+            request.Headers["UserAgent"] = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0;";
             request.ContentType = "text/html";
             request.CookieContainer = container;
 
-			var response = (HttpWebResponse)request.GetResponse();
+			var response = (HttpWebResponse)request.GetResponseAsync().GetAwaiter().GetResult();
 			using (var responseStreamReader = new StreamReader(response.GetResponseStream()))
 			{
 				responseStreamReader.ReadToEnd ();
@@ -90,21 +90,21 @@ namespace ChatterBotAPI
             if (cookies != null)
             {
                 var container = new CookieContainer();
-                container.Add(cookies);
+                container.Add(new System.Uri(url), cookies);
                 request.CookieContainer = container;
             }
 
             
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
-            request.ContentLength = postDataBytes.Length;
+            request.Headers[HttpRequestHeader.ContentLength] = postDataBytes.Length.ToString();
 
-			using (var outputStream = request.GetRequestStream())
+			using (var outputStream = request.GetRequestStreamAsync().GetAwaiter().GetResult())
 			{
 				outputStream.Write(postDataBytes, 0, postDataBytes.Length);
-				outputStream.Close();
+				outputStream.Dispose();
 
-				var response = (HttpWebResponse)request.GetResponse();
+				var response = (HttpWebResponse)request.GetResponseAsync().GetAwaiter().GetResult();
 				using (var responseStreamReader = new StreamReader(response.GetResponseStream()))
 				{
 					return responseStreamReader.ReadToEnd().Trim();

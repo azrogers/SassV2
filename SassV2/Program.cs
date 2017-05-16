@@ -16,7 +16,7 @@ namespace SassV2
 
 #if DEBUG
 		private const string BotUrl = "http://localhost:1443/";
-		private const string AssetPath = "../../Content";
+		private const string AssetPath = "Content";
 #else
 		private const string BotUrl = "http://*:1443/";
 		private const string AssetPath = "Content";
@@ -24,6 +24,7 @@ namespace SassV2
 
 		static void Main(string[] args)
 		{
+			NLog.LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration("NLog.Config", false);
 			Config config = new Config("config.json");
 			DiscordBot bot = new DiscordBot(config);
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Rant;
+/*using Rant;
 
 namespace SassV2.Commands
 {
@@ -35,3 +35,4 @@ namespace SassV2.Commands
 		}
 	}
 }
+*/

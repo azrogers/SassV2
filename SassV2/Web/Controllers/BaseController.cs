@@ -31,16 +31,20 @@ namespace SassV2.Web.Controllers
 
 		protected bool ViewResponse(WebServer server, HttpListenerContext context, string name, object viewbag)
 		{
-			var dynamicViewBag = Util.ViewBagFromAnonObject(viewbag);
-			dynamicViewBag.AddValue("Session", context.GetSession(server));
+			var viewBagEo = Util.ViewBagFromAnonObject(viewbag);
+			var dynamicViewBag = (dynamic)viewBagEo;
+			dynamicViewBag.Session = context.GetSession(server);
+			dynamicViewBag.Title = viewBagEo.ContainsKey("Title") ? dynamicViewBag.Title : "";
 			var content = _viewManager.RenderView(name, dynamicViewBag);
 			return UtilExtension.HtmlResponse(context, content);
 		}
 
 		protected bool ViewResponse<T>(WebServer server, HttpListenerContext context, string name, T model, object viewbag)
 		{
-			var dynamicViewBag = Util.ViewBagFromAnonObject(viewbag);
-			dynamicViewBag.AddValue("Session", context.GetSession(server));
+			var viewBagEo = Util.ViewBagFromAnonObject(viewbag);
+			var dynamicViewBag = (dynamic)viewBagEo;
+			dynamicViewBag.Session = context.GetSession(server);
+			dynamicViewBag.Title = viewBagEo.ContainsKey("Title") ? dynamicViewBag.Title : "";
 			var content = _viewManager.RenderView<T>(name, model, dynamicViewBag);
 			return UtilExtension.HtmlResponse(context, content);
 		}

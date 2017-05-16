@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Mono.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using System.IO;
 
 namespace SassV2
@@ -14,11 +14,10 @@ namespace SassV2
 
 		public RelationalDatabase(string path)
 		{
-			if(!File.Exists(path))
+			_connection = new SqliteConnection(new SqliteConnectionStringBuilder()
 			{
-				SqliteConnection.CreateFile(path);
-			}
-			_connection = new SqliteConnection("Data Source=" + path + "; Version=3;journal_mode=WAL;");
+				DataSource = path
+			}.ToString());
 		}
 
 		public async Task Open()

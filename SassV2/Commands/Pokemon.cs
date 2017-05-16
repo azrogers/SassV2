@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Mono.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 
 namespace SassV2.Commands
 {

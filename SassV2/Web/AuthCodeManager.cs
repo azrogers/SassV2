@@ -20,8 +20,8 @@ namespace SassV2.Web
 		public static async Task<string> GetURL(string after, IUser user, DiscordBot bot)
 		{
 			return bot.Config.URL + "auth?code=" +
-				System.Web.HttpUtility.UrlEncode(await AuthCodeManager.GenerateCode(user, bot.GlobalDatabase)) +
-				$"&after={System.Web.HttpUtility.UrlEncode(after)}";
+				System.Net.WebUtility.UrlEncode(await AuthCodeManager.GenerateCode(user, bot.GlobalDatabase)) +
+				$"&after={System.Net.WebUtility.UrlEncode(after)}";
 		}
 
 		public static async Task InvalidateCode(string code, RelationalDatabase db)

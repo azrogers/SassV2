@@ -1,12 +1,10 @@
-﻿using System;
+﻿using Discord;
+using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Dynamic;
 using System.Linq;
-using Unosquare.Net;
 using System.Text;
-using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
+using Unosquare.Net;
 
 namespace SassV2
 {
@@ -62,6 +60,27 @@ namespace SassV2
 		{
 			var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 			return epoch.AddSeconds(unixTime);
+		}
+
+		/// <summary>
+		/// Extension method that turns a dictionary of string and object to an ExpandoObject
+		/// </summary>
+		public static ExpandoObject ToExpando(this IDictionary<string, object> dictionary)
+		{
+			var expando = new ExpandoObject();
+			var eoColl = (ICollection<KeyValuePair<string, object>>)expando;
+
+			foreach(var kv in dictionary)
+			{
+				eoColl.Add(kv);
+			}
+
+			return expando;
+		}
+
+		public static bool ContainsKey(this ExpandoObject eo, string key)
+		{
+			return ((IDictionary<string, object>)eo).ContainsKey(key);
 		}
 	}
 }

@@ -36,7 +36,7 @@ namespace ChatterBotAPI
                 case ChatterBotType.JABBERWACKY:
                     return new Cleverbot("http://jabberwacky.com", "http://jabberwacky.com/webservicemin", 20);
                 case ChatterBotType.PANDORABOTS:
-                    if (arg == null) throw new ApplicationException("PANDORABOTS needs a botid arg");
+                    if (arg == null) throw new Exception("PANDORABOTS needs a botid arg");
                     return new Pandorabots(arg.ToString());
             }
             return null;

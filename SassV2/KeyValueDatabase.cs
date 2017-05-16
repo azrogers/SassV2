@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Mono.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using System.IO;
 
@@ -15,11 +15,10 @@ namespace SassV2
 
 		public KeyValueDatabase(string path)
 		{
-			if(!File.Exists(path))
+			_connection = new SqliteConnection(new SqliteConnectionStringBuilder()
 			{
-				SqliteConnection.CreateFile(path);
-			}
-			_connection = new SqliteConnection("Data Source=" + path + "; Version=3;journal_mode=WAL;");
+				DataSource = path
+			}.ToString());
 		}
 
 		public async Task Open()
@@ -32,29 +31,29 @@ namespace SassV2
 		public void InsertObject<T>(string key, T obj)
 		{
 			var valueJson = JsonConvert.SerializeObject(obj);
-			var cmd = new SqliteCommand("SELECT * FROM 'values' WHERE key = ?;", _connection);
-			cmd.Parameters.AddWithValue(null, key);
+			var cmd = new SqliteCommand("SELECT * FROM 'values' WHERE key = :k;", _connection);
+			cmd.Parameters.AddWithValue("k", key);
 			var reader = cmd.ExecuteReader();
 			if(reader.HasRows)
 			{
-				var updateCmd = new SqliteCommand("UPDATE 'values' SET value = ? WHERE key = ?;", _connection);
-				updateCmd.Parameters.AddWithValue(null, valueJson);
-				updateCmd.Parameters.AddWithValue(null, key);
+				var updateCmd = new SqliteCommand("UPDATE 'values' SET value = :v WHERE key = :k;", _connection);
+				updateCmd.Parameters.AddWithValue("v", valueJson);
+				updateCmd.Parameters.AddWithValue("k", key);
 				updateCmd.ExecuteNonQuery();
 			}
 			else
 			{
-				var insertCmd = new SqliteCommand("INSERT INTO 'values' (key,value) VALUES (?,?);", _connection);
-				insertCmd.Parameters.AddWithValue(null, key);
-				insertCmd.Parameters.AddWithValue(null, valueJson);
+				var insertCmd = new SqliteCommand("INSERT INTO 'values' (key,value) VALUES (:k,:v);", _connection);
+				insertCmd.Parameters.AddWithValue("k", key);
+				insertCmd.Parameters.AddWithValue("v", valueJson);
 				insertCmd.ExecuteNonQuery();
 			}
 		}
 
 		public T GetObject<T>(string key)
 		{
-			var cmd = new SqliteCommand("SELECT value FROM 'values' WHERE key = ?;", _connection);
-			cmd.Parameters.AddWithValue(null, key);
+			var cmd = new SqliteCommand("SELECT value FROM 'values' WHERE key = :key;", _connection);
+			cmd.Parameters.AddWithValue("key", key);
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 			{
@@ -66,8 +65,8 @@ namespace SassV2
 
 		public T GetOrCreateObject<T>(string key, Func<T> createFunc)
 		{
-			var cmd = new SqliteCommand("SELECT value FROM 'values' WHERE key = ?;", _connection);
-			cmd.Parameters.AddWithValue(null, key);
+			var cmd = new SqliteCommand("SELECT value FROM 'values' WHERE key = :key;", _connection);
+			cmd.Parameters.AddWithValue("key", key);
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 			{
@@ -79,15 +78,15 @@ namespace SassV2
 
 		public void InvalidateObject<T>(string key)
 		{
-			var cmd = new SqliteCommand("DELETE FROM 'values' WHERE key = ?;", _connection);
-			cmd.Parameters.AddWithValue(null, key);
+			var cmd = new SqliteCommand("DELETE FROM 'values' WHERE key = :key;", _connection);
+			cmd.Parameters.AddWithValue("key", key);
 			cmd.ExecuteNonQuery();
 		}
 
 		public IEnumerable<KeyValuePair<string, T>> GetKeysOfNamespace<T>(string ns)
 		{
-			var cmd = new SqliteCommand("SELECT key, value FROM 'values' WHERE key LIKE ?", _connection);
-			cmd.Parameters.AddWithValue(null, ns + ":%");
+			var cmd = new SqliteCommand("SELECT key, value FROM 'values' WHERE key LIKE :ns", _connection);
+			cmd.Parameters.AddWithValue("ns", ns + ":%");
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 			{

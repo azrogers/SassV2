@@ -15,11 +15,11 @@ namespace SassV2.Commands
 		private static Regex _disambRegex = new Regex(".+? may refer to:");
 
 		[Command(name: "define", desc: "look that shit up.", usage: "define <thing>", category: "Useful")]
-		public static string WikipediaDefine(DiscordBot bot, IMessage msg, string args)
+		public static async Task<string> WikipediaDefine(DiscordBot bot, IMessage msg, string args)
 		{
 			var url = "https://en.wikipedia.org/w/api.php?format=json&redirects&action=query&prop=extracts&exintro=&explaintext=&titles=";
 			url += Uri.EscapeUriString(args.Trim());
-			var data = Util.GetURL(url);
+			var data = await Util.GetURL(url);
 			var info = JObject.Parse(data);
 			foreach(var pageKey in (info["query"]["pages"] as JObject).Properties().Select(p => p.Name))
 			{
@@ -36,18 +36,18 @@ namespace SassV2.Commands
 				}
 				if(_disambRegex.IsMatch(str))
 				{
-					return DefineDisambg(args);
+					return await DefineDisambg(args);
 				}
 				return str;
 			}
 			return Util.Locale("define.nothing");
 		}
 
-		private static string DefineDisambg(string args)
+		private static async Task<string> DefineDisambg(string args)
 		{
 			var url = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=revisions&rvprop=content&titles=";
 			url += Uri.EscapeUriString(args.Trim());
-			var data = Util.GetURL(url);
+			var data = await Util.GetURL(url);
 			var info = JObject.Parse(data);
 			var page = info["query"]["pages"].First().First;
 			var content = page["revisions"].First()["*"].Value<string>();

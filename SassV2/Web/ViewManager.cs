@@ -1,39 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RazorEngine;
-using RazorEngine.Configuration;
-using RazorEngine.Templating;
+using RazorLight;
 
 namespace SassV2.Web
 {
 	public class ViewManager
 	{
-		private IRazorEngineService _razor;
+		private IRazorLightEngine _razor;
 
 		public ViewManager()
 		{
-			var config = new TemplateServiceConfiguration();
-#if DEBUG
-			config.Debug = true;
-			config.TemplateManager = new WatchingResolvePathTemplateManager(new string[] { "../../Views" }, new InvalidatingCachingProvider());
-#else
-			config.TemplateManager = new ResolvePathTemplateManager(new string[] { "Views" });
-#endif
-			_razor = RazorEngineService.Create(config);
+			_razor = EngineFactory.CreatePhysical(Path.Combine(Directory.GetCurrentDirectory(), "Views"));
 		}
 
-		public string RenderView(string name, DynamicViewBag values)
+		public string RenderView(string name, ExpandoObject values)
 		{
-			return _razor.RunCompile(name + ".html", null, null, values);
+			return _razor.Parse<object>(name + ".html", new { }, values);
 		}
 
-		public string RenderView<T>(string name, T model, DynamicViewBag values)
+		public string RenderView<T>(string name, T model, ExpandoObject values)
 		{
-			return _razor.RunCompile(name + ".html", typeof(T), model, values);
+			return _razor.Parse<T>(name + ".html", model, values);
 		}
 	}
 }

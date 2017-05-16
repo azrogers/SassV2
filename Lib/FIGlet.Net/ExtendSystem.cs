@@ -9,7 +9,7 @@ namespace FIGlet.Net
     {
         public static Stream GetResourceStream(this object obj, string resourceName)
         {
-            var assem = obj.GetType().Assembly;
+            var assem = obj.GetType().GetTypeInfo().Assembly;
             return assem.GetManifestResourceStream(resourceName);
         }
         public static int GetIntValue(this string[] arrayStrings, int posi)

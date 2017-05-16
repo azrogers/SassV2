@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Reflection;
-using Stringes;
 using Discord;
-
+/*
+// ORIGINALLY USED Stringes LIBRARY. REMOVED FOR .NET CORE. WILL FIX WHEN I ACTUALLY NEED TO USE THIS.
 namespace SassV2
 {
 	public static class SassLisp
@@ -51,7 +51,8 @@ namespace SassV2
 
 	public class LispSandbox
 	{
-		private Dictionary<string, LispAction> _variables = new Dictionary<string, LispAction>();
+		
+	/*private Dictionary<string, LispAction> _variables = new Dictionary<string, LispAction>();
 
 		public void SetVariable(string name, LispAction value)
 		{
@@ -960,4 +961,4 @@ namespace SassV2
 			Length = source.Length;
 		}
 	}
-}
+}*/

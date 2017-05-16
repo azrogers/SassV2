@@ -26,7 +26,7 @@ namespace SassV2
 		private Dictionary<ulong, KeyValueDatabase> _serverDatabases;
 		private Dictionary<ulong, RelationalDatabase> _serverRelationalDatabases;
 		private Dictionary<ulong, Responder> _serverResponders;
-		private Dictionary<string, LispSandbox.LispAction> _responderFilters;
+		//private Dictionary<string, LispSandbox.LispAction> _responderFilters;
 
 		public Config Config => _config;
 		public CommandHandler CommandHandler => _commandHandler;
@@ -59,8 +59,6 @@ namespace SassV2
 
 			_client.Log += (m) => Task.Run(() =>
 			{
-				if (m.Exception != null)
-					throw m.Exception;
 				_logger.Log(Util.SeverityToLevel(m.Severity), m.Message);
 			});
 			_client.GuildAvailable += OnGuildAvailable;
@@ -90,7 +88,7 @@ namespace SassV2
 
 			foreach(var kv in _serverDatabases[guild.Id].GetKeysOfNamespace<string>("filter"))
 			{
-				_responderFilters[kv.Key.Substring(0, "filter:".Length)] = SassLisp.Compile(kv.Value);
+				//_responderFilters[kv.Key.Substring(0, "filter:".Length)] = SassLisp.Compile(kv.Value);
 			}
 
 			_logger.Info("joined " + guild.Name + " (" + guild.Id + ")");
@@ -118,7 +116,7 @@ namespace SassV2
 
 		public void AddResponderFilter(string name, string filter)
 		{
-			_responderFilters[name] = SassLisp.Compile(filter);
+			//_responderFilters[name] = SassLisp.Compile(filter);
 		}
 
 		public IEnumerable<IGuild> GuildsContainingUser(IUser user)
