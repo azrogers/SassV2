@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Http;
 using NLog;
 using RazorEngine.Templating;
+using System.Security.Cryptography;
 
 namespace SassV2
 {
@@ -292,6 +293,20 @@ namespace SassV2
 		public static DynamicViewBag ViewBagFromAnonObject(object anon)
 		{
 			return new DynamicViewBag(AnonymousObjectToDictionary<object>(anon));
+		}
+
+		/// <summary>
+		/// Crypto-random string
+		/// </summary>
+		public static string RandomString()
+		{
+			using (var rng = new RNGCryptoServiceProvider())
+			{
+				var tokenData = new byte[32];
+				rng.GetBytes(tokenData);
+
+				return Convert.ToBase64String(tokenData);
+			}
 		}
 	}
 }

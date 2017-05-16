@@ -75,9 +75,6 @@
     <Reference Include="Discord.Net.WebSocket, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Discord.Net.WebSocket.1.0.0-rc2\lib\net45\Discord.Net.WebSocket.dll</HintPath>
     </Reference>
-    <Reference Include="DynamicExpresso.Core, Version=0.11.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\DynamicExpresso.Core.0.11.0.0\lib\net40\DynamicExpresso.Core.dll</HintPath>
-    </Reference>
     <Reference Include="FIGlet.Net">
       <HintPath>..\Lib\FIGlet.Net\bin\Debug\FIGlet.Net.dll</HintPath>
     </Reference>
@@ -235,7 +232,11 @@
     <Compile Include="Commands\Theme.cs" />
     <Compile Include="Commands\Unifrog.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="Controllers\PageController.cs" />
+    <Compile Include="Web\AuthCodeManager.cs" />
+    <Compile Include="Web\AuthManager.cs" />
+    <Compile Include="Web\Controllers\BaseController.cs" />
+    <Compile Include="Web\Controllers\BioController.cs" />
+    <Compile Include="Web\Controllers\PageController.cs" />
     <Compile Include="DiscordBot.cs" />
     <Compile Include="DSFile.cs" />
     <Compile Include="KeyValueDatabase.cs" />
@@ -246,31 +247,20 @@
     <Compile Include="SassLisp.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="UtilExtension.cs" />
-    <Compile Include="ViewManager.cs" />
+    <Compile Include="Web\ViewManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Discord.Net.dll" />
+    <Content Include="Content\css\style.css" />
     <Content Include="libsodium.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\error.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\fonts.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\images.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\index.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\quotes.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\_layout.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Views\bio\edit.html" />
+    <Content Include="Views\error.html" />
+    <Content Include="Views\fonts.html" />
+    <Content Include="Views\images.html" />
+    <Content Include="Views\index.html" />
+    <Content Include="Views\quotes.html" />
+    <Content Include="Views\_layout.html" />
     <None Include="Ocean Man.flac">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -1162,9 +1152,8 @@
     <None Include="units.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Content Include="Views\servers.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Views\servers.html" />
+    <Content Include="Views\bio\index.html" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
@@ -1178,6 +1167,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\SQLitePCL.raw_basic.0.7.0\build\net45\SQLitePCL.raw_basic.targets" Condition="Exists('..\packages\SQLitePCL.raw_basic.0.7.0\build\net45\SQLitePCL.raw_basic.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -1188,6 +1178,10 @@
     <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.102.0\build\net451\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.102.0\build\net451\System.Data.SQLite.Core.targets'))" />
   </Target>
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.102.0\build\net451\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.102.0\build\net451\System.Data.SQLite.Core.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "$(SolutionDir)SassV2\Views" "$(TargetDir)\Views" /s /i /y
+xcopy "$(SolutionDir)SassV2\Content" "$(TargetDir)\Content" /s /i /y</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

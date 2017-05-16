@@ -1,0 +1,33 @@
+﻿@using System.Linq
+@{
+	Layout = "_layout.html";
+}
+
+<h2>Edit Bio</h2>
+
+<form action="/bio/edit/@Model.Id" method="post">
+	@foreach(var field in @Model.Fields)
+	{
+		<div class="field">
+			<label for="@field.Name">@field.FriendlyName</label>
+			<input type="text" name="@field.Name" placeholder="&lt;none&gt;" value="@field.Value">
+			@if(field.Info != null)
+			{
+				<p>@Raw(field.Info)</p>
+			}
+		</div>
+	}
+	<div class="field">
+		<label>Share with:</label>
+		<select name="servers" multiple>
+			@foreach(var server in @ViewBag.Servers)
+			{
+			<option value="@server.Id" selected=@server.Selected>@server.Name</option>
+			}
+		</select>
+	</div>
+	<div class="field">
+		<label></label>
+		<input type="submit" value="Save">
+	</div>
+</form>

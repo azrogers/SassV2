@@ -1,5 +1,6 @@
 ﻿using NLog;
-using SassV2.Controllers;
+using SassV2.Web;
+using SassV2.Web.Controllers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,8 +16,10 @@ namespace SassV2
 
 #if DEBUG
 		private const string BotUrl = "http://localhost:1443/";
+		private const string AssetPath = "../../Content";
 #else
 		private const string BotUrl = "http://*:1443/";
+		private const string AssetPath = "Content";
 #endif
 
 		static void Main(string[] args)
@@ -27,7 +30,13 @@ namespace SassV2
 			var viewManager = new ViewManager();
 
 			var server = new WebServer(BotUrl, RoutingStrategy.Regex);
+			server.RegisterModule(new StaticFilesModule(AssetPath));
+			server.RegisterModule(new LocalSessionModule());
 			server.RegisterModule(new WebApiModule());
+			server.Module<WebApiModule>().RegisterController(() =>
+			{
+				return new BioController(bot, viewManager);
+			});
 			server.Module<WebApiModule>().RegisterController(() =>
 			{
 				return new PageController(bot, viewManager);

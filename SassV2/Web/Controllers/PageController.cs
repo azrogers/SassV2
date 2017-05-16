@@ -12,19 +12,48 @@ using System.Reactive.Linq;
 using System.Web;
 using NLog;
 
-namespace SassV2.Controllers
+namespace SassV2.Web.Controllers
 {
-	public class PageController : WebApiController
+	public class PageController : BaseController
 	{
 		private DiscordBot _bot;
 		private Logger _logger;
-		private ViewManager _viewManager;
 
-		public PageController(DiscordBot bot, ViewManager viewManager)
+		public PageController(DiscordBot bot, ViewManager viewManager) : base(viewManager)
 		{
 			_bot = bot;
 			_logger = LogManager.GetCurrentClassLogger();
-			_viewManager = viewManager;
+		}
+
+		[WebApiHandler(HttpVerbs.Post, "/logout")]
+		public bool Logout(WebServer server, HttpListenerContext context)
+		{
+			AuthManager.Logout(server, context);
+			return context.Redirect("/");
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/auth")]
+		public async Task<bool> Auth(WebServer server, HttpListenerContext context)
+		{
+			if(AuthManager.IsAuthenticated(server, context))
+			{
+				return context.Redirect(context.QueryString("after"));
+			}
+
+			var code = context.QueryString("code");
+			if(code == null)
+			{
+				return Error(server, context, "No authentication code provided.");
+			}
+
+			var user = await AuthCodeManager.GetUser(_bot, code, _bot.GlobalDatabase);
+			if(user == null)
+			{
+				return Error(server, context, "The authentication code is invalid.");
+			}
+
+			AuthManager.SaveUser(server, context, user);
+			return context.Redirect(context.QueryString("after"));
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/images/{urlId}")]
@@ -33,13 +62,13 @@ namespace SassV2.Controllers
 			ulong serverId;
 			if(!ulong.TryParse(urlId, out serverId) || !_bot.ServerIds.Contains(serverId))
 			{
-				return Error(context, "That server doesn't exist.");
+				return Error(server, context, "That server doesn't exist.");
 			}
 
 			var imageKeyValues = _bot.Database(serverId).GetKeysOfNamespace<string>("image");
 			var images = imageKeyValues.OrderBy(k => k.Key);
 
-			return context.HtmlResponse(_viewManager.RenderView("images", new { Title = "Images", Images = images }));
+			return ViewResponse(server, context, "images", new { Title = "Images", Images = images });
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/quotes/{urlId}")]
@@ -48,7 +77,7 @@ namespace SassV2.Controllers
 			ulong serverId;
 			if (!ulong.TryParse(urlId, out serverId) || !_bot.ServerIds.Contains(serverId))
 			{
-				return Error(context, "That server doesn't exist.");
+				return Error(server, context, "That server doesn't exist.");
 			}
 
 			var db = _bot.RelDatabase(serverId);
@@ -67,7 +96,7 @@ namespace SassV2.Controllers
 				quoteList.Add(new Quote { Id = id, Content = quote, Author = author, Source = source });
 			}
 
-			return context.HtmlResponse(_viewManager.RenderView<List<Quote>>("quotes", quoteList, new { Title = "Quotes" }));
+			return ViewResponse(server, context, "quotes", quoteList, new { Title = "Quotes" });
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/fonts")]
@@ -78,7 +107,7 @@ namespace SassV2.Controllers
 				return Path.GetFileNameWithoutExtension(f.ToLower().Replace(' ', '_'));
 			});
 
-			return context.HtmlResponse(_viewManager.RenderView("fonts", new { Title = "Fonts", Fonts = files }));
+			return ViewResponse(server, context, "fonts", new { Title = "Fonts", Fonts = files });
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/servers")]
@@ -94,7 +123,7 @@ namespace SassV2.Controllers
 				.Where(s => s != default(IGuild))
 				.OrderBy(s => s.Name);
 
-			return context.HtmlResponse(_viewManager.RenderView("servers", new { Title = "Servers", Servers = servers }));
+			return ViewResponse(server, context, "servers", new { Title = "Servers", Servers = servers });
 		}
 
 		[WebApiHandler(HttpVerbs.Get, new string[] { "/images", "/quotes" })]
@@ -106,12 +135,13 @@ namespace SassV2.Controllers
 		[WebApiHandler(HttpVerbs.Get, "/")]
 		public bool Index(WebServer server, HttpListenerContext context)
 		{
-			return context.HtmlResponse(_viewManager.RenderView("index", new { ClientID = _bot.Config.ClientID }));
-		}
+			if(context.RequestPath() != "/")
+			{
+				context.Response.StatusCode = 404;
+				return Error(server, context, "The specified path could not be found.");
+			}
 
-		private bool Error(HttpListenerContext context, string message)
-		{
-			return context.HtmlResponse(_viewManager.RenderView("error", new { Title = "Error!", Message = message }));
+			return ViewResponse(server, context, "index", new { ClientID = _bot.Config.ClientID });
 		}
 
 		public class Quote

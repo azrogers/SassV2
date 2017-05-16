@@ -22,6 +22,7 @@ namespace SassV2
 		private Logger _logger;
 		private Config _config;
 		private CommandHandler _commandHandler;
+		private RelationalDatabase _globalDatabase;
 		private Dictionary<ulong, KeyValueDatabase> _serverDatabases;
 		private Dictionary<ulong, RelationalDatabase> _serverRelationalDatabases;
 		private Dictionary<ulong, Responder> _serverResponders;
@@ -31,6 +32,7 @@ namespace SassV2
 		public CommandHandler CommandHandler => _commandHandler;
 		public IDiscordClient Client => _client;
 		public List<ulong> ServerIds => _serverDatabases.Keys.ToList();
+		public RelationalDatabase GlobalDatabase => _globalDatabase;
 
 		public static Logger StaticLogger;
 
@@ -52,6 +54,8 @@ namespace SassV2
 		public async Task Start()
 		{
 			_logger.Info("starting bot");
+			_globalDatabase = new RelationalDatabase("global.db");
+			await _globalDatabase.Open();
 
 			_client.Log += (m) => Task.Run(() =>
 			{
@@ -75,6 +79,7 @@ namespace SassV2
 			{
 				Directory.CreateDirectory(dbPath);
 			}
+
 			_serverDatabases[guild.Id] = new KeyValueDatabase(Path.Combine(dbPath, "server2.db"));
 			await _serverDatabases[guild.Id].Open();
 
@@ -114,6 +119,11 @@ namespace SassV2
 		public void AddResponderFilter(string name, string filter)
 		{
 			_responderFilters[name] = SassLisp.Compile(filter);
+		}
+
+		public IEnumerable<IGuild> GuildsContainingUser(IUser user)
+		{
+			return _client.Guilds.Where(g => g.Users.Any(s => s.Id == user.Id));
 		}
 
 		private async Task OnMessageReceived(SocketMessage message)

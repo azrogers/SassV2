@@ -1,0 +1,101 @@
+﻿body {
+    font-family: 'Consolas', 'Courier New', monospace;
+    color: black;
+}
+
+.header {
+    width: 960px;
+    margin: auto;
+    display: flex;
+}
+
+.header h1 {
+    display: inline-block;
+    line-height: 40px;
+    color: black;
+}
+
+.header h1:hover
+{
+    color: #333;
+}
+
+.header .menu {
+    margin: 0;
+    padding-left: 10px;
+    line-height: 40px;
+}
+
+.header .menu li {
+    display: inline-block;
+    margin-left: 30px;
+    list-style-type: none;
+}
+
+.container {
+    width: 960px;
+    margin: auto;
+}
+
+a {
+    color: blue;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-weight: normal;
+    margin: 0;
+}
+
+.field
+{
+    padding-bottom: 5px;
+}
+
+.field label
+{
+    display: inline-block;
+    width: 200px;
+    vertical-align: top;
+}
+
+.field p
+{
+    font-size: 11px;
+    color: #666;
+    padding-left: 10px;
+}
+
+.field input, .field select
+{
+    width: 250px;
+}
+
+.header_user
+{
+    margin-left: auto;
+}
+
+.header_user form
+{
+    display: inline;
+}
+
+.header_user form input
+{
+    background: none;
+    border: none;
+    padding: 0;
+    color: blue;
+    font: inherit;
+    cursor: pointer;
+}
+
+.header_user form input:hover
+{
+    text-decoration: underline;
+}

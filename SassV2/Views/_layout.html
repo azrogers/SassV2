@@ -11,29 +11,31 @@
         }
         SASS
     </title>
-    <style>
-        body {
-            font-family: 'Consolas', 'Courier New', monospace;
-            color: black;
-        }
-
-        a {
-            color: blue;
-            text-decoration: none;
-        }
-
-            a:hover {
-                text-decoration: underline;
-            }
-
-        h1 {
-            font-weight: normal;
-            margin: 0;
-        }
-    </style>
+	<link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <div class="body">
+	<div class="header">
+		<a href="/">
+			<h1>SASS</h1>
+		</a>
+		<ul class="menu">
+			<li><a href="/servers">Servers</a></li>
+			@if(ViewBag.Session.Data.ContainsKey("discord_user_id"))
+			{
+				<li><a href="/bio/edit">Bios</a></li>
+			}
+		</ul>
+		@if(ViewBag.Session.Data.ContainsKey("discord_user_name"))
+		{
+			<div class="header_user">
+				logged in as @(ViewBag.Session.Data["discord_user_name"])
+				<form method="post" action="/logout">
+					<input type="submit" value="(log out)">
+				</form>
+			</div>
+		}
+	</div>
+    <div class="container">
         @RenderBody()
     </div>
 </body>

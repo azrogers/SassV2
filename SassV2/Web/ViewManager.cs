@@ -8,7 +8,7 @@ using RazorEngine;
 using RazorEngine.Configuration;
 using RazorEngine.Templating;
 
-namespace SassV2
+namespace SassV2.Web
 {
 	public class ViewManager
 	{
@@ -19,21 +19,21 @@ namespace SassV2
 			var config = new TemplateServiceConfiguration();
 #if DEBUG
 			config.Debug = true;
-			config.TemplateManager = new WatchingResolvePathTemplateManager(new string[] { "Views" }, new InvalidatingCachingProvider());
+			config.TemplateManager = new WatchingResolvePathTemplateManager(new string[] { "../../Views" }, new InvalidatingCachingProvider());
 #else
 			config.TemplateManager = new ResolvePathTemplateManager(new string[] { "Views" });
 #endif
 			_razor = RazorEngineService.Create(config);
 		}
 
-		public string RenderView(string name, object values)
+		public string RenderView(string name, DynamicViewBag values)
 		{
-			return _razor.RunCompile(name + ".html", null, null, Util.ViewBagFromAnonObject(values));
+			return _razor.RunCompile(name + ".html", null, null, values);
 		}
 
-		public string RenderView<T>(string name, T model, object values)
+		public string RenderView<T>(string name, T model, DynamicViewBag values)
 		{
-			return _razor.RunCompile(name + ".html", typeof(T), model, Util.ViewBagFromAnonObject(values));
+			return _razor.RunCompile(name + ".html", typeof(T), model, values);
 		}
 	}
 }
