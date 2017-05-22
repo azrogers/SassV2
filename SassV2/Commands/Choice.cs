@@ -18,6 +18,12 @@ namespace SassV2.Commands
 			}
 
 			var parts = args.Trim().Split(' ');
+
+			if(parts.Length == 0)
+			{
+				throw new CommandException("you need to provide things to choose from.");
+			}
+
 			var inString = false;
 			var currentString = "";
 			var finalParts = new List<string>();

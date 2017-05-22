@@ -26,6 +26,10 @@ namespace SassV2
 		public string ImgurClientId;
 		public string ImgurClientSecret;
 		public string ImgurAccessToken;
+		public string BotUserId;
+		public string DiscordBotsAuthHeader;
+		public int Timeout;
+		public string[] DebugIgnore;
 
 		public Config(string configFile)
 		{
@@ -45,12 +49,18 @@ namespace SassV2
 			ImgurClientId = ReadKey<string>(file, "imgur_client_id");
 			ImgurClientSecret = ReadKey<string>(file, "imgur_client_secret");
 			ImgurAccessToken = ReadKey<string>(file, "imgur_access_token");
+			//BotUserId = ReadKey<string>(file, "discordpw_bot_user_id");
+			//DiscordBotsAuthHeader = ReadKey<string>(file, "discordpw_auth_header");
+			Timeout = ReadKey<int>(file, "timeout");
 
 			// read roles
-			foreach(JProperty prop in file["roles"].ToObject<JObject>().Properties())
+			foreach (JProperty prop in file["roles"].ToObject<JObject>().Properties())
 			{
 				Roles[prop.Name] = prop.Value.ToString();
 			}
+
+			// read debug ignore servers
+			DebugIgnore = file["debug_ignore"].ToArray().Select(a => a.Value<string>()).ToArray();
 		}
 
 		public string GetRole(ulong userId)

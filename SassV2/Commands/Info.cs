@@ -17,6 +17,11 @@ namespace SassV2.Commands
 		[Command(name: "info", desc: "get some info on something", usage: "info", category: "Useful")]
 		public async static Task<string> Info(DiscordBot bot, IMessage msg, string args)
 		{
+			if(string.IsNullOrWhiteSpace(args))
+			{
+				throw new CommandException("provide something to get info on, yo");
+			}
+
 			var result = await Util.GetURLAsync("http://api.duckduckgo.com/?q=" + Uri.EscapeUriString(args) + "&format=json");
 			var data = JObject.Parse(result);
 

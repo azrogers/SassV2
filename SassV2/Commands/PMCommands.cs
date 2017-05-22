@@ -94,5 +94,17 @@ namespace SassV2.Commands
 			var user = await bot.Client.GetUserAsync(userId);
 			return await AuthCodeManager.GetURL("/bio/edit", user, bot);
 		}
+
+		[Command("restart", Hidden = true, IsPM = true)]
+		public static string RestartBot(DiscordBot bot, IMessage msg, string args)
+		{
+			if (bot.Config.GetRole(msg.Author.Id) != "admin")
+			{
+				throw new CommandException("You're not allowed to use this command.");
+			}
+
+			Environment.Exit(0);
+			return "";
+		}
 	}
 }

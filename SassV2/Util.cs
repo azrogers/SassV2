@@ -176,11 +176,6 @@ namespace SassV2
 				_localeCache = JObject.Parse(File.ReadAllText("locale.json"));
 			}
 
-			var argsDict = new Dictionary<string, string>();
-			if(args != null)
-			{
-				argsDict = AnonymousObjectToDictionary<string>(args);
-			}
 
 			JToken entry = _localeCache[name];
 			if(entry == null)
@@ -196,11 +191,22 @@ namespace SassV2
 			}
 			string str = entry.Value<string>();
 
-			Regex templateRegex = new Regex(@"\{(\d+)\}");
+			return FormatString(str, args);
+		}
+
+		public static string FormatString(string str, object args)
+		{
+			var argsDict = new Dictionary<string, string>();
+			if (args != null)
+			{
+				argsDict = AnonymousObjectToDictionary<string>(args);
+			}
+
+			Regex templateRegex = new Regex(@"\{(\w+)\}");
 			return templateRegex.Replace(str, (match) =>
 			{
 				var key = match.Groups[1].Value;
-				return (argsDict.ContainsKey(key) ? "[Unknown Argument]" : argsDict[key]);
+				return (argsDict.ContainsKey(key) ? argsDict[key] : "[Unknown Argument]");
 			});
 		}
 

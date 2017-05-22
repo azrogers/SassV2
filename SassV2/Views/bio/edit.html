@@ -10,7 +10,14 @@
 	{
 		<div class="field">
 			<label for="@field.Name">@field.FriendlyName</label>
-			<input type="text" name="@field.Name" placeholder="&lt;none&gt;" value="@field.Value">
+			@if(field.Multiline)
+			{
+				<textarea name="@field.Name" placeholder="&lt;none&gt;" maxlength="@field.MaxLength">@field.Value</textarea>
+			}
+			else
+			{
+				<input type="text" name="@field.Name" placeholder="&lt;none&gt;" value="@field.Value" maxlength="@field.MaxLength">
+			}
 			@if(field.Info != null)
 			{
 				<p>@Raw(field.Info)</p>

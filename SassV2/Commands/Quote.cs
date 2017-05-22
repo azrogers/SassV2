@@ -93,7 +93,7 @@ namespace SassV2.Commands
 		[Command(name: "edit quote", desc: "change a part of a quote", usage: "edit quote <id> (body|author|source) \"value\"", category: "Administration")]
 		public async static Task<string> EditQuote(DiscordBot bot, IMessage msg, string args)
 		{
-			if(!msg.AuthorPermissions().Administrator && bot.Config.GetRole(msg.Author.Id) != "admin")
+			if(!(msg.Author as IGuildUser).IsAdmin(bot))
 			{
 				throw new CommandException("You're not allowed to use this command.");
 			}

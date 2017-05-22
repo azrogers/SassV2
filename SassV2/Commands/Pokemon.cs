@@ -48,7 +48,9 @@ namespace SassV2.Commands
 
 		public PokemonDatabase()
 		{
-			_connection = new SqliteConnection("Data Source=pokedex.sqlite;Version=3;");
+			var str = new SqliteConnectionStringBuilder() { DataSource = "pokedex.sqlite" }.ToString();
+			NLog.LogManager.GetCurrentClassLogger().Info(str);
+			_connection = new SqliteConnection(str);
 			_connection.Open();
 		}
 
@@ -65,8 +67,8 @@ namespace SassV2.Commands
 
 		public string FindPokemon(string name)
 		{
-			var cmd = new SqliteCommand("SELECT species_id FROM pokemon WHERE identifier LIKE ? GROUP BY species_id;", _connection);
-			cmd.Parameters.AddWithValue(null, "%" + name + "%");
+			var cmd = new SqliteCommand("SELECT species_id FROM pokemon WHERE identifier LIKE :name GROUP BY species_id;", _connection);
+			cmd.Parameters.AddWithValue("name", "%" + name + "%");
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 				return "Pokemon not found.";
@@ -87,8 +89,8 @@ namespace SassV2.Commands
 
 		private string GetPokemonFlavorText(int id)
 		{
-			var cmd = new SqliteCommand("SELECT flavor_text FROM pokemon_species_flavor_text WHERE species_id=? AND language_id=9 ORDER BY version_id DESC LIMIT 1;", _connection);
-			cmd.Parameters.AddWithValue(null, id);
+			var cmd = new SqliteCommand("SELECT flavor_text FROM pokemon_species_flavor_text WHERE species_id=:id AND language_id=9 ORDER BY version_id DESC LIMIT 1;", _connection);
+			cmd.Parameters.AddWithValue("id", id);
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 				return "[No Flavor Text]";
@@ -102,8 +104,8 @@ namespace SassV2.Commands
 			{
 				return _pokemonNames[id];
 			}
-			var cmd = new SqliteCommand("SELECT name FROM pokemon_species_names WHERE pokemon_species_id = ? AND local_language_id=9;", _connection);
-			cmd.Parameters.AddWithValue(null, id);
+			var cmd = new SqliteCommand("SELECT name FROM pokemon_species_names WHERE pokemon_species_id = :id AND local_language_id=9;", _connection);
+			cmd.Parameters.AddWithValue("id", id);
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 				return "[Unknown Name]";
@@ -114,8 +116,8 @@ namespace SassV2.Commands
 		private List<string> GetPokemonTypes(int id)
 		{
 			var types = new List<string>();
-			var cmd = new SqliteCommand("SELECT type_id FROM pokemon_types WHERE pokemon_id=?;", _connection);
-			cmd.Parameters.AddWithValue(null, id);
+			var cmd = new SqliteCommand("SELECT type_id FROM pokemon_types WHERE pokemon_id=:id;", _connection);
+			cmd.Parameters.AddWithValue("id", id);
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 				return types;
@@ -133,8 +135,8 @@ namespace SassV2.Commands
 				return _typeNames[id];
 			}
 
-			var cmd = new SqliteCommand("SELECT name FROM type_names WHERE type_id = ? AND local_language_id = 9;", _connection);
-			cmd.Parameters.AddWithValue(null, id);
+			var cmd = new SqliteCommand("SELECT name FROM type_names WHERE type_id = :type AND local_language_id = 9;", _connection);
+			cmd.Parameters.AddWithValue("type", id);
 			var reader = cmd.ExecuteReader();
 			if(!reader.HasRows)
 				return "[Unknown Type]";

@@ -39,7 +39,7 @@ namespace SassV2.Commands
 				throw new CommandException(Util.Locale("images.noimage", new { thing = thing }));
 			}
 
-			return Util.Locale("images.image", new { image = image, thing = thing });
+			return $"Image for {thing}: {image}";
 		}
 
 		[Command(name: "set image", desc: "sets the image for the thing you told it to set it for.", usage: "set image <thing> <imgur url>")]

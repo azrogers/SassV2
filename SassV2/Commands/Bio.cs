@@ -13,6 +13,7 @@ namespace SassV2.Commands
 		private static List<BioField> _fields = new List<BioField>()
 		{
 			new BioField("real_name", "Real Name"),
+			new BioField("bio", "Bio", "Who dis?") { Formatter = (v) => $"```{v}```", Multiline = true, MaxLength = 500 },
 			new BioField("email", "Email"),
 			new BioField("paypal", "PayPal Email"),
 			new BioField("steam_id", "Steam ID", "Steam", "Find it at <a href='http://steamid.co/' target='_blank'>steamid.co</a>. Use the Steam 64 ID.") {
@@ -30,6 +31,8 @@ namespace SassV2.Commands
 			new BioField("uplay", "UPlay Username"),
 			new BioField("psn", "PSN Username"),
 			new BioField("xbl", "XBL Username"),
+			new BioField("friendcode", "3DS Friend Code") { Formatter = (v) => $"`{v}`" },
+			new BioField("switchcode", "Switch Friend Code") { Formatter = (v) => $"`{v}`" },
 			new BioField("minecraft", "Minecraft Username")
 		};
 		private static bool _tablesCreated = false;
@@ -42,7 +45,8 @@ namespace SassV2.Commands
 			await CreateTables(bot.GlobalDatabase);
 			var message = await AuthCodeManager.GetURL("/bio/edit", msg.Author, bot);
 			var channel = await msg.Author.CreateDMChannelAsync();
-			await channel.SendMessageAsync(message);
+			var task = channel.SendMessageAsync(message);
+			task.Forget();
 			return null;
 		}
 
@@ -117,7 +121,7 @@ namespace SassV2.Commands
 					var name = (await (msg.Author as IGuildUser).Guild.GetUserAsync(bio.Owner)).NicknameOrDefault();
 					message += "\t" + name + "\n";
 				}
-
+				
 				return message.Trim();
 			}
 
@@ -141,6 +145,11 @@ namespace SassV2.Commands
 			// insert or update fields we do have
 			foreach(var field in fields)
 			{
+				if(field.Value.Length > field.MaxLength)
+				{
+					field.Value = field.Value.Substring(0, field.MaxLength);
+				}
+
 				await SaveBioField(bio.Id, field, db);
 			}
 
@@ -341,6 +350,8 @@ namespace SassV2.Commands
 			public string Info = "";
 			public string Value = "";
 			public Func<string, string> Formatter;
+			public bool Multiline = false;
+			public int MaxLength = 100;
 
 			public BioField Clone()
 			{
@@ -350,7 +361,8 @@ namespace SassV2.Commands
 					DisplayName = DisplayName,
 					Info = Info,
 					Value = Value,
-					Formatter = Formatter
+					Formatter = Formatter,
+					Multiline = Multiline
 				};
 
 				return newField;

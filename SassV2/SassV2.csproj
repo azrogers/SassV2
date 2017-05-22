@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ChatterBotApi" Version="1.0.0" />
     <PackageReference Include="CoreCLR-NCalc" Version="2.1.3" />
     <PackageReference Include="CsvHelper" Version="3.0.0-chi02" />
     <PackageReference Include="Discord.Net" Version="1.0.0-rc2" />
@@ -25,9 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="ChatterBotApi">
-      <HintPath>..\Lib\ChatterBotApi\bin\Debug\netcoreapp1.1\ChatterBotApi.dll</HintPath>
-    </Reference>
     <Reference Include="FIGlet.Net">
       <HintPath>..\Lib\FIGlet.Net\bin\Debug\netcoreapp1.1\FIGlet.Net.dll</HintPath>
     </Reference>

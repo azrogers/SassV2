@@ -13,8 +13,7 @@ namespace SassV2.Commands
 		[Command(name: "ban", desc: "bans a user from SASS", usage: "ban <name>", category: "Administration")]
 		public static async Task<string> BanUser(DiscordBot bot, IMessage msg, string args)
 		{
-			var permissions = (msg.Author as IGuildUser).GuildPermissions;
-			if(!permissions.Administrator && bot.Config.GetRole(msg.Author.Id) != "admin")
+			if(!(msg.Author as IGuildUser).IsAdmin(bot))
 			{
 				throw new CommandException(Util.Locale("ban.notAdmin"));
 			}
@@ -43,8 +42,7 @@ namespace SassV2.Commands
 		[Command(name: "unban", desc: "unbans a user from SASS", usage: "unban <name>", category: "Administration")]
 		public static async Task<string> UnbanUser(DiscordBot bot, IMessage msg, string args)
 		{
-			var authorPermissions = (msg.Author as IGuildUser).GuildPermissions;
-			if(!authorPermissions.Administrator && bot.Config.GetRole(msg.Author.Id) != "admin")
+			if(!(msg.Author as IGuildUser).IsAdmin(bot))
 			{
 				throw new CommandException(Util.Locale("unban.notAdmin"));
 			}

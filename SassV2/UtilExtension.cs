@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Unosquare.Net;
 
 namespace SassV2
@@ -81,6 +82,17 @@ namespace SassV2
 		public static bool ContainsKey(this ExpandoObject eo, string key)
 		{
 			return ((IDictionary<string, object>)eo).ContainsKey(key);
+		}
+
+		public static bool IsAdmin(this IGuildUser user, DiscordBot bot)
+		{
+			var permissions = user.GuildPermissions;
+			return permissions.Administrator || bot.Config.GetRole(user.Id) == "admin";
+		}
+
+		public static void Forget(this Task task)
+		{
+			// this method left deliberately empty.
 		}
 	}
 }
