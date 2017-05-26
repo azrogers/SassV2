@@ -1,18 +1,19 @@
-﻿using System;
+﻿using Discord.Commands;
+using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Discord;
-using System.Threading.Tasks;
 using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SassV2.Commands
 {
-    public class Photofunia
+	public class Photofunia : ModuleBase<SocketCommandContext>
     {
-		private static Regex _resultRegex = new Regex(@"https:\/\/u\d\.photofunia\.com/\d\/results\/\w\/\w\/(.+?)\.jpg");
+		private Regex _resultRegex = new Regex(@"https:\/\/u\d\.photofunia\.com/\d\/results\/\w\/\w\/(.+?)\.jpg");
 
-		[Command("photofunia", "generates an eighties photofunia image", "photofunia \"top text\" \"middle text\" \"bottom text\"", Category = "Dumb")]
-		public static async Task<string> PhotofuniaCommand(DiscordBot bot, IMessage msg, string args)
+		[SassCommand("photofunia", "generates an eighties photofunia image", "photofunia \"top text\" \"middle text\" \"bottom text\"", Category = "Dumb")]
+		[Command("photofunia")]
+		public async Task PhotofuniaCommand([Remainder] string args)
 		{
 			var parts = Util.SplitQuotedString(args);
 			if(parts.Length == 1)
@@ -46,7 +47,7 @@ namespace SassV2.Commands
 				var match = _resultRegex.Match(content);
 				var url = match.Value;
 				
-				return url;
+				await ReplyAsync(url);
 			}
 		}
     }

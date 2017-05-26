@@ -5,60 +5,79 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using System.Reactive.Linq;
+using Discord.Commands;
 
 namespace SassV2.Commands
 {
-	public class Ban
+	public class Ban : ModuleBase<SocketCommandContext>
 	{
-		[Command(name: "ban", desc: "bans a user from SASS", usage: "ban <name>", category: "Administration")]
-		public static async Task<string> BanUser(DiscordBot bot, IMessage msg, string args)
+		private DiscordBot _bot;
+
+		public Ban(DiscordBot bot)
 		{
-			if(!(msg.Author as IGuildUser).IsAdmin(bot))
+			_bot = bot;
+		}
+
+		[SassCommand(name: "ban", desc: "bans a user from SASS", usage: "ban <name>", category: "Administration")]
+		[Command("ban")]
+		[RequireContext(ContextType.Guild)]
+		public async Task BanUser([Remainder] string user)
+		{
+			if(!(Context.Message.Author as IGuildUser).IsAdmin(_bot))
 			{
-				throw new CommandException(Util.Locale("ban.notAdmin"));
+				await ReplyAsync(Util.Locale("ban.notAdmin"));
+				return;
 			}
 
-			var foundUsers = await Util.FindWithName(args, msg);
+			var foundUsers = await Util.FindWithName(user, Context.Message);
 			if(!foundUsers.Any())
 			{
-				throw new CommandException(Util.Locale("ban.noneFound"));
+				await ReplyAsync(Util.Locale("ban.noneFound"));
+				return;
 			}
 			if(foundUsers.Count() > 1)
 			{
-				throw new CommandException(Util.Locale("ban.moreFound"));
+				await ReplyAsync(Util.Locale("ban.moreFound"));
+				return;
 			}
 
 			var target = foundUsers.First();
 			var targetPermissions = (target as IGuildUser).GuildPermissions;
-			if(targetPermissions.Administrator || bot.Config.GetRole(target.Id) == "admin")
+			if(targetPermissions.Administrator || _bot.Config.GetRole(target.Id) == "admin")
 			{
-				throw new CommandException(Util.Locale("ban.foundAdmin"));
+				await ReplyAsync(Util.Locale("ban.foundAdmin"));
+				return;
 			}
 
-			bot.Database(msg.ServerId()).InsertObject<bool>("ban:" + target.Id, true);
-			return Util.Locale("ban.sure");
+			_bot.Database(Context.Message.ServerId()).InsertObject<bool>("ban:" + target.Id, true);
+			await ReplyAsync(Util.Locale("ban.sure"));
 		}
 
-		[Command(name: "unban", desc: "unbans a user from SASS", usage: "unban <name>", category: "Administration")]
-		public static async Task<string> UnbanUser(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "unban", desc: "unbans a user from SASS", usage: "unban <name>", category: "Administration")]
+		[Command("unban")]
+		[RequireContext(ContextType.Guild)]
+		public async Task UnbanUser([Remainder] string args)
 		{
-			if(!(msg.Author as IGuildUser).IsAdmin(bot))
+			if(!(Context.User as IGuildUser).IsAdmin(_bot))
 			{
-				throw new CommandException(Util.Locale("unban.notAdmin"));
+				await ReplyAsync(Util.Locale("unban.notAdmin"));
+				return;
 			}
 
-			var foundUsers = await Util.FindWithName(args, msg);
+			var foundUsers = await Util.FindWithName(args, Context.Message);
 			if(!foundUsers.Any())
 			{
-				throw new CommandException(Util.Locale("unban.noneFound"));
+				await ReplyAsync(Util.Locale("unban.noneFound"));
+				return;
 			}
 			if(foundUsers.Count() > 1)
 			{
-				throw new CommandException(Util.Locale("unban.moreFound"));
+				await ReplyAsync(Util.Locale("unban.moreFound"));
+				return;
 			}
 			
-			bot.Database(msg.ServerId()).InvalidateObject<bool>("ban:" + foundUsers.First().Id);
-			return Util.Locale("unban.sure");
+			_bot.Database(Context.Message.ServerId()).InvalidateObject<bool>("ban:" + foundUsers.First().Id);
+			await ReplyAsync(Util.Locale("unban.sure"));
 		}
 	}
 }

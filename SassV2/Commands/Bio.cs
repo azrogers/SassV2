@@ -5,11 +5,100 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using SassV2.Web;
+using Discord.Commands;
 
 namespace SassV2.Commands
 {
-	public class Bio
+	public class BioCommand : ModuleBase<SocketCommandContext>
 	{
+		private DiscordBot _bot;
+
+		public BioCommand(DiscordBot bot)
+		{
+			_bot = bot;
+		}
+
+		[SassCommand("edit bio", Description = "edit your bio", Usage = "edit bio", Category = "Bio")]
+		[Command("edit bio")]
+		public async Task EditBio()
+		{
+			await Bio.CreateTables(_bot.GlobalDatabase);
+			var message = await AuthCodeManager.GetURL("/bio/edit", Context.User, _bot);
+			var channel = await Context.User.CreateDMChannelAsync();
+			await channel.SendMessageAsync(message);
+		}
+
+		[SassCommand("bio", Description = "see a user's bio", Usage = "bio <user>", Category = "Bio")]
+		[Command("bio")]
+		[RequireContext(ContextType.Guild)]
+		public async Task ShowBio([Remainder] string args)
+		{
+			IEnumerable<IUser> users = await Util.FindWithName(args, Context.Message);
+
+			if (!users.Any())
+			{
+				await ReplyAsync("I don't know who that is.");
+				return;
+			}
+
+			var user = users.First() as IGuildUser;
+			var bio = await Bio.GetBio(_bot, Context.Guild.Id, user.Id, _bot.GlobalDatabase);
+			if(bio == null)
+			{
+				await ReplyAsync("There is no bio for " + user.NicknameOrDefault() + ".");
+				return;
+			}
+			
+			await ReplyAsync(bio.GetBioString(user));
+		}
+
+		[SassCommand("find", Description = "find a user with a bio entry", Usage = "find <key> <value>", Category = "Bio")]
+		[Command("find")]
+		[RequireContext(ContextType.Guild)]
+		public async Task FindBio(string key, [Remainder] string value)
+		{
+			if(!Bio.Fields.Where(f => f.Name == key).Any())
+			{
+				await ReplyAsync("Invalid key! Possible values are: " + string.Join(", ", Bio.Fields.Select(f => f.Name)) + ".");
+				return;
+			}
+
+			var findCmd = _bot.GlobalDatabase.BuildCommand(@"SELECT bios.id FROM bios 
+				INNER JOIN bio_privacy ON bio_privacy.bio = bios.id
+				INNER JOIN bio_entries ON bio_entries.bio = bios.id
+				WHERE bio_entries.key = :key AND bio_entries.value LIKE :search and bio_privacy.server = :server;");
+			findCmd.Parameters.AddWithValue("key", key);
+			findCmd.Parameters.AddWithValue("search", "%" + value + "%");
+			findCmd.Parameters.AddWithValue("server", Context.Guild.Id.ToString());
+			var reader = await findCmd.ExecuteReaderAsync();
+
+			if (reader.HasRows)
+			{
+				var message = "Users that match your criteria:\n";
+				while (reader.Read())
+				{
+					var id = reader.GetInt64(0);
+
+					var bio = await Bio.GetBio(_bot, id, _bot.GlobalDatabase, false);
+					var name = (await (Context.User as IGuildUser).Guild.GetUserAsync(bio.Owner)).NicknameOrDefault();
+					message += "\t" + name + "\n";
+				}
+
+				await ReplyAsync(message.Trim());
+			}
+			else
+			{
+				await ReplyAsync("Could not find any users by those search terms.");
+			}
+		}
+		
+		
+	}
+
+	public static class Bio
+	{
+		public static List<BioField> Fields => _fields;
+
 		private static List<BioField> _fields = new List<BioField>()
 		{
 			new BioField("real_name", "Real Name"),
@@ -35,98 +124,8 @@ namespace SassV2.Commands
 			new BioField("switchcode", "Switch Friend Code") { Formatter = (v) => $"`{v}`" },
 			new BioField("minecraft", "Minecraft Username")
 		};
+
 		private static bool _tablesCreated = false;
-
-		public static List<BioField> Fields => _fields;
-
-		[Command("edit bio", Description = "edit your bio", Usage = "edit bio", Category = "Bio")]
-		public static async Task<string> EditBio(DiscordBot bot, IMessage msg, string args)
-		{
-			await CreateTables(bot.GlobalDatabase);
-			var message = await AuthCodeManager.GetURL("/bio/edit", msg.Author, bot);
-			var channel = await msg.Author.CreateDMChannelAsync();
-			var task = channel.SendMessageAsync(message);
-			task.Forget();
-			return null;
-		}
-
-		[Command("edit bio", Description = "edit your bio", Usage = "edit bio", Category = "Bio", IsPM = true)]
-		public static async Task<string> EditBioPM(DiscordBot bot, IMessage msg, string args)
-		{
-			await EditBio(bot, msg, args);
-			return null;
-		}
-
-		[Command("bio", Description = "see a user's bio", Usage = "bio <user>", Category = "Bio")]
-		public static async Task<string> ShowBio(DiscordBot bot, IMessage msg, string args)
-		{
-			IEnumerable<IUser> users;
-			if (string.IsNullOrWhiteSpace(args))
-			{
-				users = new IUser[] { msg.Author };
-			}
-			else
-			{
-				users = await Util.FindWithName(args, msg);
-			}
-
-			if(!users.Any())
-			{
-				throw new CommandException("I don't know who that is.");
-			}
-
-			var user = users.First() as IGuildUser;
-			var bio = await GetBio(bot, msg.ServerId(), user.Id, bot.GlobalDatabase);
-			if(bio == null)
-			{
-				throw new CommandException("There is no bio for " + user.NicknameOrDefault() + ".");
-			}
-			
-			return bio.GetBioString(user);
-		}
-
-		[Command("find", Description = "find a user with a bio entry", Usage = "find <key> <value>", Category = "Bio")]
-		public static async Task<string> FindBio(DiscordBot bot, IMessage msg, string args)
-		{
-			var parts = args.Split(' ');
-			if(parts.Length < 2)
-			{
-				throw new CommandException("You need to specify a key and a value to search for.");
-			}
-
-			var key = parts[0];
-			var value = string.Join(", ", parts.Skip(1));
-			if(!_fields.Where(f => f.Name == key).Any())
-			{
-				throw new CommandException("Invalid key! Possible values are: " + string.Join(", ", _fields.Select(f => f.Name)) + ".");
-			}
-
-			var findCmd = bot.GlobalDatabase.BuildCommand(@"SELECT bios.id FROM bios 
-				INNER JOIN bio_privacy ON bio_privacy.bio = bios.id
-				INNER JOIN bio_entries ON bio_entries.bio = bios.id
-				WHERE bio_entries.key = :key AND bio_entries.value LIKE :search and bio_privacy.server = :server;");
-			findCmd.Parameters.AddWithValue("key", key);
-			findCmd.Parameters.AddWithValue("search", "%" + value + "%");
-			findCmd.Parameters.AddWithValue("server", msg.ServerId().ToString());
-			var reader = await findCmd.ExecuteReaderAsync();
-
-			if(reader.HasRows)
-			{
-				var message = "Users that match your criteria:\n";
-				while(reader.Read())
-				{
-					var id = reader.GetInt64(0);
-
-					var bio = await GetBio(bot, id, bot.GlobalDatabase, false);
-					var name = (await (msg.Author as IGuildUser).Guild.GetUserAsync(bio.Owner)).NicknameOrDefault();
-					message += "\t" + name + "\n";
-				}
-				
-				return message.Trim();
-			}
-
-			return "Could not find any users by those search terms.";
-		}
 
 		public static async Task SaveBio(BioData bio, RelationalDatabase db)
 		{
@@ -134,7 +133,7 @@ namespace SassV2.Commands
 
 			// find fields that we won't be touching and delete any entries of them for this bio
 			var fieldsNotUpdating = _fields.Where(f => !fields.Any(f2 => f2.Name == f.Name));
-			foreach(var field in fieldsNotUpdating)
+			foreach (var field in fieldsNotUpdating)
 			{
 				var delCmd = db.BuildCommand("DELETE FROM bio_entries WHERE key = :key AND bio = :bio");
 				delCmd.Parameters.AddWithValue("key", field.Name);
@@ -143,9 +142,9 @@ namespace SassV2.Commands
 			}
 
 			// insert or update fields we do have
-			foreach(var field in fields)
+			foreach (var field in fields)
 			{
-				if(field.Value.Length > field.MaxLength)
+				if (field.Value.Length > field.MaxLength)
 				{
 					field.Value = field.Value.Substring(0, field.MaxLength);
 				}
@@ -159,7 +158,7 @@ namespace SassV2.Commands
 			await clearServerCmd.ExecuteNonQueryAsync();
 
 			// save new ones
-			foreach(var server in bio.SharedServers.Select(k => k.Key))
+			foreach (var server in bio.SharedServers.Select(k => k.Key))
 			{
 				await SaveServerPrivacy(bio.Id, server, db);
 			}
@@ -171,7 +170,7 @@ namespace SassV2.Commands
 			existsCmd.Parameters.AddWithValue("key", field.Name);
 			existsCmd.Parameters.AddWithValue("bio", bio);
 			var fieldId = (long?)await existsCmd.ExecuteScalarAsync();
-			if(fieldId.HasValue)
+			if (fieldId.HasValue)
 			{
 				var updateCmd = db.BuildCommand("UPDATE bio_entries SET value = :value WHERE id = :id;");
 				updateCmd.Parameters.AddWithValue("value", field.Value);
@@ -211,13 +210,13 @@ namespace SassV2.Commands
 			var biosCmd = db.BuildCommand("SELECT id FROM bios WHERE author=:author;");
 			biosCmd.Parameters.AddWithValue("author", user.Id.ToString());
 			var reader = await biosCmd.ExecuteReaderAsync();
-			if(!reader.HasRows)
+			if (!reader.HasRows)
 			{
 				return new List<BioData>();
 			}
 
 			var bios = new List<BioData>();
-			while(reader.Read())
+			while (reader.Read())
 			{
 				var id = reader.GetInt64(0);
 
@@ -254,7 +253,7 @@ namespace SassV2.Commands
 			while (reader2.Read())
 			{
 				var serverId = reader2.GetString(0);
-				var guild = await bot.Client.GetGuildAsync(ulong.Parse(serverId));
+				var guild = bot.Client.GetGuild(ulong.Parse(serverId));
 				if (guild != null)
 				{
 					servers.Add(new KeyValuePair<ulong, string>(guild.Id, guild.Name));
@@ -263,12 +262,12 @@ namespace SassV2.Commands
 
 			var fieldSpecs = new List<BioField>(_fields.Select(f => f.Clone()));
 			var fields = new List<BioField>();
-			if(full)
+			if (full)
 			{
 				var fieldCmd = db.BuildCommand("SELECT key, value FROM bio_entries WHERE bio=:bio;");
 				fieldCmd.Parameters.AddWithValue("bio", id);
 				var reader = await fieldCmd.ExecuteReaderAsync();
-				while(reader.Read())
+				while (reader.Read())
 				{
 					var key = reader.GetString(0);
 					var value = reader.GetString(1);
@@ -291,15 +290,17 @@ namespace SassV2.Commands
 			ownerCmd.Parameters.AddWithValue("bio", id);
 			var author = ulong.Parse((string)await ownerCmd.ExecuteScalarAsync());
 
-			return new BioData {
+			return new BioData
+			{
 				Id = id,
 				Owner = author,
 				SharedServers = servers,
 				SharedServerNames = servers.Select(s => s.Value).ToList(),
-				Fields = fields };
+				Fields = fields
+			};
 		}
 
-		private static async Task CreateTables(RelationalDatabase db)
+		internal static async Task CreateTables(RelationalDatabase db)
 		{
 			if (_tablesCreated) return;
 
@@ -320,74 +321,74 @@ namespace SassV2.Commands
 			await db.BuildAndExecute("CREATE INDEX IF NOT EXISTS bio_privacy_server ON bio_privacy(server);");
 			_tablesCreated = true;
 		}
+	}
 
-		public class BioData
+	public class BioData
+	{
+		public long Id;
+		public ulong Owner;
+		public List<KeyValuePair<ulong, string>> SharedServers;
+		public List<string> SharedServerNames;
+		public List<BioField> Fields;
+
+		public string GetBioString(IGuildUser user)
 		{
-			public long Id;
-			public ulong Owner;
-			public List<KeyValuePair<ulong, string>> SharedServers;
-			public List<string> SharedServerNames;
-			public List<BioField> Fields;
-
-			public string GetBioString(IGuildUser user)
+			var message = $"Bio for {user.NicknameOrDefault()}:\n";
+			foreach (var field in Fields)
 			{
-				var message = $"Bio for {user.NicknameOrDefault()}:\n";
-				foreach (var field in Fields)
-				{
-					if (string.IsNullOrWhiteSpace(field.Value)) continue;
-					message += $"\t{field.DisplayName}: {field.Formatter(field.Value)}\n";
-				}
-
-				return message.Trim();
+				if (string.IsNullOrWhiteSpace(field.Value)) continue;
+				message += $"\t{field.DisplayName}: {field.Formatter(field.Value)}\n";
 			}
+
+			return message.Trim();
+		}
+	}
+
+	public class BioField
+	{
+		public string Name;
+		public string FriendlyName;
+		public string DisplayName;
+		public string Info = "";
+		public string Value = "";
+		public Func<string, string> Formatter;
+		public bool Multiline = false;
+		public int MaxLength = 100;
+
+		public BioField Clone()
+		{
+			var newField = new BioField(Name)
+			{
+				FriendlyName = FriendlyName,
+				DisplayName = DisplayName,
+				Info = Info,
+				Value = Value,
+				Formatter = Formatter,
+				Multiline = Multiline
+			};
+
+			return newField;
 		}
 
-		public class BioField
+		public BioField(string name)
+			: this(name, name, name, "")
+		{ }
+
+		public BioField(string name, string friendlyName)
+			: this(name, friendlyName, friendlyName, "")
+		{ }
+
+		public BioField(string name, string friendlyName, string info)
+			: this(name, friendlyName, friendlyName, info)
+		{ }
+
+		public BioField(string name, string friendlyName, string displayName, string info)
 		{
-			public string Name;
-			public string FriendlyName;
-			public string DisplayName;
-			public string Info = "";
-			public string Value = "";
-			public Func<string, string> Formatter;
-			public bool Multiline = false;
-			public int MaxLength = 100;
-
-			public BioField Clone()
-			{
-				var newField = new BioField(Name)
-				{
-					FriendlyName = FriendlyName,
-					DisplayName = DisplayName,
-					Info = Info,
-					Value = Value,
-					Formatter = Formatter,
-					Multiline = Multiline
-				};
-
-				return newField;
-			}
-
-			public BioField(string name)
-				: this(name, name, name, "")
-			{ }
-
-			public BioField(string name, string friendlyName)
-				:this(name, friendlyName, friendlyName, "")
-			{ }
-
-			public BioField(string name, string friendlyName, string info)
-				: this(name, friendlyName, friendlyName, info)
-			{ }
-
-			public BioField(string name, string friendlyName, string displayName, string info)
-			{
-				Name = name;
-				FriendlyName = friendlyName;
-				DisplayName = displayName;
-				Info = info;
-				Formatter = (v) => v;
-			}
+			Name = name;
+			FriendlyName = friendlyName;
+			DisplayName = displayName;
+			Info = info;
+			Formatter = (v) => v;
 		}
 	}
 }

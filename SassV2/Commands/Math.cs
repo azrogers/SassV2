@@ -1,25 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord.Commands;
 using NCalc;
+using System;
+using System.Threading.Tasks;
 
 namespace SassV2.Commands
 {
-	public class MathCommand
+	public class MathCommand : ModuleBase<SocketCommandContext>
 	{
-		[Command(name: "math", desc: "calc.exe, but in the cloud!", usage: "math <some math stuff>", category: "Useful")]
-		public static string Math(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "math", desc: "calc.exe, but in the cloud!", usage: "math <some math stuff>", category: "Useful")]
+		[Command("math")]
+		public async Task Math([Remainder] string args)
 		{
 			try
 			{
-				return args.Trim() + " = " + new Expression(args).Evaluate().ToString();
+				var result = args.Trim() + " = " + new Expression(args).Evaluate().ToString();
+				await ReplyAsync(result);
 			}
 			catch(ArgumentException ex)
 			{
-				throw new CommandException(ex.Message);
+				await ReplyAsync(ex.Message);
 			}
 		}
 	}

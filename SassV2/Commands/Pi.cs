@@ -1,42 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Discord.Commands;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
-using System.IO;
 
 namespace SassV2.Commands
 {
-	public class PiCommand
+	public class PiCommand : ModuleBase<SocketCommandContext>
 	{
-		[Command(name: "pi", desc: "gets the nth digit of pi, up to the millionth.", usage: "pi <number>", category: "Dumb")]
-		public static string Pi(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "pi", desc: "gets the nth digit of pi, up to the millionth.", usage: "pi <number>", category: "Dumb")]
+		[Command("pi")]
+		public async Task Pi(int number)
 		{
-			int numPosition;
-			if(!int.TryParse(args, out numPosition))
+			if(number < 1)
 			{
-				throw new CommandException("I don't know what that is.");
+				await ReplyAsync("That's not how it works.");
+				return;
 			}
-			if(numPosition < 1)
+			if(number > 1000000)
 			{
-				throw new CommandException("That's not how it works.");
-			}
-			if(numPosition > 1000000)
-			{
-				throw new CommandException("You and I both know you don't really need to know what that digit is.");
+				await ReplyAsync("Come on - you don't *really* need to know what that is, do you?");
+				return;
 			}
 			if(!File.Exists("pi.dat"))
 			{
-				throw new CommandException("I don't know how, sorry.");
+				await ReplyAsync("I don't know how, sorry.");
+				return;
 			}
 
 			using(var file = File.OpenRead("pi.dat"))
 			{
 				byte[] output = new byte[1];
-				file.Position = numPosition - 1;
+				file.Position = number - 1;
 				file.Read(output, 0, 1);
-				return "The " + Util.CardinalToOrdinal(numPosition) + " digit of Pi is " + Encoding.ASCII.GetString(output) + ".";
+				await ReplyAsync("The " + Util.CardinalToOrdinal(number) + " digit of Pi is " + Encoding.ASCII.GetString(output) + ".");
 			}
 		}
 	}

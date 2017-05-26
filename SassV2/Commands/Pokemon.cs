@@ -1,20 +1,19 @@
-﻿using System;
+﻿using Discord.Commands;
+using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
-using Microsoft.Data.Sqlite;
 
 namespace SassV2.Commands
 {
-	public static class PokemonCommand
+	public class PokemonCommand : ModuleBase<SocketCommandContext>
 	{
-		private static PokemonDatabase _database = new PokemonDatabase();
+		private PokemonDatabase _database = new PokemonDatabase();
 
-		[Command(name: "pokemon", desc: "gotta catch 'em all.", usage: "pokemon <name> or pokemon #<number>", category: "Useful")]
-		public static string Pokemon(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "pokemon", desc: "gotta catch 'em all.", usage: "pokemon <name> or pokemon #<number>", category: "Useful")]
+		[Command("pokemon")]
+		public async Task Pokemon([Remainder] string args)
 		{
 			var builder = new StringBuilder();
 			
@@ -26,18 +25,19 @@ namespace SassV2.Commands
 					throw new CommandException("Invalid Pokemon ID.");
 				}
 
-				return _database.FindPokemon(pokemonId);
-			}
-			else if(string.IsNullOrEmpty(args))
-			{
-				return _database.RandomPokemon();
+				await ReplyAsync(_database.FindPokemon(pokemonId));
 			}
 			else
 			{
-				return _database.FindPokemon(args);
+				await ReplyAsync(_database.FindPokemon(args));
 			}
 		}
 
+		[Command("pokemon")]
+		public async Task RandomPokemon()
+		{
+			await ReplyAsync(_database.RandomPokemon());
+		}
 	}
 
 	public class PokemonDatabase

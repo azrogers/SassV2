@@ -1,57 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Discord.Commands;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Discord;
-using System.Reactive.Linq;
 
 namespace SassV2.Commands
 {
-	public class ThemeCommand
+	public class ThemeCommand : ModuleBase<SocketCommandContext>
 	{
-		private static Regex _youtubeRegex = new Regex(@"(youtu\.be\/|youtube\.com\/(watch\?(.*&)?v=|(embed|v)\/))([^\?&""'>]+)");
-		private static Regex _setThemeRegex = new Regex(@"(for\s|)(\s+)?(.+?)$");
+		private Regex _youtubeRegex = new Regex(@"(youtu\.be\/|youtube\.com\/(watch\?(.*&)?v=|(embed|v)\/))([^\?&""'>]+)");
+		private DiscordBot _bot;
 
-		[Command(name: "theme", desc: "gets the theme for the current chat room.", usage: "theme", category: "Dumb")]
-		public static string Theme(DiscordBot bot, IMessage msg, string args)
+		public ThemeCommand(DiscordBot bot)
 		{
-			string theme = bot.Database(msg.ServerId()).GetObject<string>("theme:" + msg.Channel.Id);
-			if(theme == null)
-			{
-				throw new CommandException("There's no theme for " + msg.Channel.Name + " (yet).");
-			}
-			
-			return "Theme for #" + msg.Channel.Name + ": " + theme;
+			_bot = bot;
 		}
 
-		[Command(name: "set theme", desc: "sets the theme for the current chat room.", usage: "set theme <youtube URL>", category: "Dumb")]
-		public static string SetTheme(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "theme", desc: "gets the theme for the current chat room.", usage: "theme", category: "Dumb")]
+		[Command("theme")]
+		public async Task Theme()
 		{
-			var match = _setThemeRegex.Match(args.Trim());
-			if(!match.Success || match.Groups.Count < 4)
+			string theme = _bot.Database(Context.Guild.Id).GetObject<string>("theme:" + Context.Channel.Id);
+			if(theme == null)
 			{
-				throw new CommandException("That doesn't make any sense.");
+				await ReplyAsync("There's no theme for " + Context.Channel.Name + " (yet).");
+				return;
 			}
+			
+			await ReplyAsync("Theme for #" + Context.Channel.Name + ": " + theme);
+		}
 
-			var parts = match.Groups[3].Value.Split(' ');
-			if(parts.Length < 1)
-			{
-				throw new CommandException("You need to provide a URL.");
-			}
-
-			var url = parts.Last();
+		[SassCommand(name: "set theme", desc: "sets the theme for the current chat room.", usage: "set theme <youtube URL>", category: "Dumb")]
+		[Command("set theme")]
+		public async Task SetTheme(string url)
+		{
 			var urlMatch = _youtubeRegex.Match(url);
 			if(!urlMatch.Success || urlMatch.Groups.Count < 6)
 			{
-				throw new CommandException("I suggest using YouTube.");
+				await ReplyAsync("I suggest using YouTube.");
+				return;
 			}
 
 			var videoId = urlMatch.Groups[5].Value;
 			var finalUrl = "https://youtu.be/" + videoId;
-			bot.Database(msg.ServerId()).InsertObject<string>("theme:" + msg.Channel.Id, finalUrl);
-			return "Theme set.";
+			_bot.Database(Context.Guild.Id).InsertObject<string>("theme:" + Context.Channel.Id, finalUrl);
+			await ReplyAsync("Theme set.");
 		}
 	}
 }

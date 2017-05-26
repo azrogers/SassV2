@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using Microsoft.Data.Sqlite;
 
 namespace SassV2.Commands
 {
-	public class QuoteCommand
+	public class QuoteCommand : ModuleBase<SocketCommandContext>
 	{
 		private const string CREATE_STATEMENT = @"
 			CREATE TABLE IF NOT EXISTS quotes (
@@ -19,15 +20,25 @@ namespace SassV2.Commands
 			);
 		";
 
-		[Command(name: "add quote", desc: "add a quote to SASS", usage: "add quote \"<quote>\" \"<author>\" \"<source>\"", category: "Spam")]
-		public async static Task<string> AddQuote(DiscordBot bot, IMessage msg, string args)
+		private DiscordBot _bot;
+
+		public QuoteCommand(DiscordBot bot)
 		{
-			var db = bot.RelDatabase(msg.ServerId());
+			_bot = bot;
+		}
+
+		[SassCommand(name: "add quote", desc: "add a quote to SASS", usage: "add quote \"<quote>\" \"<author>\" \"<source>\"", category: "Spam")]
+		[Command("add quote")]
+		[RequireContext(ContextType.Guild)]
+		public async Task AddQuote([Remainder] string args)
+		{
+			var db = _bot.RelDatabase(Context.Guild.Id);
 			await InitializeDatabase(db);
 			var parts = Util.SplitQuotedString(args);
 			if(parts.Length < 2)
 			{
-				throw new CommandException("You at least need to provide a quote and an author.");
+				await ReplyAsync("You at least need to provide a quote and an author.");
+				return;
 			}
 
 			var quote = parts[0];
@@ -44,36 +55,33 @@ namespace SassV2.Commands
 			cmd.Parameters.AddWithValue("source", source);
 			var lastId = (long)(await cmd.ExecuteScalarAsync());
 
-			return "Quote #" + lastId + " added.";
+			await ReplyAsync("Quote #" + lastId + " added.");
 		}
 
-		[Command(name: "quote", desc: "get a quote from SASS", usage: "quote\nquote <id>", category: "Spam")]
-		public async static Task<string> GetQuote(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "quote", desc: "get a quote from SASS", usage: "quote\nquote <id>", category: "Spam")]
+		[Command("quote")]
+		[RequireContext(ContextType.Guild)]
+		public async Task GetQuote(long id)
 		{
-			await InitializeDatabase(bot.RelDatabase(msg.ServerId()));
+			await InitializeDatabase(_bot.RelDatabase(Context.Guild.Id));
 
 			SqliteCommand command;
 			long quoteId;
-			if(!string.IsNullOrWhiteSpace(args))
+			if(id == -1)
 			{
-				if(!long.TryParse(args, out quoteId))
-				{
-					throw new CommandException("Invalid quote ID.");
-				}
-
-				command = bot.RelDatabase(msg.ServerId()).BuildCommand("SELECT * FROM quotes WHERE id = :id;");
-				command.Parameters.AddWithValue("id", quoteId);
-
+				command = _bot.RelDatabase(Context.Guild.Id).BuildCommand("SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1;");
 			}
 			else
 			{
-				command = bot.RelDatabase(msg.ServerId()).BuildCommand("SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1;");
+				command = _bot.RelDatabase(Context.Guild.Id).BuildCommand("SELECT * FROM quotes WHERE id = :id;");
+				command.Parameters.AddWithValue("id", id);
 			}
 
 			var reader = await command.ExecuteReaderAsync();
 			if(!reader.HasRows)
 			{
-				throw new CommandException("No quotes found.");
+				await ReplyAsync("No quotes found.");
+				return;
 			}
 			reader.Read();
 
@@ -87,38 +95,33 @@ namespace SassV2.Commands
 				sourceBody = $" ({source})";
 			}
 
-			return $"\"{quote}\"\n\t\t- *{author}{sourceBody}, #{quoteId}*";
+			await ReplyAsync($"\"{quote}\"\n\t\t- *{author}{sourceBody}, #{quoteId}*");
 		}
 
-		[Command(name: "edit quote", desc: "change a part of a quote", usage: "edit quote <id> (body|author|source) \"value\"", category: "Administration")]
-		public async static Task<string> EditQuote(DiscordBot bot, IMessage msg, string args)
+		[Command("quote")]
+		[RequireContext(ContextType.Guild)]
+		public async Task GetQuote()
 		{
-			if(!(msg.Author as IGuildUser).IsAdmin(bot))
+			await GetQuote(-1);
+		}
+
+		[SassCommand(name: "edit quote", desc: "change a part of a quote", usage: "edit quote <id> (body|author|source) \"value\"", category: "Administration")]
+		[Command("edit quote")]
+		[RequireContext(ContextType.Guild)]
+		public async Task EditQuote(long quoteId, string field, [Remainder] string args)
+		{
+			if(!(Context.User as IGuildUser).IsAdmin(_bot))
 			{
-				throw new CommandException("You're not allowed to use this command.");
+				await ReplyAsync("You're not allowed to use this command.");
+				return;
 			}
 
-			await InitializeDatabase(bot.RelDatabase(msg.ServerId()));
-			var parts = Util.SplitQuotedString(args);
-
-			if(parts.Length < 3)
-			{
-				throw new CommandException("You're missing some arguments.");
-			}
-
-			var id = parts[0];
-			var field = parts[1].ToLower();
-			var value = parts[2];
-
-			long quoteId;
-			if(!long.TryParse(id, out quoteId))
-			{
-				throw new CommandException("Invalid quote ID.");
-			}
-
+			await InitializeDatabase(_bot.RelDatabase(Context.User.Id));
+			
 			if(field != "body" && field != "author" && field != "source")
 			{
-				throw new CommandException("Field must be body, author, or source.");
+				await ReplyAsync("Field must be body, author, or source.");
+				return;
 			}
 
 			if(field == "body")
@@ -126,19 +129,21 @@ namespace SassV2.Commands
 				field = "quote";
 			}
 
-			var cmd = bot.RelDatabase(msg.ServerId()).BuildCommand($"UPDATE quotes SET {field} = :value WHERE id = :id;");
+			var cmd = _bot.RelDatabase(Context.Guild.Id).BuildCommand($"UPDATE quotes SET {field} = :value WHERE id = :id;");
 			cmd.Parameters.AddWithValue("field", field);
-			cmd.Parameters.AddWithValue("value", value);
+			cmd.Parameters.AddWithValue("value", args.Trim('"'));
 			cmd.Parameters.AddWithValue("id", quoteId);
 
 			await cmd.ExecuteNonQueryAsync();
-			return "ok";
+			await ReplyAsync("ok");
 		}
 
-		[Command(name: "quotes", desc: "list all quotes", usage: "quotes", category: "Spam")]
-		public static string ListQuotes(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "quotes", desc: "list all quotes", usage: "quotes", category: "Spam")]
+		[Command("quotes")]
+		[RequireContext(ContextType.Guild)]
+		public async Task ListQuotes()
 		{
-			return bot.Config.URL + "quotes/" + (msg.Channel as IGuildChannel).GuildId;
+			await ReplyAsync(_bot.Config.URL + "quotes/" + Context.Guild.Id);
 		}
 
 		public async static Task InitializeDatabase(RelationalDatabase db)

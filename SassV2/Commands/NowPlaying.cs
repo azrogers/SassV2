@@ -1,29 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Discord.Commands;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
-using Discord;
 
 namespace SassV2.Commands
 {
-	public static class NowPlayingCommand
+	public class NowPlayingCommand : ModuleBase<SocketCommandContext>
 	{
-		[Command(name: "now playing", desc: "print the currently playing song on remi radio", usage: "now playing")]
-		public async static Task<string> NowPlaying(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "now playing", desc: "print the currently playing song on remi radio", usage: "now playing")]
+		[Command("now playing")]
+		public async Task NowPlaying()
 		{
 			var xml = await Util.GetURLAsync("http://radio.anime.lgbt:8000/mpd.ogg.xspf");
 			var reader = XmlReader.Create(new StringReader(xml));
 			reader.ReadToFollowing("track");
 			reader.ReadToFollowing("creator");
 			reader.MoveToContent();
+			if(reader.NodeType == XmlNodeType.None)
+			{
+				await ReplyAsync("nothing");
+				return;
+			}
 			var creator = reader.ReadElementContentAsString();
 			reader.ReadToFollowing("title");
 			reader.MoveToContent();
 			var title = reader.ReadElementContentAsString();
-			return creator + " - " + title;
+			await ReplyAsync(creator + " - " + title);
 		}
 	}
 }

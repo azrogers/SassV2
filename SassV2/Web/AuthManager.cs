@@ -24,7 +24,7 @@ namespace SassV2.Web
 		{
 			if (!IsAuthenticated(server, context)) return null;
 			var id = (ulong)server.GetSession(context)[SessionAuthKey];
-			return await bot.Client.GetUserAsync(id);
+			return bot.Client.GetUser(id);
 		}
 
 		public static string GetUsername(WebServer server, HttpListenerContext context)

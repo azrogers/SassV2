@@ -7,17 +7,12 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SassV2
 {
 	public class DiscordBot
 	{
-#if DEBUG
-		public const string BotName = "!sass";
-#else
-		public const string BotName = "sass";
-#endif
-
 		private DiscordSocketClient _client;
 		private Logger _logger;
 		private Config _config;
@@ -26,11 +21,12 @@ namespace SassV2
 		private Dictionary<ulong, KeyValueDatabase> _serverDatabases;
 		private Dictionary<ulong, RelationalDatabase> _serverRelationalDatabases;
 		private Dictionary<ulong, Responder> _serverResponders;
+		private ServiceProvider _services;
 		//private Dictionary<string, LispSandbox.LispAction> _responderFilters;
 
 		public Config Config => _config;
 		public CommandHandler CommandHandler => _commandHandler;
-		public IDiscordClient Client => _client;
+		public DiscordSocketClient Client => _client;
 		public List<ulong> ServerIds => _serverDatabases.Keys.ToList();
 		public RelationalDatabase GlobalDatabase => _globalDatabase;
 
@@ -52,6 +48,11 @@ namespace SassV2
 			{
 				Directory.CreateDirectory("Servers");
 			}
+
+			var serviceCollection = new ServiceCollection();
+			serviceCollection.AddSingleton(this);
+
+			_services = serviceCollection.BuildServiceProvider();
 		}
 
 		public async Task Start()
@@ -59,6 +60,8 @@ namespace SassV2
 			_logger.Info("starting bot");
 			_globalDatabase = new RelationalDatabase("global.db");
 			await _globalDatabase.Open();
+
+			await _commandHandler.InitCommands();
 			
 			_client.Log += (m) => Task.Run(() =>
 			{
@@ -132,13 +135,13 @@ namespace SassV2
 		private async Task OnMessageReceived(SocketMessage message)
 		{
 			// ignore messages we send
-			if (message.Author == _client.CurrentUser) return;
+			if (message.Author.Id == _client.CurrentUser.Id) return;
 
 			if(message.Channel is ISocketPrivateChannel)
 			{
 				_logger.Debug("message from " + message.Author.Username + ": " + message.Content);
 			}
-			else if(!_config.DebugIgnore.Contains((message.Channel as IGuildChannel).GuildId.ToString()))
+			else if(_config.DebugServers.Contains((message.Channel as IGuildChannel).GuildId.ToString()))
 			{
 				var channel = (message.Channel as IGuildChannel);
 				_logger.Debug($"message on #{channel.Name} ({channel.Guild.Name}) from {message.Author.Username}: {message.Content}");
@@ -147,17 +150,11 @@ namespace SassV2
 			// if they mention sass, send a rude message
 			if(message.MentionedUsers.Contains(_client.CurrentUser))
 			{
-				SendMessage(message.Channel, Util.AssembleRudeMessage()).Forget();
-				return;
-			}
-			
-			// check if the command starts with the bot name
-			if(!message.Content.StartsWith(BotName, StringComparison.CurrentCultureIgnoreCase))
-			{
+				await SendMessage(message.Channel, Util.AssembleRudeMessage());
 				return;
 			}
 
-			if(message.Content.Trim().Equals(BotName, StringComparison.CurrentCultureIgnoreCase))
+			if(message.Content.Trim().Equals(CommandHandler.BOT_NAME, StringComparison.CurrentCultureIgnoreCase))
 			{
 				SendMessage(message.Channel, "Give me a command. If you don't have one, try `sass help`.").Forget();
 				return;
@@ -171,73 +168,40 @@ namespace SassV2
 			var permissions = (message.Author as SocketGuildUser)?.GuildPermissions;
 			if(banned && (!permissions.HasValue || !permissions.Value.Administrator) && Config.GetRole(message.Author.Id) != "admin")
 			{
-				SendMessage(message.Channel as ISocketMessageChannel, Util.Locale("error.banned")).Forget();
+				await SendMessage(message.Channel as ISocketMessageChannel, Util.Locale("error.banned"));
 				return;
 			}
-
-			// find the command
-			var command = _commandHandler.FindCommand(message.Content.Substring(BotName.Length).Trim(), message.Channel is ISocketPrivateChannel);
-			if(command != null)
+			
+			try
 			{
-				var typing = message.Channel.EnterTypingState();
-				
-				try
-				{
-					string result;
-					if(command.IsAsync)
-					{
-						var task = command.AsyncDelegate(this, message, command.Arguments);
-						if (task.Wait(TimeSpan.FromSeconds(Config.Timeout)))
-							result = task.Result;
-						else
-							throw new CommandException("Command took too long, sorry.");
-					}
-					else
-					{
-						result = command.Delegate(this, message, command.Arguments);
-					}
-
-					if(string.IsNullOrWhiteSpace(result))
-					{
-						typing.Dispose();
-						return;
-					}
-
-					SendMessage(message.Channel, result).ContinueWith(t => typing.Dispose()).Forget();
-				}
-				// a command exception is one that the user should know about
-				catch(CommandException commandEx)
-				{
-					SendMessage(message.Channel, commandEx.Message).ContinueWith(t => typing.Dispose()).Forget();
-					return;
-				}
-				catch(AggregateException ex)
-				{
-					typing.Dispose();
-					if (ex.InnerExceptions.Any(a => a.GetType() == typeof(Discord.Net.RateLimitedException)))
-						SendMessage(message.Channel, $"I'm being rate limited!").Forget();
-					if(ex.InnerExceptions.Any(a => a.GetType() == typeof(CommandException)))
-					{
-						foreach (var err in ex.InnerExceptions.Where(a => a.GetType() == typeof(CommandException)))
-							SendMessage(message.Channel, err.Message).Forget();
-						return;
-					}
-					SendMessage(message.Channel, Util.AssembleRudeErrorMessage()).Forget();
-					_logger.Error(ex);
-					return;
-				}
-				// this is an exception the user shouldn't know about
-				catch(Exception ex)
-				{
-					typing.Dispose();
-					SendMessage(message.Channel, Util.AssembleRudeErrorMessage()).Forget();
-					_logger.Error(ex);
-					return;
-				}
+				await _commandHandler.HandleCommand(_services, message);
 			}
-			else
+			// a command exception is one that the user should know about
+			catch(CommandException commandEx)
 			{
-				SendMessage(message.Channel, Util.Locale("error.noCommand")).Forget();
+				await SendMessage(message.Channel, commandEx.Message);
+				return;
+			}
+			catch(AggregateException ex)
+			{
+				if (ex.InnerExceptions.Any(a => a.GetType() == typeof(Discord.Net.RateLimitedException)))
+					SendMessage(message.Channel, $"I'm being rate limited!").Forget();
+				if(ex.InnerExceptions.Any(a => a.GetType() == typeof(CommandException)))
+				{
+					foreach (var err in ex.InnerExceptions.Where(a => a.GetType() == typeof(CommandException)))
+						SendMessage(message.Channel, err.Message).Forget();
+					return;
+				}
+				await SendMessage(message.Channel, Util.AssembleRudeErrorMessage());
+				_logger.Error(ex);
+				return;
+			}
+			// this is an exception the user shouldn't know about
+			catch(Exception ex)
+			{
+				await SendMessage(message.Channel, Util.AssembleRudeErrorMessage());
+				_logger.Error(ex);
+				return;
 			}
 		}
 

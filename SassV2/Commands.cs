@@ -1,129 +1,88 @@
-﻿using System;
+﻿using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using NLog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Reflection;
-using Discord;
-using Discord.WebSocket;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SassV2
 {
 	public class CommandHandler
 	{
-		public delegate string CommandDelegate(DiscordBot bot, IMessage msg, string args);
-		public delegate Task<string> AsyncCommandDelegate(DiscordBot bot, IMessage msg, string args);
+#if DEBUG
+		public const string BOT_NAME = "!sass";
+#else
+		public const string BOT_NAME = "sass";
+#endif
+		private CommandService _commands;
+		private SassCommandAttribute[] _commandAttributes;
+		private Logger _logger;
 
-		private List<string> _commands;
-		private List<string> _pmCommands;
-		private Dictionary<string, MethodInfo> _commandMap;
-		private Dictionary<string, MethodInfo> _pmCommandMap;
-		private List<CommandAttribute> _commandAttributes;
-
-		public List<CommandAttribute> CommandAttributes => _commandAttributes;
+		public SassCommandAttribute[] CommandAttributes => _commandAttributes;
 
 		public CommandHandler()
 		{
-			_commands = new List<string>();
-			_pmCommands = new List<string>();
-			_commandMap = new Dictionary<string, MethodInfo>();
-			_pmCommandMap = new Dictionary<string, MethodInfo>();
-			_commandAttributes = new List<CommandAttribute>();
+			_logger = LogManager.GetCurrentClassLogger();
+		}
 
+		public async Task InitCommands()
+		{
+			var config = new CommandServiceConfig();
+			config.CaseSensitiveCommands = false;
+			config.ThrowOnError = true;
+			config.DefaultRunMode = RunMode.Async;
+
+			_commands = new CommandService(config);
+			_commands.AddTypeReader<IGuild>(new GuildTypeReader());
 			var commandNamespace = typeof(CommandHandler).Namespace + ".Commands";
-			// find all command methods
-			var methodInfo =
-				typeof(CommandHandler).GetTypeInfo().Assembly.GetTypes()
-				.Where(t => t.GetTypeInfo().IsClass && t.Namespace == commandNamespace)
-				.Select(t => t.GetTypeInfo().DeclaredMethods)
-				.SelectMany(m => m)
-				.ToArray();
+			var modules = typeof(CommandHandler).GetTypeInfo().Assembly.GetTypes()
+				.Where(t => t.Namespace == commandNamespace && t.GetTypeInfo().IsClass && t.GetTypeInfo().IsVisible);
 
-			// add methods to map and list
-			foreach(var method in methodInfo)
+			var attributes = new List<SassCommandAttribute>();
+			foreach (var module in modules)
 			{
-				var commandAttribute = method.GetCustomAttribute<CommandAttribute>();
-				if(commandAttribute == null)
+				var methods = module.GetTypeInfo().DeclaredMethods.Where(m => m.IsPublic);
+				foreach(var method in methods)
 				{
-					continue;
+					var attr = method.GetCustomAttribute<SassCommandAttribute>();
+					if(attr == null)
+					{
+						continue;
+					}
+
+					attributes.Add(attr);
 				}
 
-				_commandAttributes.Add(commandAttribute);
-
-				foreach(var commandName in commandAttribute.Names)
-				{
-					if(commandAttribute.IsPM)
-					{
-						_pmCommands.Add(commandName);
-						_pmCommandMap[commandName] = method;
-					}
-					else
-					{
-						_commands.Add(commandName);
-						_commandMap[commandName] = method;
-					}
-				}
+				await _commands.AddModuleAsync(module);
 			}
 
-			// make sure the longest commands are at the top of the command list
-			_commands = _commands.OrderByDescending(n => n.Length).ToList();
+			_commandAttributes = attributes.ToArray();
 		}
 
-		/// <summary>
-		/// Find a command for the given message.
-		/// </summary>
-		/// <param name="message">The message to find a command for.</param>
-		/// <returns>A Maybe representing the command or nothing.</returns>
-		public Command FindCommand(string message, bool isPrivate)
+		public async Task HandleCommand(ServiceProvider services, SocketMessage messageParam)
 		{
-			var commandFound = false;
-			var commandName = "";
-			foreach(var name in (isPrivate ? _pmCommands : _commands))
+			var message = messageParam as SocketUserMessage;
+			if (message == null) return;
+			if (!message.Content.StartsWith(BOT_NAME, StringComparison.CurrentCultureIgnoreCase)) return;
+
+			var commandContext = new SocketCommandContext(services.GetService<DiscordBot>().Client, message);
+
+			var result = await _commands.ExecuteAsync(commandContext, BOT_NAME.Length + 1, services);
+			if(!result.IsSuccess)
 			{
-				if(message.ToLower().Trim() == name.ToLower() || message.StartsWith(name + " ", StringComparison.CurrentCultureIgnoreCase))
-				{
-					commandFound = true;
-					commandName = name;
-					break;
-				}
+				if(result.Error.Value == CommandError.Exception)
+					_logger.Error(result.ErrorReason);
+				await commandContext.Channel.SendMessageAsync(Util.CommandErrorToMessage(result.Error.Value));
 			}
-
-			if(!commandFound)
-			{
-				return null;
-			}
-
-			var args = message.Substring(commandName.Length).Trim();
-
-			var command = new Command();
-			var commandMethod = (isPrivate ? _pmCommandMap[commandName] : _commandMap[commandName]);
-			if(commandMethod.ReturnType == typeof(string))
-			{
-				command.Delegate = (CommandDelegate)commandMethod.CreateDelegate(typeof(CommandDelegate));
-			}
-			else
-			{
-				command.IsAsync = true;
-				command.AsyncDelegate = (AsyncCommandDelegate)commandMethod.CreateDelegate(typeof(AsyncCommandDelegate));
-			}
-			command.Attribute = _commandAttributes.Where(c => c.Names.Where(n => n.ToLower() == commandName).Any()).First();
-			command.Arguments = args;
-
-			return command;
-		}
-
-		public class Command
-		{
-			public CommandDelegate Delegate;
-			public AsyncCommandDelegate AsyncDelegate;
-			public string Arguments;
-			public CommandAttribute Attribute;
-			public bool IsAsync = false;
 		}
 	}
 
 	[AttributeUsage(AttributeTargets.Method)]
-	public class CommandAttribute : Attribute
+	public class SassCommandAttribute : Attribute
 	{
 		public string[] Names;
 		public string Description;
@@ -132,7 +91,7 @@ namespace SassV2
 		public bool Hidden;
 		public bool IsPM = false;
 
-		public CommandAttribute(string[] names, string desc = "", string usage = "", string category = "General", bool hidden = false, bool isPM = false)
+		public SassCommandAttribute(string[] names, string desc = "", string usage = "", string category = "General", bool hidden = false, bool isPM = false)
 		{
 			Names = names;
 			Description = desc;
@@ -141,7 +100,7 @@ namespace SassV2
 			Hidden = hidden;
 			IsPM = isPM;
 		}
-		public CommandAttribute(string name, string desc = "", string usage = "", string category = "General", bool hidden = false, bool isPM = false)
+		public SassCommandAttribute(string name, string desc = "", string usage = "", string category = "General", bool hidden = false, bool isPM = false)
 		{
 			Names = new string[] { name };
 			Description = desc;
@@ -158,6 +117,26 @@ namespace SassV2
 			: base(message)
 		{
 
+		}
+	}
+
+	public class GuildTypeReader : TypeReader
+	{
+		public override async Task<TypeReaderResult> Read(ICommandContext context, string input)
+		{
+			ulong guildId;
+			if(!ulong.TryParse(input, out guildId))
+			{
+				return TypeReaderResult.FromError(CommandError.ParseFailed, "Input could not be parsed as a ulong.");
+			}
+
+			var guild = await context.Client.GetGuildAsync(guildId);
+			if(guild == null)
+			{
+				return TypeReaderResult.FromError(CommandError.ObjectNotFound, "Could not find guild with that ID.");
+			}
+
+			return TypeReaderResult.FromSuccess(guild);
 		}
 	}
 }

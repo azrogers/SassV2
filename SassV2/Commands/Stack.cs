@@ -1,32 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Discord.Commands;
 using System.IO;
-using Discord;
+using System.Threading.Tasks;
 
 namespace SassV2.Commands
 {
-	public class StackCommand
+	public class StackCommand : ModuleBase<SocketCommandContext>
 	{
-		[Command(name: "stack", desc: "add something to the stack of requests or print it out.", usage: "stack\nstack <thing>")]
-		public static string Stack(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "stack", desc: "add something to the stack of requests or print it out.", usage: "stack\nstack <thing>")]
+		[Command("stack")]
+		public async Task Stack([Remainder] string thing)
 		{
-			if(args.Trim().Length == 0)
-			{
-				if(!File.Exists("requests.txt"))
-				{
-					throw new CommandException("There is nothing on the stack.");
-				}
+			File.AppendAllText("requests.txt", thing.Replace('\n', ' ') + "\n");
+			await ReplyAsync("It's on the stack now.");
+		}
 
-				return "**Requests Stack**\n" + string.Join("\n", File.ReadAllLines("requests.txt"));
-			}
-			else
+		[Command("stack")]
+		public async Task Stack()
+		{
+			if (!File.Exists("requests.txt"))
 			{
-				File.AppendAllText("requests.txt", args + "\n");
-				return "It's on the stack now.";
+				await ReplyAsync("There is nothing on the stack.");
+				return;
 			}
+
+			await ReplyAsync("**Requests Stack**\n" + string.Join("\n", File.ReadAllLines("requests.txt")));
 		}
 	}
 }

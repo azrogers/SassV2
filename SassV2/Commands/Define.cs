@@ -7,15 +7,17 @@ using Discord;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
+using Discord.Commands;
 
 namespace SassV2.Commands
 {
-	public class Define
+	public class Define : ModuleBase<SocketCommandContext>
 	{
-		private static Regex _disambRegex = new Regex(".+? may refer to:");
+		private Regex _disambRegex = new Regex(".+? may refer to:");
 
-		[Command(name: "define", desc: "look that shit up.", usage: "define <thing>", category: "Useful")]
-		public static async Task<string> WikipediaDefine(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "define", desc: "look that shit up.", usage: "define <thing>", category: "Useful")]
+		[Command("define")]
+		public async Task WikipediaDefine([Remainder] string args)
 		{
 			var url = "https://en.wikipedia.org/w/api.php?format=json&redirects&action=query&prop=extracts&exintro=&explaintext=&titles=";
 			url += Uri.EscapeUriString(args.Trim());
@@ -26,7 +28,8 @@ namespace SassV2.Commands
 				var page = info["query"]["pages"][pageKey];
 				if(page["missing"] != null)
 				{
-					throw new CommandException(Util.Locale("define.nothing"));
+					await ReplyAsync(Util.Locale("define.nothing"));
+					return;
 				}
 				var parts = page["extract"].Value<string>().Split('\n');
 				var str = parts.First();
@@ -34,13 +37,20 @@ namespace SassV2.Commands
 				{
 					str = parts.Skip(1).First();
 				}
+
 				if(_disambRegex.IsMatch(str))
 				{
-					return await DefineDisambg(args);
+					await ReplyAsync(await DefineDisambg(args));
 				}
-				return str;
+				else
+				{
+					await ReplyAsync(str);
+				}
+
+				return;
 			}
-			return Util.Locale("define.nothing");
+
+			await ReplyAsync(Util.Locale("define.nothing"));
 		}
 
 		private static async Task<string> DefineDisambg(string args)
@@ -62,12 +72,12 @@ namespace SassV2.Commands
 
 			if(!names.Any())
 			{
-				throw new CommandException(Util.Locale("define.nothing"));
+				return Util.Locale("define.nothing");
 			}
 
 			if(names.Count > 20)
 			{
-				throw new CommandException(Util.Locale("define.ambiguous"));
+				return Util.Locale("define.ambiguous");
 			}
 
 			string str = "";

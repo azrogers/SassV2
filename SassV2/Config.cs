@@ -29,7 +29,7 @@ namespace SassV2
 		public string BotUserId;
 		public string DiscordBotsAuthHeader;
 		public int Timeout;
-		public string[] DebugIgnore;
+		public string[] DebugServers;
 
 		public Config(string configFile)
 		{
@@ -60,7 +60,7 @@ namespace SassV2
 			}
 
 			// read debug ignore servers
-			DebugIgnore = file["debug_ignore"].ToArray().Select(a => a.Value<string>()).ToArray();
+			DebugServers = file["debug_servers"].ToArray().Select(a => a.Value<string>()).ToArray();
 		}
 
 		public string GetRole(ulong userId)

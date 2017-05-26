@@ -8,42 +8,73 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Discord.Commands;
 
 namespace SassV2.Commands
 {
-	public class ConvertCommand
+	public class ConvertCommand : ModuleBase<SocketCommandContext>
 	{
 		private static UnitConverter _unitConverter = new UnitConverter();
 
-		[Command(
-			names: new string[] { "convert", "unit convert", "convert unit" }, 
+		[SassCommand(
+			names: new string[] { "unit convert", "convert unit" }, 
 			desc: "convert one unit to another unit (not in the cloud).", 
 			usage: "convert <thing> (to|in|at|as|=) <thing>", 
 			category: "Useful")]
-		public static string ConvertUnits(DiscordBot bot, IMessage msg, string args)
+		[Command("unit convert")]
+		[Alias("convert unit")]
+		public async Task ConvertUnits([Remainder] string args)
 		{
-			return _unitConverter.ConvertUnit(args);
+			try
+			{
+				var result = _unitConverter.ConvertUnit(args);
+				await ReplyAsync(result);
+			}
+			catch(CommandException ex)
+			{
+				await ReplyAsync(ex.Message);
+			}
 		}
 
-		[Command(
+		[SassCommand(
 			names: new string[] { "convert currency", "currency convert" }, 
 			desc: "convert one unit to another unit, kinda in the cloud.",
 			usage: "convert currency <from> (to|in|at|as|=) <to>",
 			category: "Useful")]
-		public async static Task<string> ConvertCurrency(DiscordBot bot, IMessage msg, string args)
+		[Command("convert currency")]
+		[Alias("currency convert")]
+		public async Task ConvertCurrency([Remainder] string args)
 		{
-			return await _unitConverter.ConvertCurrency(args);
+			try
+			{
+				var result = await _unitConverter.ConvertCurrency(args);
+				await ReplyAsync(result);
+			}
+			catch (CommandException ex)
+			{
+				await ReplyAsync(ex.Message);
+			}
 		}
 
-		[Command(
+		[SassCommand(
 			names: new string[] { "convert timezone", "timezone convert" },
 			desc: "convert one time to another time in a different timezone, not involving clouds in any way.",
 			usage: "convert timezone <time> <timezone> (to|in|at|as|=) <timezone>",
 			category: "Useful"	
 		)]
-		public static string ConvertTimezone(DiscordBot bot, IMessage msg, string args)
+		[Command("convert timezone")]
+		[Alias("timezone convert")]
+		public async Task ConvertTimezone([Remainder] string args)
 		{
-			return _unitConverter.ConvertTimezone(args);
+			try
+			{
+				var result = _unitConverter.ConvertTimezone(args);
+				await ReplyAsync(result);
+			}
+			catch (CommandException ex)
+			{
+				await ReplyAsync(ex.Message);
+			}
 		}
 	}
 

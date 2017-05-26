@@ -1,33 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Discord;
+using Discord.Commands;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Discord;
-using Newtonsoft.Json.Linq;
 
 namespace SassV2.Commands
 {
-	public class InfoCommand
+	public class InfoCommand : ModuleBase<SocketCommandContext>
 	{
-		private static Regex _titleRegex = new Regex("<a.+?>(.+?)</a>");
-		private static Regex _htmlRegex = new Regex("<.*?>", RegexOptions.Compiled);
+		private Regex _titleRegex = new Regex("<a.+?>(.+?)</a>");
+		private Regex _htmlRegex = new Regex("<.*?>", RegexOptions.Compiled);
 
-		[Command(name: "info", desc: "get some info on something", usage: "info", category: "Useful")]
-		public async static Task<string> Info(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "info", desc: "get some info on something", usage: "info", category: "Useful")]
+		[Command("info")]
+		public async Task Info([Remainder] string args)
 		{
-			if(string.IsNullOrWhiteSpace(args))
-			{
-				throw new CommandException("provide something to get info on, yo");
-			}
-
 			var result = await Util.GetURLAsync("http://api.duckduckgo.com/?q=" + Uri.EscapeUriString(args) + "&format=json");
 			var data = JObject.Parse(result);
 
 			if(data["Heading"].Value<string>() == "")
 			{
-				return "Not found.";
+				await ReplyAsync("Not found.");
+				return;
 			}
 
 			var body = data["AbstractText"].Value<string>();
@@ -71,7 +66,7 @@ namespace SassV2.Commands
 				infoboxInfo = infoboxInfo.Trim();
 			}
 
-			return $@"
+			var response = $@"
 **{data["Heading"].Value<string>()}**
 
 {body}".Trim() + $@"
@@ -79,6 +74,8 @@ namespace SassV2.Commands
 {infoboxInfo}".TrimEnd() + $@"
 
 *Read more: {data["AbstractURL"].Value<string>()}*";
+
+			await ReplyAsync(response);
 		}
 	}
 }

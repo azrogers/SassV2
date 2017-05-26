@@ -54,7 +54,7 @@ namespace SassV2.Web
 			var data = reader.GetString(0);
 
 			//await InvalidateCode(code, db);
-			return await bot.Client.GetUserAsync(ulong.Parse(data));
+			return bot.Client.GetUser(ulong.Parse(data));
 		}
 
 		public static async Task<string> GenerateCode(IUser user, RelationalDatabase db)

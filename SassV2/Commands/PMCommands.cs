@@ -1,25 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Threading.Tasks;
-using System.Diagnostics;
+﻿using CsvHelper;
 using Discord;
-using CsvHelper;
+using Discord.Commands;
 using SassV2.Web;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SassV2.Commands
 {
-	public class PMCommands
+	public class PMCommands : ModuleBase<SocketCommandContext>
 	{
-		[Command(name: "servers", desc: "list servers", usage: "servers", isPM: true)]
-		public static async Task<string> ListServers(DiscordBot bot, IMessage msg, string args)
+		private DiscordBot _bot;
+
+		public PMCommands(DiscordBot bot)
 		{
-			var clientServers = await bot.Client.GetGuildsAsync();
+			_bot = bot;
+		}
+
+		[SassCommand(name: "servers", desc: "list servers", usage: "servers", isPM: true)]
+		[Command("servers")]
+		[RequireContext(ContextType.DM)]
+		public async Task ListServers()
+		{
+			var clientServers = _bot.Client.Guilds;
 
 			var servers =
-				bot.ServerIds
+				_bot.ServerIds
 				.Select(i =>
 					clientServers.Where(s => s.Id == i).First()
 				)
@@ -28,38 +35,32 @@ namespace SassV2.Commands
 				{
 					return $"{s.Name} - {s.Id}";
 				});
-			return string.Join("\n", servers);
+
+			await ReplyAsync(string.Join("\n", servers));
 		}
 
-		[Command(name: "import quotes", desc: "import quotes from csv attachment", usage: "sass import quotes <server> <attachment>\nattachment must be a CSV file with the columns Quote,Author,Source", isPM: true)]
-		public async static Task<string> ImportQuotes(DiscordBot bot, IMessage msg, string args)
+		[SassCommand(name: "import quotes", desc: "import quotes from csv attachment", usage: "sass import quotes <server> <attachment>\nattachment must be a CSV file with the columns Quote,Author,Source", isPM: true)]
+		[Command("import quotes")]
+		[RequireContext(ContextType.DM)]
+		public async Task ImportQuotes(IGuild guild)
 		{
-			if(bot.Config.GetRole(msg.Author.Id) != "admin")
+			if(_bot.Config.GetRole(Context.User.Id) != "admin")
 			{
-				throw new CommandException("You're not allowed to use this command.");
+				await ReplyAsync("You're not allowed to use this command.");
+				return;
+			}
+			
+			if(!Context.Message.Attachments.Any())
+			{
+				await ReplyAsync("You need to attach a CSV file!");
+				return;
 			}
 
-			ulong serverId;
-			if(!ulong.TryParse(args, out serverId))
-			{
-				throw new CommandException("Invalid server ID.");
-			}
-
-			if(!bot.ServerIds.Contains(serverId))
-			{
-				throw new CommandException("SASS isn't connected to that server.");
-			}
-
-			if(!msg.Attachments.Any())
-			{
-				throw new CommandException("You need to attach a CSV file!");
-			}
-
-			var db = bot.RelDatabase(serverId);
+			var db = _bot.RelDatabase(guild.Id);
 			await QuoteCommand.InitializeDatabase(db);
 			var cmd = db.BuildCommand("INSERT INTO quotes (quote,author,source) VALUES (:body,:author,:source);");
 
-			var csv = await Util.GetURLAsync(msg.Attachments.First().Url);
+			var csv = await Util.GetURLAsync(Context.Message.Attachments.First().Url);
 			var reader = new CsvReader(new StringReader(csv));
 			while(reader.Read())
 			{
@@ -74,37 +75,33 @@ namespace SassV2.Commands
 				cmd.ExecuteNonQuery();
 			}
 
-			return "ok";
+			await ReplyAsync("ok");
 		}
 
-		[Command("impersonate", Description = "impersonate a user to edit their bio for them", Usage = "impersonate <user id>", Hidden = true, IsPM = true)]
-		public static async Task<string> ImpersonateUser(DiscordBot bot, IMessage msg, string args)
+		[SassCommand("impersonate", Description = "impersonate a user to edit their bio for them", Usage = "impersonate <user id>", Hidden = true, IsPM = true)]
+		[Command("impersonate")]
+		public async Task ImpersonateUser(IUser user)
 		{
-			if (bot.Config.GetRole(msg.Author.Id) != "admin")
+			if (_bot.Config.GetRole(Context.User.Id) != "admin")
 			{
-				throw new CommandException("You're not allowed to use this command.");
+				await ReplyAsync("You're not allowed to use this command.");
+				return;
 			}
-
-			ulong userId;
-			if(!ulong.TryParse(args, out userId))
-			{
-				throw new CommandException("Invalid user ID.");
-			}
-
-			var user = await bot.Client.GetUserAsync(userId);
-			return await AuthCodeManager.GetURL("/bio/edit", user, bot);
+			
+			await ReplyAsync(await AuthCodeManager.GetURL("/bio/edit", user, _bot));
 		}
 
-		[Command("restart", Hidden = true, IsPM = true)]
-		public static string RestartBot(DiscordBot bot, IMessage msg, string args)
+		[SassCommand("restart", Hidden = true, IsPM = true)]
+		[Command("restart")]
+		public async Task RestartBot()
 		{
-			if (bot.Config.GetRole(msg.Author.Id) != "admin")
+			if (_bot.Config.GetRole(Context.User.Id) != "admin")
 			{
-				throw new CommandException("You're not allowed to use this command.");
+				await ReplyAsync("You're not allowed to use this command.");
+				return;
 			}
 
 			Environment.Exit(0);
-			return "";
 		}
 	}
 }

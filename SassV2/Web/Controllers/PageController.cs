@@ -80,7 +80,7 @@ namespace SassV2.Web.Controllers
 			}
 
 			var db = _bot.RelDatabase(serverId);
-			await Commands.QuoteCommand.InitializeDatabase(db);
+			//await Commands.QuoteCommand.InitializeDatabase(db);
 			var cmd = db.BuildCommand("SELECT id,quote,author,source FROM quotes;");
 			var reader = cmd.ExecuteReader();
 
@@ -112,7 +112,7 @@ namespace SassV2.Web.Controllers
 		[WebApiHandler(HttpVerbs.Get, "/servers")]
 		public async Task<bool> ListServers(WebServer server, HttpListenerContext context)
 		{
-			var botGuilds = await _bot.Client.GetGuildsAsync();
+			var botGuilds = _bot.Client.Guilds;
 
 			var servers =
 				_bot.ServerIds

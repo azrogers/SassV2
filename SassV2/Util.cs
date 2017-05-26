@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Discord.Commands;
 
 namespace SassV2
 {
@@ -293,6 +294,28 @@ namespace SassV2
 					return LogLevel.Warn;
 				default:
 					return LogLevel.Info;
+			}
+		}
+
+		public static string CommandErrorToMessage(CommandError error)
+		{
+			switch(error)
+			{
+				case CommandError.UnknownCommand:
+					return "I don't know what that is.";
+				case CommandError.ParseFailed:
+					return "Something doesn't make sense with your command.";
+				case CommandError.BadArgCount:
+					return "That's not how you use that command.";
+				case CommandError.ObjectNotFound:
+				case CommandError.MultipleMatches:
+					return "Something messed up here.";
+				case CommandError.UnmetPrecondition:
+					return "You can't do that.";
+				case CommandError.Exception:
+					return AssembleRudeErrorMessage();
+				default:
+					return "Something went wrong and I don't know what.";
 			}
 		}
 
