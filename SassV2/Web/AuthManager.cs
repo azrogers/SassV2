@@ -13,26 +13,48 @@ namespace SassV2.Web
 	{
 		private const string SessionAuthKey = "discord_user_id";
 		private const string SessionUsernameKey = "discord_user_name";
-
+		
+		/// <summary>
+		/// Has the user been authenticated?
+		/// </summary>
 		public static bool IsAuthenticated(WebServer server, HttpListenerContext context)
 		{
 			var session = server.GetSession(context);
 			return session.Data.ContainsKey(SessionAuthKey);
 		}
 
-		public static async Task<IUser> GetUser(WebServer server, HttpListenerContext context, DiscordBot bot)
+		/// <summary>
+		/// Is the user a bot-wide admin?
+		/// </summary>
+		public static bool IsAdmin(WebServer server, HttpListenerContext context, DiscordBot bot)
+		{
+			if (!IsAuthenticated(server, context))
+				return false;
+			return bot.Config.GetRole((ulong)server.GetSession(context)[SessionAuthKey]) == "admin";
+		}
+
+		/// <summary>
+		/// Returns the IUser object if authenticated, or null.
+		/// </summary>
+		public static IUser GetUser(WebServer server, HttpListenerContext context, DiscordBot bot)
 		{
 			if (!IsAuthenticated(server, context)) return null;
 			var id = (ulong)server.GetSession(context)[SessionAuthKey];
 			return bot.Client.GetUser(id);
 		}
 
+		/// <summary>
+		/// Returns only the user's username if authenticated, or null.
+		/// </summary>
 		public static string GetUsername(WebServer server, HttpListenerContext context)
 		{
 			if (!IsAuthenticated(server, context)) return null;
 			return server.GetSession(context)[SessionUsernameKey].ToString();
 		}
 
+		/// <summary>
+		/// Saves an IUser to the session.
+		/// </summary>
 		public static void SaveUser(WebServer server, HttpListenerContext context, IUser user)
 		{
 			var session = server.GetSession(context);
@@ -40,6 +62,9 @@ namespace SassV2.Web
 			session[SessionUsernameKey] = user.Username;
 		}
 
+		/// <summary>
+		/// Clears the user's session.
+		/// </summary>
 		public static void Logout(WebServer server, HttpListenerContext context)
 		{
 			server.DeleteSession(context);

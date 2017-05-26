@@ -922,6 +922,12 @@
     <None Update="units.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Views\admin\index.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Views\admin\server.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Views\bio\edit.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

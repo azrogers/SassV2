@@ -103,5 +103,17 @@ namespace SassV2.Commands
 
 			Environment.Exit(0);
 		}
+
+		[Command("admin")]
+		public async Task Admin()
+		{
+			if (_bot.Config.GetRole(Context.User.Id) != "admin")
+			{
+				await ReplyAsync("You're not allowed to use this command.");
+				return;
+			}
+
+			await ReplyAsync(await AuthCodeManager.GetURL("/admin/", Context.User, _bot));
+		}
 	}
 }

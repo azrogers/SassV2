@@ -85,7 +85,7 @@ h1 {
     display: inline;
 }
 
-.header_user form input
+.header_user form input, .link_button
 {
     background: none;
     border: none;
@@ -95,7 +95,7 @@ h1 {
     cursor: pointer;
 }
 
-.header_user form input:hover
+.header_user form input:hover, .link_button:hover
 {
     text-decoration: underline;
 }

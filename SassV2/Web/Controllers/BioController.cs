@@ -34,7 +34,7 @@ namespace SassV2.Web.Controllers
 				return ForbiddenError(server, context);
 			}
 
-			var id = await Bio.CreateBio(await AuthManager.GetUser(server, context, _bot), _bot.GlobalDatabase);
+			var id = await Bio.CreateBio(AuthManager.GetUser(server, context, _bot), _bot.GlobalDatabase);
 			return Redirect(server, context, "/bio/edit/" + id);
 		}
 
@@ -46,13 +46,13 @@ namespace SassV2.Web.Controllers
 				return ForbiddenError(server, context);
 			}
 
-			var user = await AuthManager.GetUser(server, context, _bot);
+			var user = AuthManager.GetUser(server, context, _bot);
 			var bio = await Bio.GetBio(_bot, id, _bot.GlobalDatabase, true);
 			if (bio == null)
 			{
 				return Error(server, context, "The specified bio doesn't exist!");
 			}
-			else if(bio.Owner != user.Id)
+			else if(bio.Owner != user.Id && _bot.Config.GetRole(user.Id) != "admin")
 			{
 				return ForbiddenError(server, context);
 			}
@@ -92,18 +92,18 @@ namespace SassV2.Web.Controllers
 				return ForbiddenError(server, context);
 			}
 
-			var user = await AuthManager.GetUser(server, context, _bot);
+			var user = AuthManager.GetUser(server, context, _bot);
 			var bio = await Bio.GetBio(_bot, id, _bot.GlobalDatabase, true);
 			if (bio == null)
 			{
 				return Error(server, context, "The specified bio doesn't exist!");
 			}
-			else if (bio.Owner != user.Id)
+			else if (bio.Owner != user.Id && _bot.Config.GetRole(user.Id) != "admin")
 			{
 				return ForbiddenError(server, context);
 			}
 
-			var servers = _bot.GuildsContainingUser(await AuthManager.GetUser(server, context, _bot));
+			var servers = _bot.GuildsContainingUser(AuthManager.GetUser(server, context, _bot));
 			var serversInt = servers
 				.Select(s => new BioServerInt
 				{
@@ -123,7 +123,7 @@ namespace SassV2.Web.Controllers
 				return ForbiddenError(server, context);
 			}
 
-			var bios = await Bio.GetBios(_bot, await AuthManager.GetUser(server, context, _bot), _bot.GlobalDatabase);
+			var bios = await Bio.GetBios(_bot, AuthManager.GetUser(server, context, _bot), _bot.GlobalDatabase);
 
 			return ViewResponse(server, context, "bio/index", new { Title = "Edit Bios", Bios = bios });
 		}

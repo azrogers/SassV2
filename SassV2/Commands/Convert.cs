@@ -21,8 +21,8 @@ namespace SassV2.Commands
 			desc: "convert one unit to another unit (not in the cloud).", 
 			usage: "convert <thing> (to|in|at|as|=) <thing>", 
 			category: "Useful")]
-		[Command("unit convert")]
-		[Alias("convert unit")]
+		[Command("convert unit")]
+		[Alias("unit convert")]
 		public async Task ConvertUnits([Remainder] string args)
 		{
 			try

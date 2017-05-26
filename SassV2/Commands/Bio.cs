@@ -48,6 +48,8 @@ namespace SassV2.Commands
 				await ReplyAsync("There is no bio for " + user.NicknameOrDefault() + ".");
 				return;
 			}
+
+			bio.Fields = bio.Fields.OrderBy(f => Bio.Fields.IndexOf(Bio.Fields.Where(f2 => f2.Name == f.Name).First())).ToList();
 			
 			await ReplyAsync(bio.GetBioString(user));
 		}

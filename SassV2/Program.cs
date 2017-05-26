@@ -40,6 +40,10 @@ namespace SassV2
 			});
 			server.Module<WebApiModule>().RegisterController(() =>
 			{
+				return new AdminController(bot, viewManager);
+			});
+			server.Module<WebApiModule>().RegisterController(() =>
+			{
 				return new PageController(bot, viewManager);
 			});
 			server.RunAsync();
