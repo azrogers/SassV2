@@ -45,6 +45,8 @@ namespace SassV2
 			server.RunAsync();
 
 			bot.Start().GetAwaiter().GetResult();
+
+			LogManager.GetCurrentClassLogger().Error("Program should never get to this point.");
 		}
 	}
 }

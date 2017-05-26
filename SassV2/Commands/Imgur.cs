@@ -20,17 +20,19 @@ namespace SassV2.Commands
 				throw new CommandException(Util.Locale("imgur.needsubreddit"));
 			}
 
-			var client = new HttpClient();
-			client.BaseAddress = new Uri("https://api.imgur.com");
-			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bot.Config.ImgurAccessToken);
-			var result = client.GetAsync("/3/gallery/r/" + args).Result;
-			var data = JObject.Parse(await result.Content.ReadAsStringAsync());
-			var images = data["data"] as JArray;
-			if(images.Count == 0)
+			using (var client = new HttpClient())
 			{
-				throw new CommandException(Util.Locale("imgur.notfound"));
+				client.BaseAddress = new Uri("https://api.imgur.com");
+				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bot.Config.ImgurAccessToken);
+				var result = client.GetAsync("/3/gallery/r/" + args).Result;
+				var data = JObject.Parse(await result.Content.ReadAsStringAsync());
+				var images = data["data"] as JArray;
+				if (images.Count == 0)
+				{
+					throw new CommandException(Util.Locale("imgur.notfound"));
+				}
+				return images[new Random().Next(0, images.Count)]["link"].Value<string>();
 			}
-			return images[new Random().Next(0, images.Count)]["link"].Value<string>();
 		}
 	}
 }

@@ -39,7 +39,10 @@ namespace SassV2
 		public DiscordBot(Config config)
 		{
 			StaticLogger = _logger = LogManager.GetCurrentClassLogger();
-			_client = new DiscordSocketClient();
+			var discordConfig = new DiscordSocketConfig();
+			discordConfig.LogLevel = LogSeverity.Verbose;
+			
+			_client = new DiscordSocketClient(discordConfig);
 			_config = config;
 			_commandHandler = new CommandHandler();
 			_serverDatabases = new Dictionary<ulong, KeyValueDatabase>();
@@ -56,7 +59,7 @@ namespace SassV2
 			_logger.Info("starting bot");
 			_globalDatabase = new RelationalDatabase("global.db");
 			await _globalDatabase.Open();
-
+			
 			_client.Log += (m) => Task.Run(() =>
 			{
 				_logger.Log(Util.SeverityToLevel(m.Severity), m.Message);
@@ -64,6 +67,7 @@ namespace SassV2
 			_client.GuildAvailable += OnGuildAvailable;
 			_client.MessageReceived += OnMessageReceived;
 			_client.UserJoined += UserJoined;
+			_client.Disconnected += Disconnected;
 			_client.Ready += () => Task.Run(() => _logger.Info("client ready"));
 
 			await _client.LoginAsync(TokenType.Bot, _config.Token);
@@ -128,7 +132,7 @@ namespace SassV2
 		private async Task OnMessageReceived(SocketMessage message)
 		{
 			// ignore messages we send
-			if(message.Author == _client.CurrentUser) return;
+			if (message.Author == _client.CurrentUser) return;
 
 			if(message.Channel is ISocketPrivateChannel)
 			{
@@ -176,7 +180,7 @@ namespace SassV2
 			if(command != null)
 			{
 				var typing = message.Channel.EnterTypingState();
-
+				
 				try
 				{
 					string result;
@@ -237,6 +241,17 @@ namespace SassV2
 			}
 		}
 
+		private Task Disconnected(Exception arg)
+		{
+			return Task.Run(() =>
+			{
+				if (arg != null)
+					_logger.Error(arg);
+				_logger.Warn("Rebooting");
+				Environment.Exit(1);
+			});
+		}
+
 		private async Task UserJoined(SocketUser user)
 		{
 			var guild = (user as IGuildUser).Guild;
@@ -254,8 +269,8 @@ namespace SassV2
 
 		private Task SendMessage(ISocketMessageChannel channel, string message)
         {
-            _logger.Debug("sent message on " + channel.Name + ": " + message);
-			return channel.SendMessageAsync(message, false, null, new RequestOptions() { Timeout = 6000 });
+			_logger.Info("sent message");
+			return channel.SendMessageAsync(message);
         }
 
         private Task ReplyToPM(SocketMessage pm, string message)

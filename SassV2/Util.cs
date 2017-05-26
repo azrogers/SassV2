@@ -243,7 +243,7 @@ namespace SassV2
 
 		public static string[] SplitQuotedString(string input)
 		{
-			return Regex.Matches(input, @"[\""].+?[\""]|[^ ]+")
+			return Regex.Matches(input, @"[\""].*?[\""]|[^ ]+")
 				.Cast<Match>()
 				.Select(m => m.Value.Trim('"'))
 				.ToArray();
@@ -312,6 +312,18 @@ namespace SassV2
 				rng.GetBytes(tokenData);
 
 				return Convert.ToBase64String(tokenData);
+			}
+		}
+
+		public static async Task<string> SearchMessages(IGuild guild, string token, DateTime from, DateTime to)
+		{
+			var discordEpoch = new DateTime(2015, 1, 1);
+			var fromId = (ulong)(from - discordEpoch).TotalMilliseconds << 22;
+			var toId = (ulong)(to - discordEpoch).TotalMilliseconds << 22;
+			using (var client = new HttpClient())
+			{
+				client.DefaultRequestHeaders.Add("Authorization", "Bot " + token);
+				return await client.GetStringAsync($"/v6/guilds/{guild.Id}/messages/search?min_id={fromId}&max_id={toId}");
 			}
 		}
 	}
