@@ -10,7 +10,12 @@ namespace SassV2.Commands
 {
 	public class Choice : ModuleBase<SocketCommandContext>
 	{
-		[SassCommand(name: "choice", desc: "gives you a random thing out of the options you give it.", usage: "choice <a whole bunch of things>", category: "Useful")]
+		[SassCommand(
+			name: "choice", 
+			desc: "Chooses between several space-delineated options. Use quotes for multi-word options.", 
+			usage: "choice <a whole bunch of things>", 
+			example: "choice a \"thing b\" c d",
+			category: "Useful")]
 		[Command("choice")]
 		public async void Choices([Remainder] string args)
 		{

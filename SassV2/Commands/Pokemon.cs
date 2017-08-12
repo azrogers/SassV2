@@ -11,7 +11,12 @@ namespace SassV2.Commands
 	{
 		private PokemonDatabase _database = new PokemonDatabase();
 
-		[SassCommand(name: "pokemon", desc: "gotta catch 'em all.", usage: "pokemon <name> or pokemon #<number>", category: "Useful")]
+		[SassCommand(
+			name: "pokemon", 
+			desc: "Gives a random pokemon (if no info provided), or provides the pokemon with that name or number.", 
+			example: "pokemon #190",
+			usage: "pokemon <name> or pokemon #<number>", 
+			category: "Useful")]
 		[Command("pokemon")]
 		public async Task Pokemon([Remainder] string args)
 		{

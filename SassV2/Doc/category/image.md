@@ -1,0 +1,3 @@
+﻿Image commands relate to SASS's ability to store images under keywords, generally for comedic purposes. Imagine this as a sort of definition system, where every definition has to be an image.
+
+Images are, without exception, Imgur images. If you try to add an image to SASS that isn't an Imgur link, SASS will attempt to upload your image to Imgur. This includes attachments - so if you use the [[set image]] command with an image attached, SASS will upload your image to Imgur for you.

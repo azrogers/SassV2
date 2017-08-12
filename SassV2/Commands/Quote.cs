@@ -27,7 +27,12 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(name: "add quote", desc: "add a quote to SASS", usage: "add quote \"<quote>\" \"<author>\" \"<source>\"", category: "Spam")]
+		[SassCommand(
+			name: "add quote", 
+			desc: "Adds a quote to SASS.", 
+			usage: "add quote \"<quote>\" \"<author>\" \"<source>\"", 
+			example: "add quote \"Mess with the best, die like the rest.\" \"Dade Murphy\" \"Hackers\"",
+			category: "Quote")]
 		[Command("add quote")]
 		[RequireContext(ContextType.Guild)]
 		public async Task AddQuote([Remainder] string args)
@@ -58,7 +63,12 @@ namespace SassV2.Commands
 			await ReplyAsync("Quote #" + lastId + " added.");
 		}
 
-		[SassCommand(name: "quote", desc: "get a quote from SASS", usage: "quote\nquote <id>", category: "Spam")]
+		[SassCommand(
+			name: "quote", 
+			desc: "Get a quote from SASS.", 
+			usage: "quote\nquote <id>", 
+			example: "quote 1",
+			category: "Quote")]
 		[Command("quote")]
 		[RequireContext(ContextType.Guild)]
 		public async Task GetQuote(long id)
@@ -105,7 +115,12 @@ namespace SassV2.Commands
 			await GetQuote(-1);
 		}
 
-		[SassCommand(name: "edit quote", desc: "change a part of a quote", usage: "edit quote <id> (body|author|source) \"value\"", category: "Administration")]
+		[SassCommand(
+			name: "edit quote", 
+			desc: "Change a part of a quote. This requires admin permissions.", 
+			usage: "edit quote <id> (body|author|source) \"value\"", 
+			example: "edit quote 1 source \"Hackers (1995, Iain Softley)\"",
+			category: "Quote")]
 		[Command("edit quote")]
 		[RequireContext(ContextType.Guild)]
 		public async Task EditQuote(long quoteId, string field, [Remainder] string args)
@@ -138,7 +153,11 @@ namespace SassV2.Commands
 			await ReplyAsync("ok");
 		}
 
-		[SassCommand(name: "quotes", desc: "list all quotes", usage: "quotes", category: "Spam")]
+		[SassCommand(
+			name: "quotes", 
+			desc: "List all quotes.", 
+			usage: "quotes", 
+			category: "Quote")]
 		[Command("quotes")]
 		[RequireContext(ContextType.Guild)]
 		public async Task ListQuotes()

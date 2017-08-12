@@ -11,7 +11,12 @@ namespace SassV2.Commands
     {
 		private Regex _resultRegex = new Regex(@"https:\/\/u\d\.photofunia\.com/\d\/results\/\w\/\w\/(.+?)\.jpg");
 
-		[SassCommand("photofunia", "generates an eighties photofunia image", "photofunia \"top text\" \"middle text\" \"bottom text\"", Category = "Dumb")]
+		[SassCommand(
+			name: "photofunia", 
+			desc: "Generates an eighties photofunia image. Each quoted part is a seperate line, so you can leave out one or two to make a one or two line image.", 
+			usage: "photofunia \"top text\" \"middle text\" \"bottom text\"", 
+			example: "photofunia \"Disappointed\" \"but not\" \"surprised\"",
+			category: "Dumb")]
 		[Command("photofunia")]
 		public async Task PhotofuniaCommand([Remainder] string args)
 		{

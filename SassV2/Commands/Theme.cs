@@ -14,7 +14,11 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(name: "theme", desc: "gets the theme for the current chat room.", usage: "theme", category: "Dumb")]
+		[SassCommand(
+			name: "theme", 
+			desc: "Gets the theme for the current chat room.", 
+			usage: "theme", 
+			category: "Dumb")]
 		[Command("theme")]
 		public async Task Theme()
 		{
@@ -28,7 +32,12 @@ namespace SassV2.Commands
 			await ReplyAsync("Theme for #" + Context.Channel.Name + ": " + theme);
 		}
 
-		[SassCommand(name: "set theme", desc: "sets the theme for the current chat room.", usage: "set theme <youtube URL>", category: "Dumb")]
+		[SassCommand(
+			name: "set theme", 
+			desc: "Sets the theme for the current chat room.", 
+			usage: "set theme <youtube URL>", 
+			example: "set theme https://www.youtube.com/watch?v=hkI3RymKUJo",
+			category: "Dumb")]
 		[Command("set theme")]
 		public async Task SetTheme(string url)
 		{

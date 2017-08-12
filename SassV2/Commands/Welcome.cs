@@ -17,7 +17,11 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand("welcome", "prints the current welcome message (if set)", "welcome", Category = "Administration")]
+		[SassCommand(
+			name: "welcome", 
+			desc: "Prints the current welcome message (if set). Welcome messages are displayed to new users when they join the server.", 
+			usage: "welcome", 
+			category: "Administration")]
 		[Command("welcome")]
 		public async Task WelcomeCommand()
 		{
@@ -31,18 +35,38 @@ namespace SassV2.Commands
 			await ReplyAsync("The welcome message for this server is ```" + welcome + "```");
 		}
 
-		[SassCommand("welcome edit", "edit the welcome message", "welcome edit <channel> <message>\nset to blank to disable", Category = "Administration")]
+		[SassCommand(
+			name: "welcome edit", 
+			desc: "Edit the welcome message.", 
+			usage: "welcome edit <channel mention> <message>\nuse pm for channel to send via pm\nset to blank to disable", 
+			example: "welcome edit #general Hello {username}, welcome to this server!",
+			category: "Administration")]
 		[Command("welcome edit")]
-		public async Task WelcomeEditCommand(IGuildChannel channel, [Remainder] string message)
+		public async Task WelcomeEditCommand([Remainder] string message)
 		{
-			if(!(Context.User as IGuildUser).IsAdmin(_bot))
+			if (!(Context.User as IGuildUser).IsAdmin(_bot))
 			{
 				await ReplyAsync("You're not allowed to access this command.");
 				return;
 			}
 
-			_bot.Database(Context.Guild.Id).InsertObject<ulong>("welcome_channel", channel.Id);
-			_bot.Database(Context.Guild.Id).InsertObject<string>("welcome", message);
+			if (!Context.Message.MentionedChannels.Any() && !message.StartsWith("pm"))
+			{
+				await ReplyAsync("You need to mention a channel or use 'pm'.");
+				return;
+			}
+
+			if (message.StartsWith("pm"))
+			{
+				_bot.Database(Context.Guild.Id).InsertObject<string>("welcome_channel", "pm");
+			}
+			else
+			{
+				var channel = Context.Message.MentionedChannels.First();
+				_bot.Database(Context.Guild.Id).InsertObject<ulong>("welcome_channel", channel.Id);
+			}
+
+			_bot.Database(Context.Guild.Id).InsertObject<string>("welcome", message.Substring(message.IndexOf(" ")));
 			await ReplyAsync("Welcome message set.");
 		}
 
@@ -53,7 +77,11 @@ namespace SassV2.Commands
 			await ReplyAsync("Welcome message disabled.");
 		}
 
-		[SassCommand("welcome help", "get help on welcome message", "welcome help", Category = "Administration")]
+		[SassCommand(
+			name: "welcome help", 
+			desc: "Get help on welcome messages.", 
+			usage: "welcome help", 
+			category: "Administration")]
 		[Command("welcome help")]
 		public async Task WelcomeHelpCommand()
 		{

@@ -1,0 +1,16 @@
+[Unit]
+Description=SASS service
+
+[Service]
+ExecStart=/usr/local/bin/dotnet /opt/sass-v2/SassV2.dll
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=sass-v2
+User=sass
+Group=nobody
+WorkingDirectory=/opt/sass-v2
+
+[Install]
+WantedBy=multi-user.target
+

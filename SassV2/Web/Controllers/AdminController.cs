@@ -1,4 +1,5 @@
 ﻿using NLog;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
@@ -17,6 +18,50 @@ namespace SassV2.Web.Controllers
 		{
 			_bot = bot;
 			_logger = LogManager.GetCurrentClassLogger();
+		}
+
+		[WebApiHandler(HttpVerbs.Post, "/admin/stack")]
+		public async Task<bool> EditStack(WebServer server, HttpListenerContext context)
+		{
+			if (!AuthManager.IsAdmin(server, context, _bot))
+			{
+				return ForbiddenError(server, context);
+			}
+
+			var data = context.RequestFormDataDictionary();
+			if(!data.ContainsKey("stack"))
+			{
+				return Error(server, context, "No stack posted.");
+			}
+
+			if(File.Exists("requests.txt"))
+			{
+				File.WriteAllText("requests-bkp.txt", File.ReadAllText("requests.txt"));
+			}
+
+			File.WriteAllText("requests.txt", data["stack"].ToString().Trim() + "\n");
+			return Redirect(server, context, "/admin/");
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/admin/stack")]
+		public async Task<bool> ViewStack(WebServer server, HttpListenerContext context)
+		{
+			if (!AuthManager.IsAdmin(server, context, _bot))
+			{
+				return ForbiddenError(server, context);
+			}
+
+			string stack;
+			if(!File.Exists("requests.txt"))
+			{
+				stack = "";
+			}
+			else
+			{
+				stack = File.ReadAllText("requests.txt");
+			}
+
+			return ViewResponse(server, context, "admin/stack", new { Title = "Edit Stack", Stack = stack.Trim() });
 		}
 
 		[WebApiHandler(HttpVerbs.Post, "/admin/leave/{serverId}")]

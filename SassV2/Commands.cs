@@ -1,13 +1,13 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace SassV2
 {
@@ -38,6 +38,7 @@ namespace SassV2
 
 			_commands = new CommandService(config);
 			_commands.AddTypeReader<IGuild>(new GuildTypeReader());
+
 			var commandNamespace = typeof(CommandHandler).Namespace + ".Commands";
 			var modules = typeof(CommandHandler).GetTypeInfo().Assembly.GetTypes()
 				.Where(t => t.Namespace == commandNamespace && t.GetTypeInfo().IsClass && t.GetTypeInfo().IsVisible);
@@ -88,10 +89,22 @@ namespace SassV2
 		public string Description;
 		public string Usage;
 		public string Category;
+		public string Example;
 		public bool Hidden;
 		public bool IsPM = false;
 
-		public SassCommandAttribute(string[] names, string desc = "", string usage = "", string category = "General", bool hidden = false, bool isPM = false)
+		public string SnakeName => Util.ToSnakeCase(Names[0]);
+		public IEnumerable<string> SnakeNames => Names.Select(n => Util.ToSnakeCase(n));
+		public string WebUsage => Util.nl2br(Usage?.Replace("<", "&lt;")?.Replace(">", "&gt;") ?? Names[0]);
+
+		public SassCommandAttribute(
+			string[] names, 
+			string desc = "", 
+			string usage = "", 
+			string category = "General", 
+			string example = "",
+			bool hidden = false, 
+			bool isPM = false)
 		{
 			Names = names;
 			Description = desc;
@@ -99,8 +112,16 @@ namespace SassV2
 			Category = category;
 			Hidden = hidden;
 			IsPM = isPM;
+			Example = example;
 		}
-		public SassCommandAttribute(string name, string desc = "", string usage = "", string category = "General", bool hidden = false, bool isPM = false)
+		public SassCommandAttribute(
+			string name, 
+			string desc = "", 
+			string usage = "", 
+			string category = "General", 
+			string example = "", 
+			bool hidden = false, 
+			bool isPM = false)
 		{
 			Names = new string[] { name };
 			Description = desc;
@@ -108,6 +129,7 @@ namespace SassV2
 			Category = category;
 			Hidden = hidden;
 			IsPM = isPM;
+			Example = example;
 		}
 	}
 

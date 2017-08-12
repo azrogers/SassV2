@@ -31,7 +31,11 @@ namespace SassV2.Commands
 			await ReplyAsync(Util.Locale("dumb.thanks"));
 		}
 
-		[SassCommand(name: "seinfeld", desc: "seinfeld theme", usage: "seinfeld", category: "Dumb")]
+		[SassCommand(
+			name: "seinfeld", 
+			desc: "The Seinfeld theme.", 
+			usage: "seinfeld", 
+			category: "Dumb")]
 		[Command("seinfeld")]
 		public async Task Seinfeld()
 		{

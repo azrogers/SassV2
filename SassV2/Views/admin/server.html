@@ -3,6 +3,9 @@
 }
 
 <h2>@ViewBag.Server.Name</h2>
+<p class="back-button">
+	<a href="/admin/">back</a>
+</p>
 
 <form action="/admin/leave/@ViewBag.Server.Id" method="post" onsubmit="return confirm('Are you sure you want to do this?');">
 	<input type="submit" value="leave server" class="link_button">

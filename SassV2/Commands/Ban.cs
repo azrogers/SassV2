@@ -18,7 +18,12 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(name: "ban", desc: "bans a user from SASS", usage: "ban <name>", category: "Administration")]
+		[SassCommand(
+			name: "ban", 
+			desc: "Bans a user from SASS. This doesn't ban the user from your server; it only prevents them from using SASS.", 
+			usage: "ban <name or mention>", 
+			example: "ban @Scripted Automated Speech System",
+			category: "Administration")]
 		[Command("ban")]
 		[RequireContext(ContextType.Guild)]
 		public async Task BanUser([Remainder] string user)
@@ -53,7 +58,12 @@ namespace SassV2.Commands
 			await ReplyAsync(Util.Locale("ban.sure"));
 		}
 
-		[SassCommand(name: "unban", desc: "unbans a user from SASS", usage: "unban <name>", category: "Administration")]
+		[SassCommand(
+			name: "unban", 
+			desc: "Unbans a user from SASS.", 
+			usage: "unban <name or mention>", 
+			example: "unban @Scripted Automated Speech System",
+			category: "Administration")]
 		[Command("unban")]
 		[RequireContext(ContextType.Guild)]
 		public async Task UnbanUser([Remainder] string args)

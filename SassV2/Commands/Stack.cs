@@ -6,7 +6,11 @@ namespace SassV2.Commands
 {
 	public class StackCommand : ModuleBase<SocketCommandContext>
 	{
-		[SassCommand(name: "stack", desc: "add something to the stack of requests or print it out.", usage: "stack\nstack <thing>")]
+		[SassCommand(
+			name: "stack", 
+			desc: "Adds a request for a SASS feature to the stack, or prints it out.", 
+			usage: "stack\nstack <thing>",
+			category: "General")]
 		[Command("stack")]
 		public async Task Stack([Remainder] string thing)
 		{

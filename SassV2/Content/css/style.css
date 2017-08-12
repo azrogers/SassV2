@@ -3,6 +3,15 @@
     color: black;
 }
 
+h2 {
+    margin-bottom: 0;
+}
+
+.back-button
+{
+    margin-top: 0;
+}
+
 .header {
     width: 960px;
     margin: auto;
@@ -98,4 +107,15 @@ h1 {
 .header_user form input:hover, .link_button:hover
 {
     text-decoration: underline;
+}
+
+.command-info-list li
+{
+    padding: 5px 0;
+}
+
+code
+{
+    background: #eeeeee;
+    padding: 3px;
 }

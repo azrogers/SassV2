@@ -18,7 +18,11 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(name: "servers", desc: "list servers", usage: "servers", isPM: true)]
+		[SassCommand(
+			name: "servers", 
+			desc: "list servers", 
+			usage: "servers", 
+			isPM: true)]
 		[Command("servers")]
 		[RequireContext(ContextType.DM)]
 		public async Task ListServers()
@@ -39,7 +43,12 @@ namespace SassV2.Commands
 			await ReplyAsync(string.Join("\n", servers));
 		}
 
-		[SassCommand(name: "import quotes", desc: "import quotes from csv attachment", usage: "sass import quotes <server> <attachment>\nattachment must be a CSV file with the columns Quote,Author,Source", isPM: true)]
+		[SassCommand(
+			name: "import quotes", 
+			desc: "import quotes from csv attachment", 
+			usage: "sass import quotes <server> <attachment>\nattachment must be a CSV file with the columns Quote,Author,Source", 
+			hidden: true,
+			isPM: true)]
 		[Command("import quotes")]
 		[RequireContext(ContextType.DM)]
 		public async Task ImportQuotes(IGuild guild)

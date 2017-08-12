@@ -1,13 +1,14 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace SassV2
 {
@@ -22,13 +23,14 @@ namespace SassV2
 		private Dictionary<ulong, RelationalDatabase> _serverRelationalDatabases;
 		private Dictionary<ulong, Responder> _serverResponders;
 		private ServiceProvider _services;
-		//private Dictionary<string, LispSandbox.LispAction> _responderFilters;
+		private Stopwatch _uptime;
 
 		public Config Config => _config;
 		public CommandHandler CommandHandler => _commandHandler;
 		public DiscordSocketClient Client => _client;
 		public List<ulong> ServerIds => _serverDatabases.Keys.ToList();
 		public RelationalDatabase GlobalDatabase => _globalDatabase;
+		public TimeSpan Uptime => _uptime.Elapsed;
 
 		public static Logger StaticLogger;
 
@@ -51,8 +53,11 @@ namespace SassV2
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton(this);
+			serviceCollection.AddPaginator(_client);
 
 			_services = serviceCollection.BuildServiceProvider();
+			_uptime = new Stopwatch();
+			_uptime.Start();
 		}
 
 		public async Task Start()
@@ -94,11 +99,6 @@ namespace SassV2
 
 			_serverResponders[guild.Id] = new Responder();
 
-			foreach(var kv in _serverDatabases[guild.Id].GetKeysOfNamespace<string>("filter"))
-			{
-				//_responderFilters[kv.Key.Substring(0, "filter:".Length)] = SassLisp.Compile(kv.Value);
-			}
-
 			_logger.Info("joined " + guild.Name + " (" + guild.Id + ")");
 		}
 
@@ -122,11 +122,6 @@ namespace SassV2
 			return _serverResponders[serverId];
 		}
 
-		public void AddResponderFilter(string name, string filter)
-		{
-			//_responderFilters[name] = SassLisp.Compile(filter);
-		}
-
 		public IEnumerable<IGuild> GuildsContainingUser(IUser user)
 		{
 			return _client.Guilds.Where(g => g.Users.Any(s => s.Id == user.Id));
@@ -148,7 +143,7 @@ namespace SassV2
 			}
 
 			// if they mention sass, send a rude message
-			if(message.MentionedUsers.Contains(_client.CurrentUser))
+			if(message.MentionedUsers.Any(u => u.Id == _client.CurrentUser.Id))
 			{
 				await SendMessage(message.Channel, Util.AssembleRudeMessage());
 				return;
@@ -222,18 +217,31 @@ namespace SassV2
 			var welcome = Database(guild.Id).GetObject<string>("welcome");
 			if (welcome == default(string))
 				return;
-			var welcomeChannel = _client.GetChannel(Database(guild.Id).GetObject<ulong>("welcome_channel"));
 
-			await SendMessage(welcomeChannel as ISocketMessageChannel, Util.FormatString(welcome, new
+			var message = Util.FormatString(welcome, new
 			{
 				username = (user as IGuildUser).NicknameOrDefault(),
 				mention = user.Mention
-			}));
+			});
+
+			var channelId = Database(guild.Id).GetObject<string>("welcome_channel");
+			if(channelId == "pm")
+			{
+				var channel = await user.CreateDMChannelAsync();
+				await channel.SendMessageAsync(message);
+			}
+			else
+			{
+				var welcomeChannel = await guild.GetChannelAsync(ulong.Parse(channelId));
+				if (welcomeChannel == null)
+					return;
+				await SendMessage(welcomeChannel as ISocketMessageChannel, message);
+			}
 		}
 
 		private Task SendMessage(ISocketMessageChannel channel, string message)
         {
-			_logger.Info("sent message");
+			_logger.Debug("sent message");
 			return channel.SendMessageAsync(message);
         }
 

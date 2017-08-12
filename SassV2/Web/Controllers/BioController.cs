@@ -23,7 +23,6 @@ namespace SassV2.Web.Controllers
 		{
 			_bot = bot;
 			_logger = LogManager.GetCurrentClassLogger();
-			_viewManager = viewManager;
 		}
 
 		[WebApiHandler(HttpVerbs.Post, "/bio/new")]

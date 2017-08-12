@@ -15,7 +15,12 @@ namespace SassV2.Commands
 	{
 		private Regex _disambRegex = new Regex(".+? may refer to:");
 
-		[SassCommand(name: "define", desc: "look that shit up.", usage: "define <thing>", category: "Useful")]
+		[SassCommand(
+			name: "define", 
+			desc: "Look something up on Wikipedia.", 
+			usage: "define <thing>", 
+			example: "define computers",
+			category: "Useful")]
 		[Command("define")]
 		public async Task WikipediaDefine([Remainder] string args)
 		{

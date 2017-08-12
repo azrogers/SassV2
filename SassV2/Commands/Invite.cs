@@ -12,7 +12,11 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(name: "invite", desc: "invite sass to your server.", usage: "invite")]
+		[SassCommand(
+			name: "invite", 
+			desc: "Invite sass to your server.",
+			usage: "invite",
+			category: "General")]
 		[Command("invite")]
 		public async Task Invite()
 		{

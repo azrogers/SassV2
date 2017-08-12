@@ -17,20 +17,32 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(name: "imgur", desc: "get a random image from an imgur subreddit", usage: "imgur <subreddit>", category: "Spam")]
+		[SassCommand(
+			name: "imgur", 
+			desc: "Get a random image from an imgur subreddit. Please don't use this for nefarious purposes. Sass is a pure being.", 
+			usage: "imgur <subreddit>", 
+			example: "imgur shiba",
+			category: "Spam")]
 		[Command("imgur")]
 		public async Task Imgur(string subreddit)
 		{
 			using (var client = new HttpClient())
 			{
 				client.BaseAddress = new Uri("https://api.imgur.com");
-				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _bot.Config.ImgurAccessToken);
+				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Client-ID", _bot.Config.ImgurClientId);
 				var result = client.GetAsync("/3/gallery/r/" + subreddit).Result;
+				if(!result.IsSuccessStatusCode)
+				{
+					await ReplyAsync("Permission denied. This is probably my bad.");
+					return;
+				}
+
 				var data = JObject.Parse(await result.Content.ReadAsStringAsync());
 				var images = data["data"] as JArray;
 				if (images.Count == 0)
 				{
-					throw new CommandException(Util.Locale("imgur.notfound"));
+					await ReplyAsync("No images found.");
+					return;
 				}
 
 				var image = images[new Random().Next(0, images.Count)]["link"].Value<string>();

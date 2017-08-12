@@ -104,13 +104,13 @@ namespace SassV2.Web.Controllers
 			var files = Directory.EnumerateFiles("Fonts").Select(f =>
 			{
 				return Path.GetFileNameWithoutExtension(f.ToLower().Replace(' ', '_'));
-			});
+			}).OrderBy(f => f);
 
 			return ViewResponse(server, context, "fonts", new { Title = "Fonts", Fonts = files });
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/servers")]
-		public async Task<bool> ListServers(WebServer server, HttpListenerContext context)
+		public bool ListServers(WebServer server, HttpListenerContext context)
 		{
 			var botGuilds = _bot.Client.Guilds;
 
@@ -131,6 +131,7 @@ namespace SassV2.Web.Controllers
 			return Redirect(server, context, "/servers");
 		}
 
+		// this is our 404 handler
 		[WebApiHandler(HttpVerbs.Get, "/")]
 		public bool Index(WebServer server, HttpListenerContext context)
 		{

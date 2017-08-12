@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
+﻿using Discord.Commands;
 using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
 
 namespace SassV2.Commands
 {
@@ -19,7 +13,11 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(names: new string[] { "kitty", "cat", "cats" }, desc: "get a cat", usage: "kitty", category: "Spam")]
+		[SassCommand(
+			names: new string[] { "kitty", "cat", "cats" }, 
+			desc: "Responds with a random image of a cat.", 
+			usage: "kitty", 
+			category: "Animal")]
 		[Command("kitty", RunMode = RunMode.Async)]
 		[Alias("cat", "cats")]
 		public async Task Kitty()
@@ -29,7 +27,11 @@ namespace SassV2.Commands
 			await ReplyAsync(image);
 		}
 
-		[SassCommand(names: new string[] { "shibe", "shiba" }, desc: "get a shiba inu", usage: "shibe", category: "Spam")]
+		[SassCommand(
+			names: new string[] { "shibe", "shiba" }, 
+			desc: "Responds with a random image of a shiba inu.", 
+			usage: "shibe", 
+			category: "Animal")]
 		[Command("shibe", RunMode = RunMode.Async)]
 		[Alias("shiba")]
 		public async Task Shibe()
@@ -39,7 +41,11 @@ namespace SassV2.Commands
 			await ReplyAsync(image);
 		}
 
-		[SassCommand(names: new string[] { "bird", "birb" }, desc: "get a bird", usage: "bird", category: "Spam")]
+		[SassCommand(
+			names: new string[] { "bird", "birb" }, 
+			desc: "Responds with a random image of a bird.", 
+			usage: "bird", 
+			category: "Animal")]
 		[Command("bird", RunMode = RunMode.Async)]
 		[Alias("birb")]
 		public async Task Bird()

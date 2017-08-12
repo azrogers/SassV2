@@ -12,7 +12,12 @@ namespace SassV2.Commands
 		private Regex _titleRegex = new Regex("<a.+?>(.+?)</a>");
 		private Regex _htmlRegex = new Regex("<.*?>", RegexOptions.Compiled);
 
-		[SassCommand(name: "info", desc: "get some info on something", usage: "info", category: "Useful")]
+		[SassCommand(
+			name: "info", 
+			desc: "Get some info on something.", 
+			usage: "info <something>", 
+			example: "info National Treasure Film",
+			category: "Useful")]
 		[Command("info")]
 		public async Task Info([Remainder] string args)
 		{

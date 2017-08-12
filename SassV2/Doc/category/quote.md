@@ -1,0 +1,1 @@
+﻿Quotes can be added to SASS using these commands. Quotes contain a "body" (the quote itself), an author, and a source. You can leave the source out if you don't know who it was.

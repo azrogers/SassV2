@@ -349,5 +349,34 @@ namespace SassV2
 				return await client.GetStringAsync($"/v6/guilds/{guild.Id}/messages/search?min_id={fromId}&max_id={toId}");
 			}
 		}
+
+		public static IEnumerable<string> GetMessages(IEnumerable<string> lines, int max)
+		{
+			var pageAmount = 1;
+			var message = "";
+			foreach(var line in lines)
+			{
+				if (message.Length + line.Length > max)
+				{
+					yield return message;
+					pageAmount++;
+					message = $"Page {pageAmount}:\n" + line;
+				}
+				else
+					message += "\n" + line;
+			}
+
+			yield return message;
+		}
+
+		public static string nl2br(string str)
+		{
+			return str.Replace("\n", "<br>");
+		}
+
+		public static string ToSnakeCase(string str)
+		{
+			return str.ToLower().Replace(" ", "_");
+		}
 	}
 }

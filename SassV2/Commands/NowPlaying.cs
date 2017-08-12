@@ -7,7 +7,11 @@ namespace SassV2.Commands
 {
 	public class NowPlayingCommand : ModuleBase<SocketCommandContext>
 	{
-		[SassCommand(name: "now playing", desc: "print the currently playing song on remi radio", usage: "now playing")]
+		[SassCommand(
+			name: "now playing", 
+			desc: "print the currently playing song on remi radio", 
+			usage: "now playing",
+			hidden: true)]
 		[Command("now playing")]
 		public async Task NowPlaying()
 		{

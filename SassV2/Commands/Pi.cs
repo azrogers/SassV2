@@ -7,7 +7,12 @@ namespace SassV2.Commands
 {
 	public class PiCommand : ModuleBase<SocketCommandContext>
 	{
-		[SassCommand(name: "pi", desc: "gets the nth digit of pi, up to the millionth.", usage: "pi <number>", category: "Dumb")]
+		[SassCommand(
+			name: "pi", 
+			desc: "Gets the nth digit of pi, up to the millionth.", 
+			usage: "pi <number>", 
+			example: "pi 1000",
+			category: "Dumb")]
 		[Command("pi")]
 		public async Task Pi(int number)
 		{

@@ -23,7 +23,11 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand(name: "images", desc: "list images.", usage: "images")]
+		[SassCommand(
+			name: "images", 
+			desc: "List all images on this server.", 
+			usage: "images",
+			category: "Image")]
 		[Command("images")]
 		[RequireContext(ContextType.Guild)]
 		public async Task ListImages()
@@ -31,7 +35,12 @@ namespace SassV2.Commands
 			await ReplyAsync(_bot.Config.URL + "images/" + Context.Guild.Id);
 		}
 
-		[SassCommand(name: "image", desc: "gets the image for the thing you asked for.", usage: "image <thing>")]
+		[SassCommand(
+			name: "image", 
+			desc: "Gets the image for the thing you asked for.", 
+			usage: "image <thing>",
+			example: "image pizza",
+			category: "Image")]
 		[Command("image")]
 		[RequireContext(ContextType.Guild)]
 		public async Task Image([Remainder] string args)
@@ -54,7 +63,12 @@ namespace SassV2.Commands
 			await ReplyAsync($"Image for {thing}: {image}");
 		}
 
-		[SassCommand(name: "set image", desc: "sets the image for the thing you told it to set it for.", usage: "set image <thing> <imgur url>")]
+		[SassCommand(
+			name: "set image", 
+			desc: "Sets the image for the thing you told it to set it for.", 
+			example: "set image pizza http://i.imgur.com/b9zDbyb.jpg",
+			usage: "set image <thing> <imgur url>",
+			category: "Image")]
 		[Command("set image")]
 		[RequireContext(ContextType.Guild)]
 		public async Task SetImage([Remainder] string args)

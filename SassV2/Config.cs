@@ -24,8 +24,6 @@ namespace SassV2
 		public string ClientID;
 		public string ClientSecret;
 		public string ImgurClientId;
-		public string ImgurClientSecret;
-		public string ImgurAccessToken;
 		public string BotUserId;
 		public string DiscordBotsAuthHeader;
 		public int Timeout;
@@ -47,8 +45,6 @@ namespace SassV2
 			ClientID = ReadKey<string>(file, "client_id");
 			ClientSecret = ReadKey<string>(file, "client_secret");
 			ImgurClientId = ReadKey<string>(file, "imgur_client_id");
-			ImgurClientSecret = ReadKey<string>(file, "imgur_client_secret");
-			ImgurAccessToken = ReadKey<string>(file, "imgur_access_token");
 			//BotUserId = ReadKey<string>(file, "discordpw_bot_user_id");
 			//DiscordBotsAuthHeader = ReadKey<string>(file, "discordpw_auth_header");
 			Timeout = ReadKey<int>(file, "timeout");

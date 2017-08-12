@@ -18,7 +18,11 @@ namespace SassV2.Commands
 			_bot = bot;
 		}
 
-		[SassCommand("edit bio", Description = "edit your bio", Usage = "edit bio", Category = "Bio")]
+		[SassCommand(
+			name: "edit bio", 
+			desc: "Edit your bio. Works via DM too.", 
+			usage: "edit bio", 
+			category: "Bio")]
 		[Command("edit bio")]
 		public async Task EditBio()
 		{
@@ -28,7 +32,12 @@ namespace SassV2.Commands
 			await channel.SendMessageAsync(message);
 		}
 
-		[SassCommand("bio", Description = "see a user's bio", Usage = "bio <user>", Category = "Bio")]
+		[SassCommand(
+			"bio", 
+			desc: "see a user's bio", 
+			usage: "bio <name or mention>", 
+			example: "bio Scripted Automated Speech System",
+			category: "Bio")]
 		[Command("bio")]
 		[RequireContext(ContextType.Guild)]
 		public async Task ShowBio([Remainder] string args)
@@ -54,7 +63,12 @@ namespace SassV2.Commands
 			await ReplyAsync(bio.GetBioString(user));
 		}
 
-		[SassCommand("find", Description = "find a user with a bio entry", Usage = "find <key> <value>", Category = "Bio")]
+		[SassCommand(
+			name: "find", 
+			desc: "Finds all users whose bio contains this specific value.", 
+			usage: "find <key> <value>", 
+			example: "find twitter _cpancake",
+			category: "Bio")]
 		[Command("find")]
 		[RequireContext(ContextType.Guild)]
 		public async Task FindBio(string key, [Remainder] string value)
