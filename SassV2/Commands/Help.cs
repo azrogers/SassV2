@@ -23,8 +23,22 @@ namespace SassV2.Commands
 			usage: "help",
 			category: "General")]
 		[Command("help")]
-		public async Task Help()
+		public async Task Help([Remainder] string command)
 		{
+			if(!string.IsNullOrWhiteSpace(command))
+			{
+				command = command.ToLower().Trim();
+				var attr = _bot.CommandHandler.CommandAttributes.Where(c => c.Names.Contains(command)).FirstOrDefault();
+				if(attr == null)
+				{
+					await ReplyAsync("Command not found.");
+					return;
+				}
+
+				await ReplyAsync($"{_bot.Config.URL}docs/categories/{attr.Category.ToLower()}#{Util.ToSnakeCase(command)}");
+				return;
+			}
+
 			await ReplyAsync(_bot.Config.URL + "docs/");
 		}
 	}
