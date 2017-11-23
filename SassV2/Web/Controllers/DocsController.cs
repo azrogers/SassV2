@@ -47,7 +47,7 @@ namespace SassV2.Web.Controllers
 
 				return $"<a href='{link}'>{name}</a>";
 			});
-			desc = Util.Nl2br(desc);
+			desc = Util.NewLineToLineBreak(desc);
 
 			var commands = _bot.CommandHandler.CommandAttributes.Where(c => c.Category.ToLower() == category && !c.Hidden);
 			return ViewResponse(server, context, "docs/category", new

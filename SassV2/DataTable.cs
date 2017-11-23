@@ -10,52 +10,53 @@ namespace SassV2
 {
 	public class DataTable<T>
 	{
-		protected static string FieldNamesFormatted
-		{
-			get
-			{
-				return string.Join(", ", from f in _fields
-										 select "`" + f.GetCustomAttribute<SqliteFieldAttribute>().FieldName + "`");
-			}
-		}
+		/// <summary>
+		/// Returns the field names for this table formatted for use in a SQL statement.
+		/// </summary>
+		protected static string FieldNamesFormatted => 
+			string.Join(", ", _fields.Select(f =>  "`" + f.GetCustomAttribute<SqliteFieldAttribute>().FieldName + "`"));
 
-		protected RelationalDatabase DB
-		{
-			get
-			{
-				return _db;
-			}
-		}
+		/// <summary>
+		/// Returns the DB behind this DataTable.
+		/// </summary>
+		protected RelationalDatabase DB => _db;
 
+		/// <summary>
+		/// Returns the ID of this object.
+		/// </summary>
 		public long? Id;
+
+		/// <summary>
+		/// Returns the name of this SQLite table.
+		/// </summary>
+		protected static string TableName;
+
 		private static HashSet<RelationalDatabase> _createdDbs = new HashSet<RelationalDatabase>();
 		private static FieldInfo[] _fields;
 		private static Dictionary<string, FieldInfo> _fieldNameToInfo = new Dictionary<string, FieldInfo>();
 		private static Logger _logger = LogManager.GetCurrentClassLogger();
 		private RelationalDatabase _db;
-		protected static string TableName;
-
-		// Token: 0x060000BB RID: 187 RVA: 0x00004C84 File Offset: 0x00002E84
+		
 		static DataTable()
 		{
-			_fields = (from f in typeof(T).GetTypeInfo().GetFields()
-					   where f.IsPublic && f.GetCustomAttribute<SqliteFieldAttribute>() != null
-					   select f).ToArray<FieldInfo>();
+			_fields = typeof(T).GetTypeInfo().GetFields()
+				.Where(f => f.IsPublic && f.GetCustomAttribute<SqliteFieldAttribute>() != null).ToArray();
+
 			foreach(FieldInfo fieldInfo in _fields)
 			{
-				SqliteFieldAttribute customAttribute = fieldInfo.GetCustomAttribute<SqliteFieldAttribute>();
+				var customAttribute = fieldInfo.GetCustomAttribute<SqliteFieldAttribute>();
 				_fieldNameToInfo[customAttribute.FieldName] = fieldInfo;
 			}
-			DataTable<T>.TableName = typeof(T).GetTypeInfo().GetCustomAttribute<SqliteTableAttribute>().TableName;
-		}
 
-		// Token: 0x060000BC RID: 188 RVA: 0x00004D30 File Offset: 0x00002F30
+			TableName = typeof(T).GetTypeInfo().GetCustomAttribute<SqliteTableAttribute>().TableName;
+		}
+		
+		/// <summary>
+		/// Loads an object with this ID if it exists.
+		/// </summary>
 		public static async Task<T> TryLoad(RelationalDatabase db, long id)
 		{
-			DataTable<T> obj = (DataTable<T>)Activator.CreateInstance(typeof(T), new object[]
-			{
-				db
-			});
+			DataTable<T> obj = (DataTable<T>)Activator.CreateInstance(typeof(T), new object[] { db });
 			obj.Id = new long?(id);
 			try
 			{
@@ -67,93 +68,104 @@ namespace SassV2
 			}
 			return (T)((object)obj);
 		}
-
-		// Token: 0x060000BD RID: 189 RVA: 0x00004D80 File Offset: 0x00002F80
+		
+		/// <summary>
+		/// Returns all objects of this type.
+		/// </summary>
 		public static Task<IEnumerable<T>> All(RelationalDatabase db)
 		{
-			SqliteCommand sqliteCommand = db.BuildCommand(string.Format("SELECT `id`, {0} FROM {1};", DataTable<T>.FieldNamesFormatted, DataTable<T>.TableName));
-			DataTable<T>._logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
-			return DataTable<T>.AllFromCommand(db, sqliteCommand);
+			var sqliteCommand = db.BuildCommand(string.Format("SELECT `id`, {0} FROM {1};", FieldNamesFormatted, TableName));
+			_logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
+			return AllFromCommand(db, sqliteCommand);
 		}
-
-		// Token: 0x060000BE RID: 190 RVA: 0x00004DCC File Offset: 0x00002FCC
+		
+		/// <summary>
+		/// Returns all results from this command.
+		/// </summary>
 		protected static async Task<IEnumerable<T>> AllFromCommand(RelationalDatabase db, SqliteCommand cmd)
 		{
 			if(!_createdDbs.Contains(db))
 			{
 				await CreateTable(db);
 			}
-			List<T> list = new List<T>();
-			SqliteDataReader sqliteDataReader = await cmd.ExecuteReaderAsync();
+
+			var list = new List<T>();
+			var sqliteDataReader = await cmd.ExecuteReaderAsync();
 			while(sqliteDataReader.Read())
 			{
 				object obj = typeof(T).GetTypeInfo().GetConstructor(new Type[]
 				{
 					typeof(RelationalDatabase)
-				}).Invoke(new object[]
-				{
-					db
-				});
+				}).Invoke(new object[] { db });
 				((DataTable<T>)obj).LoadFromReader(sqliteDataReader);
 				list.Add((T)obj);
 			}
+
 			return list;
 		}
-
-		// Token: 0x060000BF RID: 191 RVA: 0x00004E19 File Offset: 0x00003019
+		
 		public DataTable(RelationalDatabase db)
 		{
 			_db = db;
-			if(!DataTable<T>._createdDbs.Contains(db))
+			if(!_createdDbs.Contains(db))
 			{
-				DataTable<T>.CreateTable(db).Wait();
+				CreateTable(db).Wait();
 			}
 		}
-
-		// Token: 0x060000C0 RID: 192 RVA: 0x00004E40 File Offset: 0x00003040
+		
+		/// <summary>
+		/// Saves this object.
+		/// </summary>
 		public virtual async Task Save()
 		{
+			// if we've created this object yet
 			if(Id != null)
 			{
-				SqliteCommand sqliteCommand = _db.BuildCommand("");
-				List<string> list = new List<string>();
-				foreach(FieldInfo fieldInfo in _fields)
+				var sqliteCommand = _db.BuildCommand("");
+				var list = new List<string>();
+				// create update statement
+				foreach(var fieldInfo in _fields)
 				{
-					SqliteFieldAttribute customAttribute = fieldInfo.GetCustomAttribute<SqliteFieldAttribute>();
+					var customAttribute = fieldInfo.GetCustomAttribute<SqliteFieldAttribute>();
 					list.Add(string.Format("{0}=:{1}", customAttribute.FieldName, customAttribute.FieldName));
-					Type fieldType = fieldInfo.FieldType;
-					object obj = ConvertToSQL(fieldInfo.GetValue(this), fieldType, customAttribute.Type);
+					var fieldType = fieldInfo.FieldType;
+					var obj = ConvertToSQL(fieldInfo.GetValue(this), fieldType, customAttribute.Type);
 					sqliteCommand.Parameters.AddWithValue(customAttribute.FieldName, obj);
 				}
+
 				sqliteCommand.CommandText = string.Format("UPDATE {0} SET {1} WHERE id=:id", DataTable<T>.TableName, string.Join(", ", list));
-				DataTable<T>._logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
+				_logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
 				sqliteCommand.Parameters.AddWithValue("id", Id.Value);
 				await sqliteCommand.ExecuteNonQueryAsync();
 			}
-			else
+			else // insert it
 			{
-				List<string> list2 = new List<string>();
-				SqliteCommand sqliteCommand2 = _db.BuildCommand("");
-				foreach(FieldInfo fieldInfo2 in _fields)
+				var insertFields = new List<string>();
+				var sqliteCommand2 = _db.BuildCommand("");
+				foreach(var fieldInfo2 in _fields)
 				{
-					SqliteFieldAttribute customAttribute2 = fieldInfo2.GetCustomAttribute<SqliteFieldAttribute>();
-					list2.Add(":" + customAttribute2.FieldName);
-					Type fieldType2 = fieldInfo2.FieldType;
-					object obj2 = ConvertToSQL(fieldInfo2.GetValue(this), fieldType2, customAttribute2.Type);
+					var customAttribute2 = fieldInfo2.GetCustomAttribute<SqliteFieldAttribute>();
+					insertFields.Add(":" + customAttribute2.FieldName);
+					var fieldType2 = fieldInfo2.FieldType;
+					var obj2 = ConvertToSQL(fieldInfo2.GetValue(this), fieldType2, customAttribute2.Type);
 					sqliteCommand2.Parameters.AddWithValue(customAttribute2.FieldName, obj2);
 				}
-				sqliteCommand2.CommandText = string.Format("INSERT OR IGNORE INTO {0} ({1}) VALUES ({2}); SELECT last_insert_rowid();", DataTable<T>.TableName, DataTable<T>.FieldNamesFormatted, string.Join(", ", list2));
-				DataTable<T>._logger.Debug("executing sql statement: " + sqliteCommand2.CommandText);
-				SqliteDataReader sqliteDataReader = await sqliteCommand2.ExecuteReaderAsync();
+
+				sqliteCommand2.CommandText = $"INSERT OR IGNORE INTO {TableName} ({FieldNamesFormatted}) VALUES ({string.Join(", ", insertFields)}); SELECT last_insert_rowid();";
+				_logger.Debug("executing sql statement: " + sqliteCommand2.CommandText);
+				var sqliteDataReader = await sqliteCommand2.ExecuteReaderAsync();
 				if(!sqliteDataReader.Read())
 				{
 					throw new Exception("Insert failed.");
 				}
-				Id = new long?(sqliteDataReader.GetInt64(0));
+
+				Id = sqliteDataReader.GetInt64(0);
 			}
 		}
-
-		// Token: 0x060000C1 RID: 193 RVA: 0x00004E88 File Offset: 0x00003088
+		
+		/// <summary>
+		/// Loads this class from the given SqliteDataReader.
+		/// </summary>
 		protected void LoadFromReader(SqliteDataReader reader)
 		{
 			for(int i = 0; i < reader.FieldCount; i++)
@@ -161,12 +173,12 @@ namespace SassV2
 				string name = reader.GetName(i);
 				if(name == "id")
 				{
-					Id = new long?(reader.GetInt64(i));
+					Id = reader.GetInt64(i);
 				}
 				else if(_fieldNameToInfo.ContainsKey(name))
 				{
-					FieldInfo fieldInfo = _fieldNameToInfo[name];
-					Type fieldType = reader.GetFieldType(i);
+					var fieldInfo = _fieldNameToInfo[name];
+					var fieldType = reader.GetFieldType(i);
 					if(fieldType == typeof(long))
 					{
 						fieldInfo.SetValue(this, ConvertFromSQL(reader.GetInt64(i), fieldInfo.FieldType, DataType.Integer));
@@ -190,32 +202,40 @@ namespace SassV2
 				}
 			}
 		}
-
-		// Token: 0x060000C2 RID: 194 RVA: 0x00004FA4 File Offset: 0x000031A4
+		
+		/// <summary>
+		/// Load this table, if its ID is set.
+		/// </summary>
 		protected async Task Load()
 		{
 			if(Id == null)
 			{
 				throw new Exception("No ID for type.");
 			}
-			SqliteCommand sqliteCommand = _db.BuildCommand(string.Format("SELECT {0} FROM {1} WHERE id=:id;", DataTable<T>.FieldNamesFormatted, DataTable<T>.TableName));
+
+			var sqliteCommand = _db.BuildCommand(string.Format("SELECT {0} FROM {1} WHERE id=:id;", FieldNamesFormatted, TableName));
 			sqliteCommand.Parameters.AddWithValue("id", Id.Value);
-			DataTable<T>._logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
-			SqliteDataReader sqliteDataReader = await sqliteCommand.ExecuteReaderAsync();
+			_logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
+
+			var sqliteDataReader = await sqliteCommand.ExecuteReaderAsync();
 			if(!sqliteDataReader.Read())
 			{
 				throw new NotFoundException("Data not found.");
 			}
 			LoadFromReader(sqliteDataReader);
 		}
-
-		// Token: 0x060000C3 RID: 195 RVA: 0x00004FEC File Offset: 0x000031EC
+		
+		/// <summary>
+		/// Creates the indexes for this table. Should be overwritten if your class has indexes.
+		/// </summary>
 		protected virtual async Task CreateIndexes(RelationalDatabase db, long version)
 		{
 			await Task.FromResult(0);
 		}
-
-		// Token: 0x060000C4 RID: 196 RVA: 0x0000502C File Offset: 0x0000322C
+		
+		/// <summary>
+		/// Creates the table for this class.
+		/// </summary>
 		protected static async Task CreateTable(RelationalDatabase db)
 		{
 			if(!_createdDbs.Contains(db))
@@ -232,7 +252,7 @@ namespace SassV2
 					await db.BuildAndExecute("SAVEPOINT migrate_point;");
 					foreach(var sqliteFieldAttribute in newColumns)
 					{
-						string text = string.Format("ALTER TABLE {0} ADD COLUMN {1} {2}", DataTable<T>.TableName, sqliteFieldAttribute.FieldName, sqliteFieldAttribute.Type.ToString().ToUpper());
+						string text = $"ALTER TABLE {TableName} ADD COLUMN {sqliteFieldAttribute.FieldName} {sqliteFieldAttribute.Type.ToString().ToUpper()}";
 						_logger.Debug("executing sql statement: " + text);
 						await db.BuildAndExecute(text);
 					}
@@ -262,7 +282,7 @@ namespace SassV2
 						fieldText.Add(customAttribute.FieldName + " " + customAttribute.Type.ToString().ToUpper());
 						if(customAttribute.ForeignKeyRelationship != null)
 						{
-							indexes.Add(string.Format("FOREIGN KEY({0}) REFERENCES {1}", customAttribute.FieldName, customAttribute.ForeignKeyRelationship));
+							indexes.Add($"FOREIGN KEY({customAttribute.FieldName}) REFERENCES {customAttribute.ForeignKeyRelationship}");
 						}
 						if(customAttribute.Version > maxVersion)
 						{
@@ -330,47 +350,49 @@ namespace SassV2
 		}
 	}
 
+	/// <summary>
+	/// Handles table migrations.
+	/// </summary>
 	public class DataMigration
 	{
 		public static async Task<int?> GetTableVersion(RelationalDatabase db, string table)
 		{
-			if(!DataMigration._createdDbs.Contains(db))
+			if(!_createdDbs.Contains(db))
 			{
-				await DataMigration.CreateTable(db);
+				await CreateTable(db);
 			}
+
 			SqliteCommand sqliteCommand = db.BuildCommand("SELECT MAX(version) FROM migrations WHERE table_name=:name;");
 			sqliteCommand.Parameters.AddWithValue("name", table);
-			DataMigration._logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
+			_logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
+
 			SqliteDataReader sqliteDataReader = await sqliteCommand.ExecuteReaderAsync();
-			int? result;
 			if(!sqliteDataReader.Read() || sqliteDataReader.GetValue(0).GetType() == typeof(DBNull))
 			{
-				result = null;
+				return null;
 			}
-			else
-			{
-				result = new int?(sqliteDataReader.GetInt32(0));
-			}
-			return result;
+
+			return sqliteDataReader.GetInt32(0);
 		}
 
 		public static async Task UpdateVersion(RelationalDatabase db, string table, long newVersion)
 		{
-			if(!DataMigration._createdDbs.Contains(db))
+			if(!_createdDbs.Contains(db))
 			{
-				await DataMigration.CreateTable(db);
+				await CreateTable(db);
 			}
+
 			SqliteCommand sqliteCommand = db.BuildCommand("INSERT INTO migrations VALUES(:name, :version);");
 			sqliteCommand.Parameters.AddWithValue("name", table);
 			sqliteCommand.Parameters.AddWithValue("version", newVersion);
-			DataMigration._logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
+			_logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
 			await sqliteCommand.ExecuteNonQueryAsync();
 		}
 
 		private static async Task CreateTable(RelationalDatabase db)
 		{
 			await db.BuildAndExecute("CREATE TABLE IF NOT EXISTS migrations (\r\n\t\t\t\ttable_name TEXT,\r\n\t\t\t\tversion INTEGER);");
-			DataMigration._createdDbs.Add(db);
+			_createdDbs.Add(db);
 		}
 
 		private static HashSet<RelationalDatabase> _createdDbs = new HashSet<RelationalDatabase>();

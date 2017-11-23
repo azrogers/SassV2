@@ -13,52 +13,46 @@ using Unosquare.Labs.EmbedIO.Modules;
 
 namespace SassV2.Web.Controllers
 {
-	// Token: 0x02000039 RID: 57
 	public class BankController : BaseController
 	{
-		// Token: 0x06000167 RID: 359 RVA: 0x00007756 File Offset: 0x00005956
 		public BankController(DiscordBot bot, ViewManager viewManager) : base(viewManager)
 		{
 			_bot = bot;
 			_logger = LogManager.GetCurrentClassLogger();
 		}
 
-		// Token: 0x06000168 RID: 360 RVA: 0x00007774 File Offset: 0x00005974
 		[WebApiHandler(HttpVerbs.Post, "^/bank/new/{id}")]
 		public async Task<bool> BankCreate(WebServer server, HttpListenerContext context, ulong id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else if(_bot.Client.GetGuild(id) == null)
+
+			if(_bot.Client.GetGuild(id) == null)
 			{
-				result = await Error(server, context, "The given guild doesn't exist.");
+				return await Error(server, context, "The given guild doesn't exist.");
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			var data = Extensions.RequestFormDataDictionary(context);
+			var db = _bot.RelDatabase(id);
+			await db.BuildAndExecute("BEGIN TRANSACTION;");
+			var t = new BankTransaction(db)
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				Dictionary<string, object> data = Extensions.RequestFormDataDictionary(context);
-				RelationalDatabase db = _bot.RelDatabase(id);
-				await db.BuildAndExecute("BEGIN TRANSACTION;");
-				BankTransaction t = new BankTransaction(db)
-				{
-					Name = data["name"].ToString(),
-					Notes = data["notes"].ToString(),
-					Creator = user.Id,
-					Timestamp = DateTime.Now
-				};
-				await t.Save();
-				await BankTransactionIndex.RegisterServer(_bot.GlobalDatabase, db.ServerId.Value, user.Id);
-				await CreateTransactionRecords(data, db, t);
-				await db.BuildAndExecute("END TRANSACTION;");
-				result = base.Redirect(server, context, string.Format("/bank/view/{0}/{1}", t.ServerId, t.Id));
-			}
-			return result;
+				Name = data["name"].ToString(),
+				Notes = data["notes"].ToString(),
+				Creator = user.Id,
+				Timestamp = DateTime.Now
+			};
+
+			await t.Save();
+			await BankTransactionIndex.RegisterServer(_bot.GlobalDatabase, db.ServerId.Value, user.Id);
+			await CreateTransactionRecords(data, db, t);
+			await db.BuildAndExecute("END TRANSACTION;");
+			return Redirect(server, context, string.Format("/bank/view/{0}/{1}", t.ServerId, t.Id));
 		}
 
-		// Token: 0x06000169 RID: 361 RVA: 0x000077D4 File Offset: 0x000059D4
 		[WebApiHandler(HttpVerbs.Get, "^/bank/new/{id}")]
 		public async Task<bool> BankNew(WebServer server, HttpListenerContext context, ulong id)
 		{
@@ -66,14 +60,14 @@ namespace SassV2.Web.Controllers
 			{
 				return await ForbiddenError(server, context);
 			}
+
 			if(_bot.Client.GetGuild(id) == null)
 			{
 				return await Error(server, context, "The given guild doesn't exist.");
 			}
-			var users = from u in _bot.Client.GetGuild(id).Users
-						select new ValueTuple<ulong, string>(u.Id, u.RealNameOrDefaultSync(_bot)) into g
-						orderby g.Item2
-						select g;
+
+			var users = _bot.Client.GetGuild(id).Users.Select(u => (u.Id, u.RealNameOrDefaultSync(_bot))).OrderBy(g => g.Item2);
+
 			return await ViewResponse(server, context, "bank/new", new
 			{
 				Title = "New Bank Transaction",
@@ -84,11 +78,10 @@ namespace SassV2.Web.Controllers
 			});
 		}
 
-		// Token: 0x0600016A RID: 362 RVA: 0x0000788C File Offset: 0x00005A8C
 		[WebApiHandler(HttpVerbs.Post, "^/bank/new")]
 		public async Task<bool> BankNewPost(WebServer server, HttpListenerContext context)
 		{
-			Dictionary<string, object> dictionary = Extensions.RequestFormDataDictionary(context);
+			var dictionary = Extensions.RequestFormDataDictionary(context);
 			if(!dictionary.ContainsKey("guild"))
 			{
 				return await Error(server, context, "No guild chosen.");
@@ -96,7 +89,6 @@ namespace SassV2.Web.Controllers
 			return Redirect(server, context, "/bank/new/" + dictionary["guild"]);
 		}
 
-		// Token: 0x0600016B RID: 363 RVA: 0x000078D8 File Offset: 0x00005AD8
 		[WebApiHandler(HttpVerbs.Get, "^/bank/new")]
 		public async Task<bool> BankNewGuild(WebServer server, HttpListenerContext context)
 		{
@@ -104,7 +96,8 @@ namespace SassV2.Web.Controllers
 			{
 				return await ForbiddenError(server, context);
 			}
-			IEnumerable<IGuild> guilds = _bot.Client.GuildsContainingUser(AuthManager.GetUser(server, context, _bot));
+
+			var guilds = _bot.Client.GuildsContainingUser(AuthManager.GetUser(server, context, _bot));
 			return await ViewResponse(server, context, "bank/guild", new
 			{
 				Title = "New Bank Transaction",
@@ -116,95 +109,77 @@ namespace SassV2.Web.Controllers
 		[WebApiHandler(HttpVerbs.Post, "^/bank/edit/transaction/{serverId}/{id}")]
 		public async Task<bool> BankCommitEditTransaction(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			if(!_bot.ServerIds.Contains(serverId))
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				if(!_bot.ServerIds.Contains(serverId))
-				{
-					result = await Error(server, context, "Invalid guild ID.");
-				}
-				else
-				{
-					RelationalDatabase db = _bot.RelDatabase(serverId);
-					BankTransaction bankTransaction = await DataTable<BankTransaction>.TryLoad(db, id);
-					BankTransaction transaction = bankTransaction;
-					if(transaction == null)
-					{
-						result = await Error(server, context, "Invalid transaction ID.");
-					}
-					else if(user.Id != transaction.Creator)
-					{
-						result = await ForbiddenError(server, context);
-					}
-					else
-					{
-						await db.BuildAndExecute("BEGIN TRANSACTION;");
-						Dictionary<string, object> dictionary = Extensions.RequestFormDataDictionary(context);
-						transaction.Name = dictionary["name"].ToString();
-						transaction.Notes = dictionary["notes"].ToString();
-						await CreateTransactionRecords(dictionary, db, transaction);
-						await transaction.Save();
-						await db.BuildAndExecute("END TRANSACTION;");
-						result = base.Redirect(server, context, string.Format("/bank/view/{0}/{1}", serverId, transaction.Id));
-					}
-				}
+				return await Error(server, context, "Invalid guild ID.");
 			}
-			return result;
+
+			var db = _bot.RelDatabase(serverId);
+			var bankTransaction = await DataTable<BankTransaction>.TryLoad(db, id);
+			var transaction = bankTransaction;
+			if(transaction == null)
+			{
+				return await Error(server, context, "Invalid transaction ID.");
+			}
+
+			if(user.Id != transaction.Creator)
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			await db.BuildAndExecute("BEGIN TRANSACTION;");
+			var dictionary = Extensions.RequestFormDataDictionary(context);
+			transaction.Name = dictionary["name"].ToString();
+			transaction.Notes = dictionary["notes"].ToString();
+			await CreateTransactionRecords(dictionary, db, transaction);
+			await transaction.Save();
+			await db.BuildAndExecute("END TRANSACTION;");
+			return Redirect(server, context, string.Format("/bank/view/{0}/{1}", serverId, transaction.Id));
 		}
 
-		// Token: 0x0600016D RID: 365 RVA: 0x00007998 File Offset: 0x00005B98
 		[WebApiHandler(HttpVerbs.Get, "^/bank/edit/transaction/{serverId}/{id}")]
 		public async Task<bool> BankEditTransaction(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			if(!_bot.ServerIds.Contains(serverId))
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				if(!_bot.ServerIds.Contains(serverId))
-				{
-					result = await Error(server, context, "Invalid guild ID.");
-				}
-				else
-				{
-					BankTransaction bankTransaction = await DataTable<BankTransaction>.TryLoad(_bot.RelDatabase(serverId), id);
-					if(bankTransaction == null)
-					{
-						result = await Error(server, context, "Invalid transaction ID.");
-					}
-					else if(user.Id != bankTransaction.Creator)
-					{
-						result = await ForbiddenError(server, context);
-					}
-					else
-					{
-						IOrderedEnumerable<ValueTuple<ulong, string>> users = from u in _bot.Client.GetGuild(serverId).Users
-																			  select new ValueTuple<ulong, string>(u.Id, u.RealNameOrDefaultSync(_bot)) into g
-																			  orderby g.Item2
-																			  select g;
-						result = await ViewResponse(server, context, "bank/new", new
-						{
-							Title = "Edit Transaction",
-							Transaction = bankTransaction,
-							GuildId = serverId,
-							Edit = true,
-							Users = users
-						});
-					}
-				}
+				return await Error(server, context, "Invalid guild ID.");
 			}
-			return result;
+
+			var bankTransaction = await DataTable<BankTransaction>.TryLoad(_bot.RelDatabase(serverId), id);
+			if(bankTransaction == null)
+			{
+				return await Error(server, context, "Invalid transaction ID.");
+			}
+
+			if(user.Id != bankTransaction.Creator)
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var users = _bot.Client.GetGuild(serverId).Users.Select(u => (u.Id, u.RealNameOrDefaultSync(_bot))).OrderBy(g => g.Item2);
+
+			return await ViewResponse(server, context, "bank/new", new
+			{
+				Title = "Edit Transaction",
+				Transaction = bankTransaction,
+				GuildId = serverId,
+				Edit = true,
+				Users = users
+			});
 		}
 
-		// Token: 0x0600016E RID: 366 RVA: 0x00007A00 File Offset: 0x00005C00
 		[WebApiHandler(HttpVerbs.Post, "^/bank/settle/{serverId}/{id}")]
 		public async Task<bool> BankSettle(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
@@ -512,7 +487,7 @@ namespace SassV2.Web.Controllers
 			}
 			return result;
 		}
-		
+
 		[WebApiHandler(HttpVerbs.Get, "^/bank/transactions")]
 		public async Task<bool> BankTransactions(WebServer server, HttpListenerContext context)
 		{

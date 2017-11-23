@@ -211,9 +211,9 @@ namespace SassV2
 		{
 			if(config != null && config.Civility)
 			{
-				return Util.CivilizeString(Util.AssembleRudeErrorMessage());
+				return CivilizeString(AssembleRudeErrorMessage());
 			}
-			return Util.AssembleRudeErrorMessage();
+			return AssembleRudeErrorMessage();
 		}
 
 
@@ -359,6 +359,9 @@ namespace SassV2
 			}
 		}
 
+		/// <summary>
+		/// Searches messages.
+		/// </summary>
 		public static async Task<string> SearchMessages(IGuild guild, string token, DateTime from, DateTime to)
 		{
 			var discordEpoch = new DateTime(2015, 1, 1);
@@ -371,6 +374,9 @@ namespace SassV2
 			}
 		}
 
+		/// <summary>
+		/// Converts the given lines to several messages.
+		/// </summary>
 		public static IEnumerable<string> GetMessages(IEnumerable<string> lines, int max)
 		{
 			var pageAmount = 1;
@@ -390,28 +396,36 @@ namespace SassV2
 			yield return message;
 		}
 
-		public static string Nl2br(string str)
-		{
-			return str.Replace("\n", "<br>");
-		}
 
+		/// <summary>
+		/// Converts a string to snake case.
+		/// </summary>
 		public static string ToSnakeCase(string str)
 		{
 			return str.ToLower().Replace(" ", "_");
 		}
 
+		/// <summary>
+		/// Creates a DateTime from the given unix time.
+		/// </summary>
 		public static DateTime FromUnixTime(ulong unixTime)
 		{
 			DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 			return dateTime.AddSeconds(unixTime);
 		}
 
+		/// <summary>
+		/// Creates a DateTime from the given unix time.
+		/// </summary>
 		public static DateTime FromUnixTime(long unixTime)
 		{
 			DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 			return dateTime.AddSeconds((double)unixTime);
 		}
 
+		/// <summary>
+		/// Returns all but the last values of an enumerator.
+		/// </summary>
 		public static IEnumerable<T> TakeAllButLast<T>(IEnumerable<T> source)
 		{
 			IEnumerator<T> it = source.GetEnumerator();
@@ -435,6 +449,9 @@ namespace SassV2
 			yield break;
 		}
 
+		/// <summary>
+		/// Formats a list in a natural way.
+		/// </summary>
 		public static string NaturalArrayJoin(IEnumerable<string> values)
 		{
 			int num = values.Count<string>();
@@ -489,26 +506,38 @@ namespace SassV2
 			}
 		}
 
+		/// <summary>
+		/// Replaces newlines with HTML line breaks.
+		/// </summary>
 		public static string NewLineToLineBreak(string str)
 		{
 			return str.Replace("\n", "<br>");
 		}
 
+		/// <summary>
+		/// Parses a bool input.
+		/// </summary>
 		public static bool ParseBool(string str)
 		{
 			str = str.ToLower().Trim();
 			return str == "true" || str == "on" || str == "yes";
 		}
 
+		/// <summary>
+		/// Replaces swear words in a string with censorship.
+		/// </summary>
 		public static string CivilizeString(string str)
 		{
-			return new Regex("(shit|fuck|heck|hell|piss|dick|cock)").Replace(str, (Match m) => Util.GenerateCensorship(m.Groups[1].Length));
+			return new Regex("(shit|fuck|heck|hell|piss|dick|cock)").Replace(str, (Match m) => GenerateCensorship(m.Groups[1].Length));
 		}
 
+		/// <summary>
+		/// Generates a string to replace a swear word.
+		/// </summary>
 		public static string GenerateCensorship(int length)
 		{
-			Random rand = new Random();
-			List<char> list = new List<char>();
+			var rand = new Random();
+			var list = new List<char>();
 			char[] sourceChars = new char[]
 			{
 				'^',
@@ -521,6 +550,7 @@ namespace SassV2
 				'!',
 				'~'
 			};
+
 			int num = 0;
 			for(int i = 0; i < length; i++)
 			{
@@ -541,7 +571,9 @@ namespace SassV2
 			return string.Join("", list);
 		}
 
-		// Token: 0x06000138 RID: 312 RVA: 0x00006C08 File Offset: 0x00004E08
+		/// <summary>
+		/// Reads an array from form post data.
+		/// </summary>
 		public static List<string> ReadFormArray(Dictionary<string, object> dir, string name)
 		{
 			if(!dir.ContainsKey(name))
