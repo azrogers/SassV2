@@ -121,13 +121,13 @@ namespace SassV2.Commands
 			new BioField("email", "Email"),
 			new BioField("paypal", "PayPal Email"),
 			new BioField("steam_id", "Steam ID", "Steam", "Find it at <a href='http://steamid.co/' target='_blank'>steamid.co</a>. Use the Steam 64 ID.") {
-				Formatter = (v) => $"https://steamcommunity.com/profiles/{v}"
+				Formatter = (v) => $"<https://steamcommunity.com/profiles/{v}>"
 			},
 			new BioField("twitter", "Twitter Username", "Twitter", "") {
-				Formatter = (v) => $"https://twitter.com/{v}"
+				Formatter = (v) => $"<https://twitter.com/{v}>"
 			},
 			new BioField("facebook", "Facebook Username", "Facebook", "The part that comes after the facebook.com/ on your Facebook page.") {
-				Formatter = (v) => $"https://facebook.com/{v}"
+				Formatter = (v) => $"<https://facebook.com/{v}>"
 			},
 			new BioField("snapchat", "Snapchat Username"),
 			new BioField("battle_net", "Battle.net Username"),
