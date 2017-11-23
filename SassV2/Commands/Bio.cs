@@ -137,6 +137,7 @@ namespace SassV2.Commands
 			new BioField("xbl", "XBL Username"),
 			new BioField("friendcode", "3DS Friend Code") { Formatter = (v) => $"`{v}`" },
 			new BioField("switchcode", "Switch Friend Code") { Formatter = (v) => $"`{v}`" },
+			new BioField("acpccode", "Animal Crossing Pocket Camp Friend Code") { Formatter = (v) => $"`{v}`" },
 			new BioField("minecraft", "Minecraft Username")
 		};
 

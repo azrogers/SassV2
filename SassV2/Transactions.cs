@@ -58,7 +58,6 @@ namespace SassV2
 
 		public async Task<bool> UserCanView(RelationalDatabase db, ulong user)
 		{
-			bool result;
 			if(user == Creator)
 			{
 				return true;
