@@ -1,0 +1,69 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>Balance for Transaction: "@ViewBag.Transaction.Name"</h2>
+<p>
+	<a href="/bank/view/@ViewBag.Transaction.ServerId/@ViewBag.Transaction.Id">go back</a>
+</p>
+<ul>
+	<li><strong>Owed By:</strong> @ViewBag.Nickname (@@@ViewBag.Name)</li>
+	<li><strong>Current Balance:</strong> $@ViewBag.Balance.Amount</li>
+	@if(ViewBag.IsCreator && !ViewBag.Balance.Settled)
+	{
+	<li><a href="/bank/payment/@ViewBag.Transaction.ServerId/@ViewBag.Balance.Id">add payment</a></li>
+	<li>
+		<form 
+			  action="/bank/settle/@ViewBag.Transaction.ServerId/@ViewBag.Balance.Id" 
+			  method="post" 
+			  onsubmit="confirm('Are you sure you want to settle this balance?')">
+			<input type="submit" class="link_button" value="settle balance">
+		</form>
+	</li>
+	}
+	@if(ViewBag.IsDebtor && ViewBag.PayPal != null && ViewBag.Balance.Amount < 0)
+	{
+	<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+		<input type="hidden" name="cmd" value="_xclick">
+		<input type="hidden" name="business" value="@ViewBag.PayPal">
+		<input type="hidden" name="lc" value="US">
+		<input type="hidden" name="item_name" value="Payment">
+		<input type="hidden" name="amount" value="@(-ViewBag.Balance.Amount)">
+		<input type="hidden" name="currency_code" value="USD">
+		<input type="hidden" name="button_subtype" value="services">
+		<input type="hidden" name="no_note" value="0">
+		<input type="hidden" name="bn" value="PP-BuyNowBF:btn_buynowCC_LG.gif:NonHostedGuest">
+		<li><input type="submit" class="link_button" value="pay with paypal"></li>
+	</form>
+	}
+</ul>
+
+<h3>Records</h3>
+<table class="bank-records">
+	<thead>
+		<tr>
+			<th>Amount</th>
+			<th>Date</th>
+			<th>Notes</th>
+		</tr>
+	</thead>
+	<tbody>		
+		@foreach(var record in ViewBag.Records)
+		{
+		<tr>
+			<td>
+				@if(record.Amount < 0)
+				{
+				<span class="bank-record-negative">$@record.Amount</span>
+				}
+				else
+				{
+				<span class="bank-record-positive">$@record.Amount</span>
+				}
+			</td>
+			<td>@record.DateTimeFormatted</td>
+			<td>@record.Note</td>
+		</tr>
+		}
+	</tbody>
+</table>

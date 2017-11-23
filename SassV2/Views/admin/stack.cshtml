@@ -1,0 +1,15 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>Edit Stack</h2>
+<p class="back-button">
+	<a href="/admin/">back</a>
+</p>
+
+<form action="/admin/stack" method="post">
+	<textarea cols="70" rows="20" name="stack">@ViewBag.Stack</textarea>
+	<p>
+		<input type="submit" value="save stack">
+	</p>
+</form>

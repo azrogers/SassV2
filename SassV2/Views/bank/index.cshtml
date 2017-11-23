@@ -1,0 +1,41 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>First Bank of SASS</h2>
+
+<p>
+	<a href="/bank/new">Create New Transaction</a>
+</p>
+
+<h3>Your Unsettled Balances</h3>
+<p class="bank-description">you owe these people money</p>
+<ul>
+	@if(ViewBag.Owes.Count == 0)
+	{
+	<li><em>You have no unsettled balances</em></li>
+	}
+	@foreach(var t in ViewBag.Owes)
+	{
+	<li><a href="/bank/view/@t.ServerId/@t.Id">"@t.Name"</a> <em class="bank-date">@t.DateFormatted</em></li>
+	}
+</ul>
+<p>
+	<a href="/bank/balances/">view all balances</a>
+</p>
+
+<h3>Your Open Transactions</h3>
+<p class="bank-description">these people owe you money</p>
+<ul>
+	@if(ViewBag.Owed.Count == 0)
+	{
+	<li><em>You have no open transactions.</em></li>
+	}
+	@foreach(var t in ViewBag.Owed)
+	{
+	<li><a href="/bank/view/@t.ServerId/@t.Id">"@t.Name"</a> <em class="bank-date">@t.DateFormatted</em></li>
+	}
+</ul>
+<p>
+	<a href="/bank/transactions/">view all transactions</a>
+</p>

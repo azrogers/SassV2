@@ -1,0 +1,3 @@
+﻿The SASS "bio" is a way of storing information about a user's accounts on other websites. This is helpful if, for example, you run a server with people who know each other in real life. Each user can add their name to their SASS bio, and if someone wants to know "Which one of you is David?", they can just use the [[find]] command to find the user with the "real_name" of David.
+
+Bios are edited through a web-based form on this site, which can be accessed using the [[edit bio]] command (through DM or guild chat).

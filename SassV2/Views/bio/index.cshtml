@@ -1,0 +1,23 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>Edit Bios</h2>
+
+@if(ViewBag.Bios.Count > 0)
+{
+	<ul>
+		@foreach(var bio in ViewBag.Bios)
+		{
+			<li><a href="/bio/edit/@bio.Id">Bio shared with @(string.Join(", ", @bio.SharedServerNames))</a></li>
+		}
+	</ul>
+}
+else
+{
+	<p>You have no bios.</p>
+}
+
+<form method="post" action="/bio/new">
+	<input type="submit" value="Create New Bio">
+</form>

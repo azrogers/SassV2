@@ -1,0 +1,66 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+@if(ViewBag.Edit)
+{
+<h2>Edit Transaction</h2>
+<p>
+	<a href="/bank/view/@ViewBag.Transaction.ServerId/@ViewBag.Transaction.Id">go back</a>
+</p>
+}
+else
+{
+<h2>New Transaction</h2>
+<p>
+	<a href="/bank/">go back</a>
+</p>
+}
+
+<div id="user-template" class="user-template" style="display:none;">
+	<div class="field">
+		<label class="user-label">User 0</label>
+		<div class="user-container">
+			<select class="user-select" name="record_user[]">
+				@foreach(var u in ViewBag.Users)
+				{
+				<option value="@u.Item1">@u.Item2</option>
+				}
+			</select>
+			<input type="number" class="user-amount" placeholder="Amount" value="0.00" min="0" step="0.01" name="record_amount[]">
+			<input type="text" class="user-note" placeholder="Note" name="record_note[]">
+			<input type="button" class="user-remove" value="Remove User">
+		</div>
+	</div>
+</div>
+
+<form action=@(ViewBag.Edit ? $"/bank/edit/transaction/{ViewBag.GuildId}/{ViewBag.Transaction.Id}" : $"/bank/new/{ViewBag.GuildId}") onsubmit="return checkSubmit();" method="post">
+	<div class="field">
+		<label>Name</label>
+		<input type="text" placeholder="A short description, i.e. Fabian owes me for McDonalds." name="name" value="@ViewBag.Transaction.Name">
+	</div>
+	<div class="field">
+		<label>Notes</label>
+		<textarea name="notes" cols="33" rows="10" placeholder="Additional information about this transaction.">@ViewBag.Transaction.Notes</textarea>
+	</div>
+	<div id="users">
+	</div>
+	<div class="field">
+		<label></label>
+		<input type="button" onclick="addUser()" value="Add User">
+	</div>
+	<hr>
+	<div class="field">
+		<label></label>
+		@if(ViewBag.Edit)
+		{
+		<input type="submit" value="Edit Transaction">
+		}
+		else
+		{
+		<input type="submit" value="Create Transaction">
+		}
+	</div>
+</form>
+
+<script src="/js/transaction.js"></script>

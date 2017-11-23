@@ -1,0 +1,5 @@
+﻿The SASS "bank" is a primarily web-based feature for keeping track of who owes who money. The idea is that you can record balances and transactions here and perform the actual exchanging of money through other means (physical cash, PayPal, barter, etc). 
+
+Here's a quick briefing on how it works: there's "transactions" and there's "balances". A transaction is a collection of balances. Balances each record the amount of money someone in the Discord owes. Balances are "unsettled" when the person still owes money. When they don't owe money anymore, they can be marked "settled". Transactions are closed when all balances are marked settled.
+
+For example, let's say you ordered barbecue with some of your friends. You paid for all four of you. You'd then create a transaction titled "Barbecue" which would include balances for each person. As each of them paid you, you'd add their payments to the balance. When they paid you in full, you would mark it "settled."

@@ -1,0 +1,25 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>New Transaction</h2>
+
+<p>
+	Please choose a guild to place this transaction under:
+</p>
+
+<form action="/bank/new" method="post">
+	<div class="field">
+		<label>Guild</label>
+		<select name="guild">			
+			@foreach(var server in @ViewBag.Guilds)
+			{
+			<option value="@server.Id">@server.Name</option>
+			}
+		</select>
+	</div>
+	<div class="field">
+		<label></label>
+		<input type="submit" value="New">
+	</div>
+</form>

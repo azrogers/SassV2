@@ -1,0 +1,12 @@
+﻿@{
+    Layout = "_layout.html";
+}
+
+<h2>Quotes</h2>
+
+<ul>
+	@foreach(var quote in @Model)
+	{
+		<li>#@quote.Id: "@quote.Content" - @quote.Author, @quote.Source</li>
+	}
+</ul>

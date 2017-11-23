@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>
+        @if (ViewBag.Title != "")
+        {
+            @(ViewBag.Title + " - ")
+        }
+        SASS
+    </title>
+	<link href="/css/style.css" rel="stylesheet">
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js"
+			integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+			crossorigin="anonymous"></script>
+</head>
+<body>
+	<div class="header">
+		<a href="/">
+			<h1>SASS</h1>
+		</a>
+		<ul class="menu">
+			<li><a href="/docs">Docs</a></li>
+			<li><a href="/servers">Servers</a></li>
+			@if(ViewBag.Session.Data.ContainsKey("discord_user_id"))
+			{
+				<li><a href="/bio/edit">Bios</a></li>
+			}
+		</ul>
+		@if(ViewBag.Session.Data.ContainsKey("discord_user_name"))
+		{
+			<div class="header_user">
+				logged in as @(ViewBag.Session.Data["discord_user_name"])
+				<form method="post" action="/logout">
+					<input type="submit" value="(log out)">
+				</form>
+			</div>
+		}
+	</div>
+    <div class="container">
+        @RenderBody()
+    </div>
+</body>
+</html>

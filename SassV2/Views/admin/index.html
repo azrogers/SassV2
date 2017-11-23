@@ -1,0 +1,19 @@
+﻿@{
+	Layout = "_layout.html";
+}
+
+<h2>Admin Page</h2>
+<p>
+	<em>Fun sass stuff.</em>
+</p>
+<h3>Stack</h3>
+<p>
+	<a href="/admin/stack">Edit the stack.</a>
+</p>
+<h3>Servers</h3>
+<ul>
+	@foreach(var server in ViewBag.Servers)
+	{
+		<li><a href="/admin/server/@server.Id">@server.Name</a></li>
+	}
+</ul>

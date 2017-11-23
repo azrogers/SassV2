@@ -1,0 +1,22 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>Docs</h2>
+
+<p>
+	Thank you for choosing the Scripted Automated Speech System (SASS) by <a href="https://www.anime-night.com/">Anime Night Interactive Media Entertainment</a>. 
+	We hope you enjoy this product. Included here is documentation on each and every command that SASS offers.
+</p>
+
+<p>
+	SASS is open-source software, and you can obtain the latest (more or less) source code <a href="https://github.com/cpancake/SassV2">here</a>.
+</p>
+
+<h3>Categories</h3>
+<ul class="command-list">
+	@foreach(var category in ViewBag.Categories)
+	{
+		<li><a href="/docs/categories/@(category.ToLower())">@category</a></li>
+	}
+</ul>

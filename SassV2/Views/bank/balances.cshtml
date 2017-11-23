@@ -1,0 +1,21 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>Your Balances</h2>
+<p>
+	<a href="/bank/">go back</a>
+</p>
+
+@if(ViewBag.Balances.Count == 0)
+{
+<p>
+	<em>You have no balances.</em>
+</p>
+}
+<ul>
+	@foreach(var t in @ViewBag.Balances)
+	{
+	<li><a href="/bank/view/@t.ServerId/@t.Id">"@t.Name"</a> <em class="bank-date">@t.DateFormatted</em></li>
+	}
+</ul>

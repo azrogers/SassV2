@@ -1,0 +1,27 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>Add Payment</h2>
+<p>
+	<a href="/bank/view/balance/@ViewBag.Transaction.ServerId/@ViewBag.Balance.Id">go back</a>
+</p>
+
+<p>
+	The current balance of this account is <strong>$@ViewBag.Balance.Amount</strong>.
+</p>
+
+<form action="/bank/payment/@ViewBag.Transaction.ServerId/@ViewBag.Balance.Id" method="post">
+	<div class="field">
+		<label>Payment Amount</label>
+		<input type="number" step="0.01" name="amount" value="@((-ViewBag.Balance.Amount).ToString("F2"))">
+	</div>
+	<div class="field">
+		<label>Note</label>
+		<input type="text" name="note">
+	</div>
+	<div class="field">
+		<label></label>
+		<input type="submit" value="Add Payment">
+	</div>
+</form>

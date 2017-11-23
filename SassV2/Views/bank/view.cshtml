@@ -1,0 +1,38 @@
+﻿@{
+	Layout = "_layout.cshtml";
+}
+
+<h2>Transaction: "@ViewBag.Transaction.Name"</h2>
+<p>	
+	<a href="/bank/">go back</a>
+</p>
+<ul>
+	<li><strong>Creator:</strong> @ViewBag.Creator.Nickname (@@@ViewBag.Creator.Name)</li>
+	<li><strong>Date:</strong> @ViewBag.Transaction.DateFormatted</li>
+	@if(@ViewBag.Creator.PayPal != null)
+	{
+	<li><strong>PayPal Email:</strong> @ViewBag.Creator.PayPal</li>
+	}
+	else
+	{
+	<li><strong>PayPal Email:</strong> <em>this user has no paypal email set</em></li>
+	}
+	@if(!string.IsNullOrWhiteSpace(@ViewBag.Transaction.Notes))
+	{
+	<li><strong>Notes:</strong> <em>@ViewBag.Transaction.Notes</em></li>
+	}
+	@if(@ViewBag.IsCreator)
+	{
+	<li><a href="/bank/edit/transaction/@ViewBag.Transaction.ServerId/@ViewBag.Transaction.Id">edit</a></li>
+	}
+</ul>
+
+<h3>Balances</h3>
+@foreach(var bal in @ViewBag.Balances)
+{
+<div class="bank-balance @(bal.IsSettled ? "bank-balance-settled": "")">
+	<p><strong>@bal.Author</strong></p>
+	<p><span>$@bal.Amount</span> owed ($@(-bal.Amount) balance)<p>
+	<p><a href="/bank/view/balance/@ViewBag.Transaction.ServerId/@bal.Id">view balance</a></p>
+</div>
+}
