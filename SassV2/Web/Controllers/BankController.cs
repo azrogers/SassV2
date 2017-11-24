@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.WebSocket;
 using NLog;
 using SassV2.Commands;
 using System;
@@ -186,309 +185,247 @@ namespace SassV2.Web.Controllers
 		[WebApiHandler(HttpVerbs.Post, "^/bank/settle/{serverId}/{id}")]
 		public async Task<bool> BankSettle(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			if(!_bot.ServerIds.Contains(serverId))
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				if(!_bot.ServerIds.Contains(serverId))
-				{
-					result = await Error(server, context, "Invalid guild ID.");
-				}
-				else
-				{
-					RelationalDatabase db = _bot.RelDatabase(serverId);
-					BankBalance bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
-					BankBalance balance = bankBalance;
-					if(balance == null)
-					{
-						result = await Error(server, context, "Invalid balance ID.");
-					}
-					else if(new BankTransaction(db, balance.TransactionId).Creator != user.Id)
-					{
-						result = await ForbiddenError(server, context);
-					}
-					else
-					{
-						balance.Settled = true;
-						await balance.Save();
-						result = base.Redirect(server, context, string.Format("/bank/view/balance/{0}/{1}", serverId, balance.Id));
-					}
-				}
+				return await Error(server, context, "Invalid guild ID.");
 			}
-			return result;
+
+			var db = _bot.RelDatabase(serverId);
+			var bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
+			var balance = bankBalance;
+
+			if(balance == null)
+			{
+				return await Error(server, context, "Invalid balance ID.");
+			}
+
+			if(new BankTransaction(db, balance.TransactionId).Creator != user.Id)
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			balance.Settled = true;
+			await balance.Save();
+			return Redirect(server, context, string.Format("/bank/view/balance/{0}/{1}", serverId, balance.Id));
 		}
 
-		// Token: 0x0600016F RID: 367 RVA: 0x00007A68 File Offset: 0x00005C68
 		[WebApiHandler(HttpVerbs.Post, "^/bank/payment/{serverId}/{id}")]
 		public async Task<bool> BankAddPaymentCommit(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			if(!_bot.ServerIds.Contains(serverId))
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				if(!_bot.ServerIds.Contains(serverId))
-				{
-					result = await Error(server, context, "Invalid guild ID.");
-				}
-				else
-				{
-					RelationalDatabase db = _bot.RelDatabase(serverId);
-					BankBalance bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
-					BankBalance balance = bankBalance;
-					if(balance == null)
-					{
-						result = await Error(server, context, "Invalid balance ID.");
-					}
-					else if(balance.Settled)
-					{
-						result = await Error(server, context, "You can't add a payment to a settled balance!");
-					}
-					else if(new BankTransaction(db, balance.TransactionId).Creator != user.Id)
-					{
-						result = await ForbiddenError(server, context);
-					}
-					else
-					{
-						Dictionary<string, object> data = Extensions.RequestFormDataDictionary(context);
-						if(!decimal.TryParse(data["amount"].ToString(), out var amount))
-						{
-							result = await Error(server, context, "Amount is invalid.");
-						}
-						else
-						{
-							await db.BuildAndExecute("BEGIN TRANSACTION;");
-							balance.Amount += amount;
-							await balance.Save();
-							await new BankBalanceRecord(db, balance.Id.Value, amount)
-							{
-								Note = data["note"].ToString()
-							}.Save();
-							await db.BuildAndExecute("END TRANSACTION;");
-							result = base.Redirect(server, context, string.Format("/bank/view/balance/{0}/{1}", serverId, balance.Id));
-						}
-					}
-				}
+				return await Error(server, context, "Invalid guild ID.");
 			}
-			return result;
+
+			var db = _bot.RelDatabase(serverId);
+			var bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
+			var balance = bankBalance;
+
+			if(balance == null)
+			{
+				return await Error(server, context, "Invalid balance ID.");
+			}
+
+			if(balance.Settled)
+			{
+				return await Error(server, context, "You can't add a payment to a settled balance!");
+			}
+
+			if(new BankTransaction(db, balance.TransactionId).Creator != user.Id)
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var data = Extensions.RequestFormDataDictionary(context);
+			if(!decimal.TryParse(data["amount"].ToString(), out var amount))
+			{
+				return await Error(server, context, "Amount is invalid.");
+			}
+
+			await db.BuildAndExecute("BEGIN TRANSACTION;");
+			balance.Amount += amount;
+			await balance.Save();
+
+			await new BankBalanceRecord(db, balance.Id.Value, amount)
+			{
+				Note = data["note"].ToString()
+			}.Save();
+
+			await db.BuildAndExecute("END TRANSACTION;");
+			return Redirect(server, context, string.Format("/bank/view/balance/{0}/{1}", serverId, balance.Id));
 		}
 
 		// Token: 0x06000170 RID: 368 RVA: 0x00007AD0 File Offset: 0x00005CD0
 		[WebApiHandler(HttpVerbs.Get, "^/bank/payment/{serverId}/{id}")]
 		public async Task<bool> BankAddPayment(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			if(!_bot.ServerIds.Contains(serverId))
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				if(!_bot.ServerIds.Contains(serverId))
-				{
-					result = await Error(server, context, "Invalid guild ID.");
-				}
-				else
-				{
-					RelationalDatabase db = _bot.RelDatabase(serverId);
-					BankBalance bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
-					if(bankBalance == null)
-					{
-						result = await Error(server, context, "Invalid balance ID.");
-					}
-					else
-					{
-						BankTransaction bankTransaction = new BankTransaction(db, bankBalance.TransactionId);
-						if(bankTransaction.Creator != user.Id)
-						{
-							result = await ForbiddenError(server, context);
-						}
-						else
-						{
-							result = await ViewResponse(server, context, "bank/payment", new
-							{
-								Title = "Add Payment",
-								Balance = bankBalance,
-								Transaction = bankTransaction
-							});
-						}
-					}
-				}
+				return await Error(server, context, "Invalid guild ID.");
 			}
-			return result;
+
+			var db = _bot.RelDatabase(serverId);
+			var bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
+			if(bankBalance == null)
+			{
+				return await Error(server, context, "Invalid balance ID.");
+			}
+
+			var bankTransaction = new BankTransaction(db, bankBalance.TransactionId);
+			if(bankTransaction.Creator != user.Id)
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			return await ViewResponse(server, context, "bank/payment", new
+			{
+				Title = "Add Payment",
+				Balance = bankBalance,
+				Transaction = bankTransaction
+			});
 		}
 
 		// Token: 0x06000171 RID: 369 RVA: 0x00007B38 File Offset: 0x00005D38
 		[WebApiHandler(HttpVerbs.Get, "^/bank/view/balance/{serverId}/{id}")]
 		public async Task<bool> BankViewBalance(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			if(!_bot.ServerIds.Contains(serverId))
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				if(!_bot.ServerIds.Contains(serverId))
-				{
-					result = await Error(server, context, "Invalid guild ID.");
-				}
-				else
-				{
-					RelationalDatabase db = _bot.RelDatabase(serverId);
-					BankBalance bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
-					BankBalance balance = bankBalance;
-					if(balance == null)
-					{
-						result = await Error(server, context, "Invalid balance ID.");
-					}
-					else
-					{
-						BankTransaction transaction = new BankTransaction(db, balance.TransactionId);
-						if(!(await transaction.UserCanView(db, user.Id)))
-						{
-							result = await ForbiddenError(server, context);
-						}
-						else
-						{
-							IEnumerable<BankBalanceRecord> records = await BankBalanceRecord.AllForBalance(db, balance);
-							BioData bioData = await Bio.GetBio(_bot, serverId, transaction.Creator);
-							SocketGuildUser guildUser = _bot.Client.GetGuild(serverId).GetUser(balance.DiscordUserId);
-							bool isCreator = user.Id == transaction.Creator;
-							bool isDebtor = user.Id == balance.DiscordUserId;
-							IEnumerable<BankBalanceRecord> records2 = records;
-							string text;
-							if(bioData == null)
-							{
-								text = null;
-							}
-							else
-							{
-								BioField bioField = bioData["paypal"];
-								text = (bioField?.Value);
-							}
-							string payPal = text;
-							BankBalance balance2 = balance;
-							result = await ViewResponse(server, context, "bank/view_balance", new
-							{
-								Title = "View Balance",
-								IsCreator = isCreator,
-								IsDebtor = isDebtor,
-								Records = records2,
-								PayPal = payPal,
-								Balance = balance2,
-								Nickname = await guildUser.RealNameOrDefault(_bot),
-								Name = guildUser.Username,
-								Transaction = transaction
-							});
-						}
-					}
-				}
+				return await Error(server, context, "Invalid guild ID.");
 			}
-			return result;
+
+			var db = _bot.RelDatabase(serverId);
+			var bankBalance = await DataTable<BankBalance>.TryLoad(db, id);
+			var balance = bankBalance;
+			if(balance == null)
+			{
+				return await Error(server, context, "Invalid balance ID.");
+			}
+
+			var transaction = new BankTransaction(db, balance.TransactionId);
+			if(!(await transaction.UserCanView(db, user.Id)))
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var records = await BankBalanceRecord.AllForBalance(db, balance);
+			var bioData = await Bio.GetBio(_bot, serverId, transaction.Creator);
+			var guildUser = _bot.Client.GetGuild(serverId).GetUser(balance.DiscordUserId);
+			var isCreator = user.Id == transaction.Creator;
+			var isDebtor = user.Id == balance.DiscordUserId;
+			string text = bioData["paypal"]?.Value;
+
+			var payPal = text;
+			return await ViewResponse(server, context, "bank/view_balance", new
+			{
+				Title = "View Balance",
+				IsCreator = isCreator,
+				IsDebtor = isDebtor,
+				Records = records,
+				PayPal = payPal,
+				Balance = balance,
+				Nickname = await guildUser.RealNameOrDefault(_bot),
+				Name = guildUser.Username,
+				Transaction = transaction
+			});
 		}
 
 		// Token: 0x06000172 RID: 370 RVA: 0x00007BA0 File Offset: 0x00005DA0
 		[WebApiHandler(HttpVerbs.Get, "^/bank/view/{serverId}/{id}")]
 		public async Task<bool> BankViewTransaction(WebServer server, HttpListenerContext context, ulong serverId, long id)
 		{
-			bool result;
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				result = await ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
-			else
+
+			var user = AuthManager.GetUser(server, context, _bot);
+			if(!_bot.ServerIds.Contains(serverId))
 			{
-				IUser user = AuthManager.GetUser(server, context, _bot);
-				if(!_bot.ServerIds.Contains(serverId))
-				{
-					result = await Error(server, context, "Invalid guild ID.");
-				}
-				else
-				{
-					RelationalDatabase db = _bot.RelDatabase(serverId);
-					BankTransaction bankTransaction = await DataTable<BankTransaction>.TryLoad(db, id);
-					BankTransaction transaction = bankTransaction;
-					if(transaction == null)
-					{
-						result = await Error(server, context, "Invalid transaction ID.");
-					}
-					else
-					{
-						IEnumerable<BankBalance> balances = await BankBalance.AllForTransaction(db, transaction);
-						if(!balances.Any((BankBalance b) => b.DiscordUserId == user.Id) && user.Id != transaction.Creator)
-						{
-							result = await ForbiddenError(server, context);
-						}
-						else
-						{
-							SocketUser author = _bot.Client.GetUser(transaction.Creator);
-							if(author == null)
-							{
-								result = await Error(server, context, "The creator of this transaction is invalid.");
-							}
-							else
-							{
-								SocketGuild guild = _bot.Client.GetGuild(serverId);
-								BioData authorBio = await Bio.GetBio(_bot, serverId, author.Id);
-								TransactionAuthorModel transactionAuthorModel = new TransactionAuthorModel
-								{
-									Name = author.Username
-								};
-								TransactionAuthorModel transactionAuthorModel2 = transactionAuthorModel;
-								string nickname = transactionAuthorModel2.Nickname;
-								transactionAuthorModel2.Nickname = await guild.GetUser(transaction.Creator).RealNameOrDefault(_bot);
-								TransactionAuthorModel transactionAuthorModel3 = transactionAuthorModel;
-								BioData bioData = authorBio;
-								string payPal;
-								if(bioData == null)
-								{
-									payPal = null;
-								}
-								else
-								{
-									BioField bioField = bioData["paypal"];
-									payPal = (bioField?.Value);
-								}
-								transactionAuthorModel3.PayPal = payPal;
-								TransactionAuthorModel creator = transactionAuthorModel;
-								transactionAuthorModel2 = null;
-								transactionAuthorModel = null;
-								IEnumerable<TransactionBalanceModel> balances2 = balances.Select(delegate (BankBalance b)
-								{
-									TransactionBalanceModel transactionBalanceModel = new TransactionBalanceModel
-									{
-										Id = b.Id.Value
-									};
-									SocketGuildUser balanceUser = guild.GetUser(b.DiscordUserId);
-									transactionBalanceModel.Author = (balanceUser?.RealNameOrDefaultSync(_bot)) ?? ("unknown user id " + b.DiscordUserId);
-									transactionBalanceModel.Amount = -b.Amount;
-									transactionBalanceModel.IsSettled = b.Settled;
-									return transactionBalanceModel;
-								});
-								result = await ViewResponse(server, context, "bank/view", new
-								{
-									Title = "View Transaction",
-									Transaction = transaction,
-									Creator = creator,
-									Balances = balances2,
-									IsCreator = (user.Id == transaction.Creator)
-								});
-							}
-						}
-					}
-				}
+				return await Error(server, context, "Invalid guild ID.");
 			}
-			return result;
+
+			var db = _bot.RelDatabase(serverId);
+			var bankTransaction = await DataTable<BankTransaction>.TryLoad(db, id);
+			var transaction = bankTransaction;
+			if(transaction == null)
+			{
+				return await Error(server, context, "Invalid transaction ID.");
+			}
+
+			var balances = await BankBalance.AllForTransaction(db, transaction);
+			if(!balances.Any((BankBalance b) => b.DiscordUserId == user.Id) && user.Id != transaction.Creator)
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var author = _bot.Client.GetUser(transaction.Creator);
+			if(author == null)
+			{
+				return await Error(server, context, "The creator of this transaction is invalid.");
+			}
+
+			var guild = _bot.Client.GetGuild(serverId);
+			var authorBio = await Bio.GetBio(_bot, serverId, author.Id);
+			var transactionAuthorModel = new TransactionAuthorModel
+			{
+				Name = author.Username
+			};
+			var transactionAuthorModel2 = transactionAuthorModel;
+			var nickname = transactionAuthorModel2.Nickname;
+			transactionAuthorModel2.Nickname = await guild.GetUser(transaction.Creator).RealNameOrDefault(_bot);
+			var transactionAuthorModel3 = transactionAuthorModel;
+			var bioData = authorBio;
+			string payPal = bioData["paypal"]?.Value;
+
+			transactionAuthorModel3.PayPal = payPal;
+			var creator = transactionAuthorModel;
+			transactionAuthorModel2 = null;
+			transactionAuthorModel = null;
+			var balances2 = balances.Select(b =>
+			{
+				var transactionBalanceModel = new TransactionBalanceModel
+				{
+					Id = b.Id.Value
+				};
+				var balanceUser = guild.GetUser(b.DiscordUserId);
+				transactionBalanceModel.Author = (balanceUser?.RealNameOrDefaultSync(_bot)) ?? ("unknown user id " + b.DiscordUserId);
+				transactionBalanceModel.Amount = -b.Amount;
+				transactionBalanceModel.IsSettled = b.Settled;
+				return transactionBalanceModel;
+			});
+			return await ViewResponse(server, context, "bank/view", new
+			{
+				Title = "View Transaction",
+				Transaction = transaction,
+				Creator = creator,
+				Balances = balances2,
+				IsCreator = (user.Id == transaction.Creator)
+			});
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "^/bank/transactions")]
