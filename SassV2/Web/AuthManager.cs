@@ -8,7 +8,7 @@ namespace SassV2.Web
 	{
 		private const string SessionAuthKey = "discord_user_id";
 		private const string SessionUsernameKey = "discord_user_name";
-		
+
 		/// <summary>
 		/// Has the user been authenticated?
 		/// </summary>
@@ -23,7 +23,7 @@ namespace SassV2.Web
 		/// </summary>
 		public static bool IsAdmin(WebServer server, HttpListenerContext context, DiscordBot bot)
 		{
-			if (!IsAuthenticated(server, context))
+			if(!IsAuthenticated(server, context))
 				return false;
 			return bot.Config.GetRole((ulong)server.GetSession(context)[SessionAuthKey]) == "admin";
 		}
@@ -46,7 +46,7 @@ namespace SassV2.Web
 		/// </summary>
 		public static IUser GetUser(WebServer server, HttpListenerContext context, DiscordBot bot)
 		{
-			if (!IsAuthenticated(server, context)) return null;
+			if(!IsAuthenticated(server, context)) return null;
 			var id = (ulong)server.GetSession(context)[SessionAuthKey];
 			return bot.Client.GetUser(id);
 		}
@@ -56,7 +56,7 @@ namespace SassV2.Web
 		/// </summary>
 		public static string GetUsername(WebServer server, HttpListenerContext context)
 		{
-			if (!IsAuthenticated(server, context)) return null;
+			if(!IsAuthenticated(server, context)) return null;
 			return server.GetSession(context)[SessionUsernameKey].ToString();
 		}
 

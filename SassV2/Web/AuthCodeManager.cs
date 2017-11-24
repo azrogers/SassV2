@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Security.Cryptography;
-using Discord;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Discord;
 using NLog;
+using System;
+using System.Threading.Tasks;
 
 namespace SassV2.Web
 {
@@ -45,7 +39,7 @@ namespace SassV2.Web
 			var command = db.BuildCommand("SELECT data FROM auth_codes WHERE code=:code LIMIT 1;");
 			command.Parameters.AddWithValue("code", code);
 			var reader = await command.ExecuteReaderAsync();
-			if (!reader.HasRows)
+			if(!reader.HasRows)
 			{
 				return null;
 			}

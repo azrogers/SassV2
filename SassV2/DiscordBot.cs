@@ -118,7 +118,7 @@ namespace SassV2
 
 			_serverRelationalDatabases[guild.Id] = new RelationalDatabase(Path.Combine(dbPath, "relational.db"), guild.Id);
 			await _serverRelationalDatabases[guild.Id].Open();
-			
+
 			_logger.Info("joined " + guild.Name + " (" + guild.Id + ")");
 		}
 

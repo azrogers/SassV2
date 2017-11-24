@@ -42,7 +42,7 @@ namespace SassV2
 		/// <summary>
 		/// Builds and executes a SQLite query.
 		/// </summary>
-		public async Task<int> BuildAndExecute(string query) => 
+		public async Task<int> BuildAndExecute(string query) =>
 			await new SqliteCommand(query, _connection).ExecuteNonQueryAsync();
 
 		public override int GetHashCode() => 10283719 ^ _path.GetHashCode();

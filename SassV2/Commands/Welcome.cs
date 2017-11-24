@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SassV2.Commands
 {
-    public class Welcome : ModuleBase<SocketCommandContext>
-    {
+	public class Welcome : ModuleBase<SocketCommandContext>
+	{
 		private DiscordBot _bot;
 
 		public Welcome(DiscordBot bot)
@@ -18,9 +15,9 @@ namespace SassV2.Commands
 		}
 
 		[SassCommand(
-			name: "welcome", 
-			desc: "Prints the current welcome message (if set). Welcome messages are displayed to new users when they join the server.", 
-			usage: "welcome", 
+			name: "welcome",
+			desc: "Prints the current welcome message (if set). Welcome messages are displayed to new users when they join the server.",
+			usage: "welcome",
 			category: "Administration")]
 		[Command("welcome")]
 		public async Task WelcomeCommand()
@@ -36,27 +33,27 @@ namespace SassV2.Commands
 		}
 
 		[SassCommand(
-			name: "welcome edit", 
-			desc: "Edit the welcome message.", 
-			usage: "welcome edit <channel mention> <message>\nuse pm for channel to send via pm\nset to blank to disable", 
+			name: "welcome edit",
+			desc: "Edit the welcome message.",
+			usage: "welcome edit <channel mention> <message>\nuse pm for channel to send via pm\nset to blank to disable",
 			example: "welcome edit #general Hello {username}, welcome to this server!",
 			category: "Administration")]
 		[Command("welcome edit")]
 		public async Task WelcomeEditCommand([Remainder] string message)
 		{
-			if (!(Context.User as IGuildUser).IsAdmin(_bot))
+			if(!(Context.User as IGuildUser).IsAdmin(_bot))
 			{
 				await ReplyAsync("You're not allowed to access this command.");
 				return;
 			}
 
-			if (!Context.Message.MentionedChannels.Any() && !message.StartsWith("pm"))
+			if(!Context.Message.MentionedChannels.Any() && !message.StartsWith("pm"))
 			{
 				await ReplyAsync("You need to mention a channel or use 'pm'.");
 				return;
 			}
 
-			if (message.StartsWith("pm"))
+			if(message.StartsWith("pm"))
 			{
 				_bot.Database(Context.Guild.Id).InsertObject<string>("welcome_channel", "pm");
 			}
@@ -78,9 +75,9 @@ namespace SassV2.Commands
 		}
 
 		[SassCommand(
-			name: "welcome help", 
-			desc: "Get help on welcome messages.", 
-			usage: "welcome help", 
+			name: "welcome help",
+			desc: "Get help on welcome messages.",
+			usage: "welcome help",
 			category: "Administration")]
 		[Command("welcome help")]
 		public async Task WelcomeHelpCommand()
@@ -92,5 +89,5 @@ Here's the available placeholders to use in your message:
 
 			await ReplyAsync(message);
 		}
-    }
+	}
 }

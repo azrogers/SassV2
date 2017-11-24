@@ -15,6 +15,9 @@ namespace SassV2.Web.Controllers
 {
 	public class BankController : BaseController
 	{
+		private DiscordBot _bot;
+		private Logger _logger;
+
 		public BankController(DiscordBot bot, ViewManager viewManager) : base(viewManager)
 		{
 			_bot = bot;
@@ -605,9 +608,6 @@ namespace SassV2.Web.Controllers
 				bal = null;
 			}
 		}
-
-		private DiscordBot _bot;
-		private Logger _logger;
 
 		public class TransactionAuthorModel
 		{

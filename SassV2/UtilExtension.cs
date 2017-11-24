@@ -46,8 +46,8 @@ namespace SassV2
 		{
 			var bio = await Bio.GetBio(bot, user.GuildId, user.Id);
 			return (
-				string.IsNullOrWhiteSpace(bio?["real_name"]?.Value) ? 
-				user.Nickname ?? user.Username : 
+				string.IsNullOrWhiteSpace(bio?["real_name"]?.Value) ?
+				user.Nickname ?? user.Username :
 				bio["real_name"].Value);
 		}
 
@@ -120,7 +120,7 @@ namespace SassV2
 		/// <summary>
 		/// Checks if this user is an admin in this guild.
 		/// </summary>
-		public static bool IsAdmin(this IGuildUser user, DiscordBot bot) => 
+		public static bool IsAdmin(this IGuildUser user, DiscordBot bot) =>
 			user.GuildPermissions.Administrator || bot.Config.GetRole(user.Id) == "admin";
 
 		/// <summary>
@@ -212,7 +212,7 @@ namespace SassV2
 		/// <summary>
 		/// Returns all the guilds containing this user.
 		/// </summary>
-		public static IEnumerable<IGuild> GuildsContainingUser(this DiscordSocketClient client, IUser user) => 
+		public static IEnumerable<IGuild> GuildsContainingUser(this DiscordSocketClient client, IUser user) =>
 			client.Guilds.Where(g => g.Users.Any(s => s.Id == user.Id));
 
 		/// <summary>

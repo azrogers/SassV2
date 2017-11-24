@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.Commands;
-using SassV2.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
+using SassV2.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;

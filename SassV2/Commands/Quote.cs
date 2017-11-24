@@ -198,7 +198,7 @@ namespace SassV2.Commands
 			var cmd = db.BuildCommand("DELETE FROM quotes WHERE id = :id;");
 			cmd.Parameters.AddWithValue("id", id);
 			await cmd.ExecuteNonQueryAsync();
-			
+
 			var findQuoteCmd = db.BuildCommand("SELECT `id` FROM quotes WHERE id > :id;");
 			findQuoteCmd.Parameters.AddWithValue("id", id);
 			var reader = await findQuoteCmd.ExecuteReaderAsync();

@@ -13,8 +13,8 @@ namespace SassV2
 		/// <summary>
 		/// Returns the field names for this table formatted for use in a SQL statement.
 		/// </summary>
-		protected static string FieldNamesFormatted => 
-			string.Join(", ", _fields.Select(f =>  "`" + f.GetCustomAttribute<SqliteFieldAttribute>().FieldName + "`"));
+		protected static string FieldNamesFormatted =>
+			string.Join(", ", _fields.Select(f => "`" + f.GetCustomAttribute<SqliteFieldAttribute>().FieldName + "`"));
 
 		/// <summary>
 		/// Returns the DB behind this DataTable.
@@ -36,7 +36,7 @@ namespace SassV2
 		private static Dictionary<string, FieldInfo> _fieldNameToInfo = new Dictionary<string, FieldInfo>();
 		private static Logger _logger = LogManager.GetCurrentClassLogger();
 		private RelationalDatabase _db;
-		
+
 		static DataTable()
 		{
 			_fields = typeof(T).GetTypeInfo().GetFields()
@@ -50,7 +50,7 @@ namespace SassV2
 
 			TableName = typeof(T).GetTypeInfo().GetCustomAttribute<SqliteTableAttribute>().TableName;
 		}
-		
+
 		/// <summary>
 		/// Loads an object with this ID if it exists.
 		/// </summary>
@@ -68,7 +68,7 @@ namespace SassV2
 			}
 			return (T)((object)obj);
 		}
-		
+
 		/// <summary>
 		/// Returns all objects of this type.
 		/// </summary>
@@ -78,7 +78,7 @@ namespace SassV2
 			_logger.Debug("executing sql statement: " + sqliteCommand.CommandText);
 			return AllFromCommand(db, sqliteCommand);
 		}
-		
+
 		/// <summary>
 		/// Returns all results from this command.
 		/// </summary>
@@ -105,7 +105,7 @@ namespace SassV2
 
 			return list;
 		}
-		
+
 		public DataTable(RelationalDatabase db)
 		{
 			_db = db;
@@ -114,7 +114,7 @@ namespace SassV2
 				CreateTable(db).Wait();
 			}
 		}
-		
+
 		/// <summary>
 		/// Saves this object.
 		/// </summary>
@@ -164,7 +164,7 @@ namespace SassV2
 				Id = sqliteDataReader.GetInt64(0);
 			}
 		}
-		
+
 		/// <summary>
 		/// Loads this class from the given SqliteDataReader.
 		/// </summary>
@@ -204,7 +204,7 @@ namespace SassV2
 				}
 			}
 		}
-		
+
 		/// <summary>
 		/// Load this table, if its ID is set.
 		/// </summary>
@@ -226,7 +226,7 @@ namespace SassV2
 			}
 			LoadFromReader(sqliteDataReader);
 		}
-		
+
 		/// <summary>
 		/// Creates the indexes for this table. Should be overwritten if your class has indexes.
 		/// </summary>
@@ -234,7 +234,7 @@ namespace SassV2
 		{
 			await Task.FromResult(0);
 		}
-		
+
 		/// <summary>
 		/// Creates the table for this class.
 		/// </summary>

@@ -380,11 +380,11 @@ namespace SassV2.Commands
 			{
 				finalStr += secondCurrency + (finalNum == 1 ? "" : "s");
 			}
-			return 
-				firstSymbol + firstNum.ToString("C").Substring(1) + " " + 
-				(firstNum == 1 ? 
-					_currencyFormatting[firstCurrency][0] : 
-					_currencyFormatting[firstCurrency][1]) 
+			return
+				firstSymbol + firstNum.ToString("C").Substring(1) + " " +
+				(firstNum == 1 ?
+					_currencyFormatting[firstCurrency][0] :
+					_currencyFormatting[firstCurrency][1])
 				+ " = " + finalStr;
 		}
 

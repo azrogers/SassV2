@@ -1,11 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 
 namespace SassV2
 {
@@ -32,7 +30,7 @@ namespace SassV2
 			CurrencyLayerKey = ReadKey<string>(file, "currency_layer");
 
 			// read roles
-			foreach (JProperty prop in file["roles"].ToObject<JObject>().Properties())
+			foreach(JProperty prop in file["roles"].ToObject<JObject>().Properties())
 			{
 				Roles[prop.Name] = prop.Value.ToString();
 			}

@@ -9,6 +9,8 @@
 
 <p>
 	last command on: @ViewBag.LastCommand
+    <br>
+    <a href="/admin/quotes/@ViewBag.Server.Id">view quotes</a>
 </p>
 
 <form action="/admin/leave/@ViewBag.Server.Id" method="post" onsubmit="return confirm('Are you sure you want to do this?');">
