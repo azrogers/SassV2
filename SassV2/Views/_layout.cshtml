@@ -24,6 +24,7 @@
 			@if(ViewBag.Session.Data.ContainsKey("discord_user_id"))
 			{
 				<li><a href="/bio/edit">Bios</a></li>
+                <li><a href="/bank">Bank</a></li>
 			}
 		</ul>
 		@if(ViewBag.Session.Data.ContainsKey("discord_user_name"))
@@ -34,7 +35,13 @@
 					<input type="submit" value="(log out)">
 				</form>
 			</div>
-		}
+        }
+        else
+        {
+            <div class="header_user">
+                <a href="/auth/discord">log in</a>
+            </div>
+        }
 	</div>
     <div class="container">
         @RenderBody()

@@ -32,18 +32,20 @@ namespace SassV2
 			return AllFromCommand(db, sqliteCommand);
 		}
 
-		public static Task<IEnumerable<BankTransaction>> OpenTransactionsForUser(RelationalDatabase db, ulong user)
+		public static async Task<IEnumerable<BankTransaction>> OpenTransactionsForUser(RelationalDatabase db, ulong user)
 		{
 			SqliteCommand sqliteCommand = db.BuildCommand("SELECT transactions.* FROM balances\r\nLEFT JOIN transactions ON transactions.id = balances.transaction_id\r\nWHERE IFNULL(balances.settled, 0) == 0 AND balances.discord_id = :user\r\nGROUP BY transactions.id\r\nORDER BY transactions.timestamp DESC;");
 			sqliteCommand.Parameters.AddWithValue("user", user.ToString());
-			return AllFromCommand(db, sqliteCommand);
+			await BankBalance.CreateTable(db);
+			return await AllFromCommand(db, sqliteCommand);
 		}
 
-		public static Task<IEnumerable<BankTransaction>> TransactionsForUser(RelationalDatabase db, ulong user)
+		public static async Task<IEnumerable<BankTransaction>> TransactionsForUser(RelationalDatabase db, ulong user)
 		{
 			SqliteCommand sqliteCommand = db.BuildCommand("SELECT transactions.* FROM balances\r\nLEFT JOIN transactions ON transactions.id = balances.transaction_id\r\nWHERE balances.discord_id = :user\r\nGROUP BY transactions.id\r\nORDER BY transactions.timestamp DESC;");
 			sqliteCommand.Parameters.AddWithValue("user", user.ToString());
-			return AllFromCommand(db, sqliteCommand);
+			await BankBalance.CreateTable(db);
+			return await AllFromCommand(db, sqliteCommand);
 		}
 
 		public BankTransaction(RelationalDatabase db) : base(db)

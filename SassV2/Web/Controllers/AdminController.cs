@@ -90,7 +90,11 @@ namespace SassV2.Web.Controllers
 			var guild = _bot.Client.GetGuild(serverId);
 			var users = guild.Users.OrderBy(u => u.Username);
 
-			return ViewResponse(server, context, "admin/server", new { Title = guild.Name, Server = guild, Users = users });
+			return ViewResponse(server, context, "admin/server", new {
+				Title = guild.Name,
+				Server = guild,
+				Users = users,
+				LastCommand = ActivityManager.GetLastActive(_bot, serverId) });
 		}
 
 		[WebApiHandler(HttpVerbs.Post, "/admin/bio")]

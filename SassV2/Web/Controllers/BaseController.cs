@@ -17,14 +17,22 @@ namespace SassV2.Web.Controllers
 
 		protected bool Redirect(WebServer server, HttpListenerContext context, string path)
 		{
-			var url = context.Request.Url.OriginalString;
-			string baseUrl;
+			string newUrl;
+			if(path.StartsWith("http://") || path.StartsWith("https://"))
+			{
+				newUrl = path;
+			}
+			else
+			{
+				var url = context.Request.Url.OriginalString;
+				string baseUrl;
 #if DEBUG
-			baseUrl = context.Request.Url.Scheme + "://" + context.Request.Url.Authority;
+				baseUrl = context.Request.Url.Scheme + "://" + context.Request.Url.Authority;
 #else
-			baseUrl = context.Request.Url.Scheme + "://" + context.Request.Url.Host;
+				baseUrl = context.Request.Url.Scheme + "://" + context.Request.Url.Host;
 #endif
-			var newUrl = baseUrl + path;
+				newUrl = baseUrl + path;
+			}
 			context.Response.StatusCode = 302;
 			context.Response.AppendHeader("Location", newUrl);
 			LogManager.GetCurrentClassLogger().Debug("redirecting to " + newUrl);

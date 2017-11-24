@@ -41,6 +41,11 @@ h2, h3 {
     line-height: 40px;
 }
 
+.header .header_user
+{
+    line-height: 40px;
+}
+
 .header .menu li {
     display: inline-block;
     margin-left: 30px;

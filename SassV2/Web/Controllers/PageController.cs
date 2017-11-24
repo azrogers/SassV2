@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Newtonsoft.Json.Linq;
 using NLog;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +15,12 @@ namespace SassV2.Web.Controllers
 {
 	public class PageController : BaseController
 	{
+#if DEBUG
+		public const string AuthAppId = "sassv2-testing";
+#else
+		public const string AuthAppId = "sassv2";
+#endif
+
 		private DiscordBot _bot;
 		private Logger _logger;
 
@@ -28,6 +35,37 @@ namespace SassV2.Web.Controllers
 		{
 			AuthManager.Logout(server, context);
 			return Redirect(server, context, "/");
+		}
+
+		// handle callback from auth gateway
+		[WebApiHandler(HttpVerbs.Get, "/auth/callback")]
+		public async Task<bool> AuthDiscordCallback(WebServer server, HttpListenerContext context)
+		{
+			var key = context.QueryString("userkey");
+			if(key == null)
+				return await Error(server, context, "No userkey provided.");
+
+			// get user data
+			var result = await Util.GetURLAsync("https://auth.anime.lgbt/auth/verify?userkey=" + key);
+			var obj = JObject.Parse(result);
+			if(!obj.Value<bool>("valid"))
+				return await Error(server, context, "Auth error: " + obj.Value<string>("error"));
+
+			// retrieve user id from bot
+			var id = obj["data"].Value<string>("id");
+			if(id == null || !ulong.TryParse(id, out ulong userId))
+				return await Error(server, context, "Invalid user ID returned from auth gateway.");
+			var user = _bot.Client.GetUser(userId);
+			if(user == null)
+				return await Error(server, context, "User not found. Are you in a guild the bot is connected to?");
+			AuthManager.SaveUser(server, context, user);
+			return Redirect(server, context, "/");
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/auth/discord")]
+		public bool AuthDiscord(WebServer server, HttpListenerContext context)
+		{
+			return Redirect(server, context, "https://auth.anime.lgbt/auth?appid=" + AuthAppId);
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/auth")]
