@@ -21,6 +21,7 @@ namespace SassV2.Web.Controllers
 			_logger = LogManager.GetCurrentClassLogger();
 		}
 
+		// edit the stack
 		[WebApiHandler(HttpVerbs.Post, "/admin/stack")]
 		public async Task<bool> EditStack(WebServer server, HttpListenerContext context)
 		{
@@ -44,6 +45,7 @@ namespace SassV2.Web.Controllers
 			return Redirect(server, context, "/admin/");
 		}
 
+		// print the stack
 		[WebApiHandler(HttpVerbs.Get, "/admin/stack")]
 		public Task<bool> ViewStack(WebServer server, HttpListenerContext context)
 		{
@@ -65,10 +67,11 @@ namespace SassV2.Web.Controllers
 			return ViewResponse(server, context, "admin/stack", new { Title = "Edit Stack", Stack = stack.Trim() });
 		}
 
+		// leave a server
 		[WebApiHandler(HttpVerbs.Post, "/admin/leave/{serverId}")]
 		public async Task<bool> LeaveServer(WebServer server, HttpListenerContext context, ulong serverId)
 		{
-			if(!AuthManager.IsAdmin(server, context, _bot))
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
 			{
 				return await ForbiddenError(server, context);
 			}
@@ -79,10 +82,11 @@ namespace SassV2.Web.Controllers
 			return Redirect(server, context, "/admin");
 		}
 
+		// print a server's info
 		[WebApiHandler(HttpVerbs.Get, "/admin/server/{serverId}")]
 		public Task<bool> ServerPage(WebServer server, HttpListenerContext context, ulong serverId)
 		{
-			if(!AuthManager.IsAdmin(server, context, _bot))
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
 			{
 				return ForbiddenError(server, context);
 			}
@@ -90,13 +94,16 @@ namespace SassV2.Web.Controllers
 			var guild = _bot.Client.GetGuild(serverId);
 			var users = guild.Users.OrderBy(u => u.Username);
 
-			return ViewResponse(server, context, "admin/server", new {
+			return ViewResponse(server, context, "admin/server", new
+			{
 				Title = guild.Name,
 				Server = guild,
 				Users = users,
-				LastCommand = ActivityManager.GetLastActive(_bot, serverId) });
+				LastCommand = ActivityManager.GetLastActive(_bot, serverId)
+			});
 		}
 
+		// allow the admin to edit a user's bio
 		[WebApiHandler(HttpVerbs.Post, "/admin/bio")]
 		public async Task<bool> BioEdit(WebServer server, HttpListenerContext context)
 		{
@@ -131,14 +138,19 @@ namespace SassV2.Web.Controllers
 		[WebApiHandler(HttpVerbs.Get, "/admin")]
 		public Task<bool> AdminPage(WebServer server, HttpListenerContext context)
 		{
-			if(!AuthManager.IsAdmin(server, context, _bot))
+			if(!AuthManager.IsAuthenticated(server, context))
 			{
 				return ForbiddenError(server, context);
 			}
 
-			var servers = _bot.Client.Guilds.OrderBy(g => g.Name);
+			var user = AuthManager.GetUser(server, context, _bot);
+			var servers = _bot.GuildsWithUserAsAdmin(user);
 
-			return ViewResponse(server, context, "admin/index", new { Title = "Admin", Servers = servers });
+			return ViewResponse(server, context, "admin/index", new {
+				Title = "Admin",
+				Servers = servers,
+				IsGlobalAdmin = AuthManager.IsAdmin(server, context, _bot)
+			});
 		}
 	}
 }

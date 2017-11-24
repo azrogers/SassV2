@@ -109,7 +109,7 @@ namespace SassV2
 				}
 
 				var msg = Util.CommandErrorToMessage(result.Error.Value);
-				if(ServerConfig.Get(services.GetService<DiscordBot>(), message.ServerId()).Civility)
+				if(message.Channel is IGuildChannel && ServerConfig.Get(services.GetService<DiscordBot>(), message.ServerId()).Civility)
 					msg = Util.CivilizeString(msg);
 				await commandContext.Channel.SendMessageAsync(msg);
 			}

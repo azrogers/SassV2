@@ -29,6 +29,19 @@ namespace SassV2.Web
 		}
 
 		/// <summary>
+		/// Is the user an admin of this specific server?
+		/// </summary>
+		public static bool IsAdminOfServer(WebServer server, HttpListenerContext context, DiscordBot bot, ulong serverId)
+		{
+			if(!IsAuthenticated(server, context))
+				return false;
+			var id = (ulong)server.GetSession(context)[SessionAuthKey];
+			return
+				bot.Config.GetRole(id) == "admin" ||
+				bot.Client.GetGuild(serverId).GetUser(id).GuildPermissions.Administrator;
+		}
+
+		/// <summary>
 		/// Returns the IUser object if authenticated, or null.
 		/// </summary>
 		public static IUser GetUser(WebServer server, HttpListenerContext context, DiscordBot bot)

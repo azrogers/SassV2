@@ -89,14 +89,28 @@ namespace SassV2.Commands
 
 		[SassCommand("impersonate", Description = "impersonate a user to edit their bio for them", Usage = "impersonate <user id>", Hidden = true, IsPM = true)]
 		[Command("impersonate")]
-		public async Task ImpersonateUser(IUser user)
+		[RequireContext(ContextType.DM)]
+		public async Task ImpersonateUser([Remainder] string userIdStr)
 		{
+			if(!ulong.TryParse(userIdStr, out ulong userId))
+			{
+				await ReplyAsync("Invalid user ID.");
+				return;
+			}
+
 			if (_bot.Config.GetRole(Context.User.Id) != "admin")
 			{
 				await ReplyAsync("You're not allowed to use this command.");
 				return;
 			}
-			
+
+			var user = _bot.Client.GetUser(userId);
+			if(user == null)
+			{
+				await ReplyAsync("User not found.");
+				return;
+			}
+
 			await ReplyAsync(await AuthCodeManager.GetURL("/bio/edit", user, _bot));
 		}
 
@@ -113,15 +127,13 @@ namespace SassV2.Commands
 			Environment.Exit(0);
 		}
 
+		[SassCommand("admin", 
+			desc: "Gives access to the admin panel for your server. PM only.",
+			category: "Administration",
+			isPM: true)]
 		[Command("admin")]
 		public async Task Admin()
 		{
-			if (_bot.Config.GetRole(Context.User.Id) != "admin")
-			{
-				await ReplyAsync("You're not allowed to use this command.");
-				return;
-			}
-
 			await ReplyAsync(await AuthCodeManager.GetURL("/admin/", Context.User, _bot));
 		}
 	}

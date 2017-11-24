@@ -31,6 +31,15 @@ namespace SassV2
 		public static string NicknameOrDefault(this IGuildUser user) => user.Nickname ?? user.Username;
 
 		/// <summary>
+		/// Waits for this task to complete and returns its result.
+		/// </summary>
+		public static T WaitAndReturn<T>(this Task<T> task)
+		{
+			task.Wait();
+			return task.Result;
+		}
+
+		/// <summary>
 		/// Returns the user's real name if the have one set, or else their nickname or username.
 		/// </summary>
 		public static async Task<string> RealNameOrDefault(this IGuildUser user, DiscordBot bot)
@@ -205,5 +214,14 @@ namespace SassV2
 		/// </summary>
 		public static IEnumerable<IGuild> GuildsContainingUser(this DiscordSocketClient client, IUser user) => 
 			client.Guilds.Where(g => g.Users.Any(s => s.Id == user.Id));
+
+		/// <summary>
+		/// Returns all the guilds that this user is admin in.
+		/// </summary>
+		public static IEnumerable<IGuild> GuildsWithUserAsAdmin(this DiscordBot bot, IUser user)
+		{
+			if(bot.Config.GetRole(user.Id) == "admin") return bot.Client.Guilds;
+			return bot.Client.GuildsContainingUser(user).Where(g => g.GetUserAsync(user.Id).WaitAndReturn().GuildPermissions.Administrator);
+		}
 	}
 }

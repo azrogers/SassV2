@@ -6,10 +6,13 @@
 <p>
 	<em>Fun sass stuff.</em>
 </p>
+@if(ViewBag.IsGlobalAdmin)
+{
 <h3>Stack</h3>
 <p>
-	<a href="/admin/stack">Edit the stack.</a>
+    <a href="/admin/stack">Edit the stack.</a>
 </p>
+}
 <h3>Servers</h3>
 <ul>
 	@foreach(var server in ViewBag.Servers)
