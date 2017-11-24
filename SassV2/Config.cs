@@ -12,42 +12,24 @@ namespace SassV2
 	public class Config
 	{
 		public string Token;
-		public string LogFile;
-		public bool EnableEG;
-		public int CallbackPort;
-		public string Server;
-		public string DefaultChannel;
-		public string GoldChannel;
 		public Dictionary<string, string> Roles = new Dictionary<string, string>();
 		public string URL;
-		public string CallbackSecret;
 		public string ClientID;
 		public string ClientSecret;
 		public string ImgurClientId;
-		public string BotUserId;
-		public string DiscordBotsAuthHeader;
-		public int Timeout;
 		public string[] DebugServers;
+		public string CurrencyLayerKey;
 
 		public Config(string configFile)
 		{
 			var file = JObject.Parse(File.ReadAllText(configFile));
 
 			Token = ReadKey<string>(file, "token");
-			LogFile = ReadKey<string>(file, "log");
-			EnableEG = ReadKey<bool>(file, "enable_eg");
-			CallbackPort = ReadKey<int>(file, "callback_port");
-			Server = ReadKey<string>(file, "server");
-			DefaultChannel = ReadKey<string>(file, "default_channel");
-			GoldChannel = ReadKey<string>(file, "gold_channel");
 			URL = ReadKey<string>(file, "url");
-			CallbackSecret = ReadKey<string>(file, "callback_secret");
 			ClientID = ReadKey<string>(file, "client_id");
 			ClientSecret = ReadKey<string>(file, "client_secret");
 			ImgurClientId = ReadKey<string>(file, "imgur_client_id");
-			//BotUserId = ReadKey<string>(file, "discordpw_bot_user_id");
-			//DiscordBotsAuthHeader = ReadKey<string>(file, "discordpw_auth_header");
-			Timeout = ReadKey<int>(file, "timeout");
+			CurrencyLayerKey = ReadKey<string>(file, "currency_layer");
 
 			// read roles
 			foreach (JProperty prop in file["roles"].ToObject<JObject>().Properties())

@@ -14,11 +14,20 @@ namespace SassV2.Commands
 	/// </summary>
 	public class ConvertCommand : ModuleBase<SocketCommandContext>
 	{
-		private static UnitConverter _unitConverter = new UnitConverter();
+		private UnitConverter _unitConverter;
+
+		public ConvertCommand(DiscordBot bot)
+		{
+			_unitConverter = new UnitConverter(bot);
+		}
 
 		// convert commands used to be one single command, so we need to remind people if they try to use that one first
+		[SassCommand(
+			name: "convert",
+			hidden: true)]
 		[Command("convert")]
-		public async Task ConvertDummy()
+		[Priority(1)]
+		public async Task ConvertDummy([Remainder] string args = "")
 		{
 			await ReplyAsync("The 'convert' command has been split into 'convert unit', 'convert currency', and 'convert timezone'.");
 		}
@@ -32,6 +41,7 @@ namespace SassV2.Commands
 			category: "Useful")]
 		[Command("convert unit")]
 		[Alias("unit convert", "convert units")]
+		[Priority(2)]
 		public async Task ConvertUnits([Remainder] string args)
 		{
 			try
@@ -54,6 +64,7 @@ namespace SassV2.Commands
 			category: "Useful")]
 		[Command("convert currency")]
 		[Alias("currency convert")]
+		[Priority(2)]
 		public async Task ConvertCurrency([Remainder] string args)
 		{
 			try
@@ -77,6 +88,7 @@ namespace SassV2.Commands
 		)]
 		[Command("convert timezone")]
 		[Alias("timezone convert")]
+		[Priority(2)]
 		public async Task ConvertTimezone([Remainder] string args)
 		{
 			try
@@ -100,6 +112,7 @@ namespace SassV2.Commands
 		// 200 meters *to* inches is divided into ["200 meters", "inches"], making it easier to parse out the units
 		private string[] _pivotWords = { "to", "in", "at", "as", "=" };
 		private Regex _timeRegex = new Regex(@"(\d+(:\d+)?)(\s+)?(AM|PM)?", RegexOptions.IgnoreCase);
+		private DiscordBot _bot;
 
 		private Dictionary<string, string> _unitTypes = new Dictionary<string, string>();
 		private Dictionary<string, double> _unitValues = new Dictionary<string, double>();
@@ -108,13 +121,15 @@ namespace SassV2.Commands
 
 		private Dictionary<string, string> _currencyNames = new Dictionary<string, string>();
 		private Dictionary<string, string[]> _currencyFormatting = new Dictionary<string, string[]>();
+		private Dictionary<string, string> _currencySymbols = new Dictionary<string, string>();
 
 		private Dictionary<string, string> _timezoneNames = new Dictionary<string, string>();
 		private Dictionary<string, string> _timezoneFormatting = new Dictionary<string, string>();
 		private Dictionary<string, string> _timezoneOffsets = new Dictionary<string, string>();
 
-		public UnitConverter()
+		public UnitConverter(DiscordBot bot)
 		{
+			_bot = bot;
 			var unitObj = JObject.Parse(File.ReadAllText("units.json"));
 
 			// read units
@@ -156,6 +171,15 @@ namespace SassV2.Commands
 				if(currency["short"] != null)
 				{
 					_currencyNames[currency["short"].Value<string>().ToLower()] = code;
+				}
+
+				if(currency["symbol"] != null)
+				{
+					_currencySymbols[code] = currency["symbol"].Value<string>();
+				}
+				else
+				{
+					_currencySymbols[code] = code;
 				}
 			}
 
@@ -333,14 +357,20 @@ namespace SassV2.Commands
 			}
 
 			// get most recent value for this unit
-			var result = await Util.GetURLAsync("http://finance.yahoo.com/d/quotes.csv?e=.csv&f=l1&s=" + firstCurrency + secondCurrency + "=X");
-			if(!double.TryParse(result, out var conversion))
-			{
-				throw new CommandException("Unexpected result from Yahoo. Blame Marissa.");
-			}
+			var key = _bot.Config.CurrencyLayerKey;
+			var result = await Util.GetURLAsync($"http://apilayer.net/api/live?access_key={key}&currencies={firstCurrency},{secondCurrency}&format=1");
+			var obj = JObject.Parse(result);
+			if(!obj.Value<bool>("success"))
+				throw new CommandException("Couldn't get currency data from Currency Layer. God, doesn't this API suck?");
+			// currency layer won't let us change the source currency on the free plan - so we look up USD->firstCurrency and USD->secondCurrency
+			var firstResult = obj["quotes"].Value<double>("USD" + firstCurrency);
+			var secondResult = obj["quotes"].Value<double>("USD" + secondCurrency);
+			var conversion = secondResult / firstResult;
 
+			var firstSymbol = _currencySymbols[firstCurrency];
+			var secondSymbol = _currencySymbols[secondCurrency];
 			var finalNum = conversion * firstNum;
-			var finalStr = finalNum + " ";
+			var finalStr = secondSymbol + finalNum.ToString("C").Substring(1) + " ";
 			if(_currencyFormatting.ContainsKey(secondCurrency))
 			{
 				var formatting = _currencyFormatting[secondCurrency];
@@ -350,7 +380,12 @@ namespace SassV2.Commands
 			{
 				finalStr += secondCurrency + (finalNum == 1 ? "" : "s");
 			}
-			return firstNum + " " + (firstNum == 1 ? _currencyFormatting[firstCurrency][0] : _currencyFormatting[firstCurrency][1]) + " = " + finalStr;
+			return 
+				firstSymbol + firstNum.ToString("C").Substring(1) + " " + 
+				(firstNum == 1 ? 
+					_currencyFormatting[firstCurrency][0] : 
+					_currencyFormatting[firstCurrency][1]) 
+				+ " = " + finalStr;
 		}
 
 		/// <summary>
