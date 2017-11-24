@@ -35,7 +35,7 @@
 
   <ItemGroup>
     <None Update="Content\css\style.css">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Fonts\1Row.flf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

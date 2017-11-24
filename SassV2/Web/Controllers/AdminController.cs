@@ -1,5 +1,7 @@
 ﻿using NLog;
 using SassV2.Commands;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -67,6 +69,62 @@ namespace SassV2.Web.Controllers
 			return ViewResponse(server, context, "admin/stack", new { Title = "Edit Stack", Stack = stack.Trim() });
 		}
 
+		[WebApiHandler(HttpVerbs.Post, "/admin/quotes/{serverId}")]
+		public async Task<bool> DeleteQuotes(WebServer server, HttpListenerContext context, ulong serverId)
+		{
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var guild = _bot.Client.GetGuild(serverId);
+			if(guild == null)
+			{
+				return await Error(server, context, "Server not found.");
+			}
+
+			var db = _bot.RelDatabase(serverId);
+
+			var postData = context.RequestFormDataDictionary();
+			var hardDelete = postData.ContainsKey("hard_delete");
+			var quotes = Util.ReadFormArray(postData, "quote_delete");
+			if(!quotes.Any())
+				return await Error(server, context, "No quotes provided.");
+
+			foreach(var quote in quotes)
+			{
+				var quoteId = long.Parse(quote);
+				if(hardDelete)
+					await Quote.DeleteQuote(db, quoteId);
+				else
+				{
+					var quoteObj = new Quote(db, quoteId);
+					quoteObj.SoftDeleted = !quoteObj.SoftDeleted;
+					await quoteObj.Save();
+				}
+			}
+
+			return await ListQuotesAdmin(server, context, serverId);
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/admin/quotes/{serverId}")]
+		public async Task<bool> ListQuotesAdmin(WebServer server, HttpListenerContext context, ulong serverId)
+		{
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var guild = _bot.Client.GetGuild(serverId);
+			if(guild == null)
+			{
+				return await Error(server, context, "Server not found.");
+			}
+
+			var quotes = await Quote.All(_bot.RelDatabase(serverId));
+			return await ViewResponse(server, context, "admin/quotes", new { Title = "List Quotes", Quotes = quotes, ServerId = serverId });
+		}
+
 		// leave a server
 		[WebApiHandler(HttpVerbs.Post, "/admin/leave/{serverId}")]
 		public async Task<bool> LeaveServer(WebServer server, HttpListenerContext context, ulong serverId)
@@ -84,22 +142,23 @@ namespace SassV2.Web.Controllers
 
 		// print a server's info
 		[WebApiHandler(HttpVerbs.Get, "/admin/server/{serverId}")]
-		public Task<bool> ServerPage(WebServer server, HttpListenerContext context, ulong serverId)
+		public async Task<bool> ServerPage(WebServer server, HttpListenerContext context, ulong serverId)
 		{
 			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
 			{
-				return ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
 
 			var guild = _bot.Client.GetGuild(serverId);
 			var users = guild.Users.OrderBy(u => u.Username);
+			var lastCommand = await ActivityManager.GetLastActive(_bot, serverId);
 
-			return ViewResponse(server, context, "admin/server", new
+			return await ViewResponse(server, context, "admin/server", new
 			{
 				Title = guild.Name,
 				Server = guild,
 				Users = users,
-				LastCommand = ActivityManager.GetLastActive(_bot, serverId)
+				LastCommand = lastCommand == DateTime.MinValue ? "never" : lastCommand.ToString("f")
 			});
 		}
 
@@ -136,21 +195,42 @@ namespace SassV2.Web.Controllers
 		}
 
 		[WebApiHandler(HttpVerbs.Get, "/admin")]
-		public Task<bool> AdminPage(WebServer server, HttpListenerContext context)
+		public async Task<bool> AdminPage(WebServer server, HttpListenerContext context)
 		{
 			if(!AuthManager.IsAuthenticated(server, context))
 			{
-				return ForbiddenError(server, context);
+				return await ForbiddenError(server, context);
 			}
 
 			var user = AuthManager.GetUser(server, context, _bot);
-			var servers = _bot.GuildsWithUserAsAdmin(user);
+			var servers = _bot.GuildsWithUserAsAdmin(user)
+				.OrderBy(g => g.Name);
 
-			return ViewResponse(server, context, "admin/index", new {
+			var serverModels = new List<ServerModel>();
+			foreach(var dServer in servers)
+			{
+				var model = new ServerModel
+				{
+					Name = dServer.Name,
+					Id = dServer.Id,
+					HasActivity = (await ActivityManager.GetLastActive(_bot, dServer.Id)) != DateTime.MinValue
+				};
+				serverModels.Add(model);
+			}
+
+			return await ViewResponse(server, context, "admin/index", new
+			{
 				Title = "Admin",
-				Servers = servers,
+				Servers = serverModels,
 				IsGlobalAdmin = AuthManager.IsAdmin(server, context, _bot)
 			});
+		}
+
+		public class ServerModel
+		{
+			public ulong Id;
+			public string Name;
+			public bool HasActivity;
 		}
 	}
 }

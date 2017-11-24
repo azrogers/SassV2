@@ -14,9 +14,12 @@
 </p>
 }
 <h3>Servers</h3>
+<p>
+    Servers in italics have never had a recorded SASS command.
+</p>
 <ul>
 	@foreach(var server in ViewBag.Servers)
 	{
-		<li><a href="/admin/server/@server.Id">@server.Name</a></li>
+		<li class=@(server.HasActivity ? "" : "server-no-activity")><a href="/admin/server/@server.Id">@server.Name</a></li>
 	}
 </ul>

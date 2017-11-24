@@ -29,7 +29,7 @@ namespace SassV2.Web.Controllers
 			_logger = LogManager.GetCurrentClassLogger();
 		}
 
-		[WebApiHandler(HttpVerbs.Post, "/logout")]
+		[WebApiHandler(HttpVerbs.Post, "^/logout")]
 		public bool Logout(WebServer server, HttpListenerContext context)
 		{
 			AuthManager.Logout(server, context);
@@ -37,7 +37,7 @@ namespace SassV2.Web.Controllers
 		}
 
 		// handle callback from auth gateway
-		[WebApiHandler(HttpVerbs.Get, "/auth/callback")]
+		[WebApiHandler(HttpVerbs.Get, "^/auth/callback")]
 		public async Task<bool> AuthDiscordCallback(WebServer server, HttpListenerContext context)
 		{
 			var key = context.QueryString("userkey");
@@ -61,13 +61,13 @@ namespace SassV2.Web.Controllers
 			return Redirect(server, context, "/");
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/auth/discord")]
+		[WebApiHandler(HttpVerbs.Get, "^/auth/discord")]
 		public bool AuthDiscord(WebServer server, HttpListenerContext context)
 		{
 			return Redirect(server, context, "https://auth.anime.lgbt/auth?appid=" + AuthAppId);
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/auth")]
+		[WebApiHandler(HttpVerbs.Get, "^/auth")]
 		public async Task<bool> Auth(WebServer server, HttpListenerContext context)
 		{
 			if(AuthManager.IsAuthenticated(server, context))
@@ -91,7 +91,7 @@ namespace SassV2.Web.Controllers
 			return Redirect(server, context, context.QueryString("after"));
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/images/{urlId}")]
+		[WebApiHandler(HttpVerbs.Get, "^/images/{urlId}")]
 		public Task<bool> GetImages(WebServer server, HttpListenerContext context, string urlId)
 		{
 			if(!ulong.TryParse(urlId, out var serverId) || !_bot.ServerIds.Contains(serverId))
@@ -105,7 +105,7 @@ namespace SassV2.Web.Controllers
 			return ViewResponse(server, context, "images", new { Title = "Images", Images = images });
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/quotes/{urlId}")]
+		[WebApiHandler(HttpVerbs.Get, "^/quotes/{urlId}")]
 		public async Task<bool> GetQuotes(WebServer server, HttpListenerContext context, string urlId)
 		{
 			if(!ulong.TryParse(urlId, out var serverId) || !_bot.ServerIds.Contains(serverId))
@@ -121,7 +121,7 @@ namespace SassV2.Web.Controllers
 			return await ViewResponse(server, context, "quotes", quoteList, new { Title = "Quotes" });
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/fonts")]
+		[WebApiHandler(HttpVerbs.Get, "^/fonts")]
 		public Task<bool> GetFonts(WebServer server, HttpListenerContext context)
 		{
 			var files = Directory.EnumerateFiles("Fonts").Select(f =>
@@ -132,7 +132,7 @@ namespace SassV2.Web.Controllers
 			return ViewResponse(server, context, "fonts", new { Title = "Fonts", Fonts = files });
 		}
 
-		[WebApiHandler(HttpVerbs.Get, "/servers")]
+		[WebApiHandler(HttpVerbs.Get, "^/servers")]
 		public Task<bool> ListServers(WebServer server, HttpListenerContext context)
 		{
 			var botGuilds = _bot.Client.Guilds;
@@ -148,7 +148,7 @@ namespace SassV2.Web.Controllers
 			return ViewResponse(server, context, "servers", new { Title = "Servers", Servers = servers });
 		}
 
-		[WebApiHandler(HttpVerbs.Get, new string[] { "/images", "/quotes" })]
+		[WebApiHandler(HttpVerbs.Get, new string[] { "^/images", "^/quotes" })]
 		public bool ImageQuotesRedirect(WebServer server, HttpListenerContext context)
 		{
 			return Redirect(server, context, "/servers");

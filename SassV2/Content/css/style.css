@@ -207,3 +207,13 @@ td, th
 {
     background: #eee;
 }
+
+.soft-deleted-quote
+{
+    color: #aaaaaa;
+}
+
+.server-no-activity
+{
+    font-style: italic;
+}

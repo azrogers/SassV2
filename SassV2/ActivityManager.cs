@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
 
 namespace SassV2
 {
@@ -14,7 +14,7 @@ namespace SassV2
 
 		public static async Task UpdateActivity(DiscordBot bot, ulong serverId)
 		{
-			SqliteCommand sqliteCommand = bot.GlobalDatabase.BuildCommand("\r\n\t\t\t\tINSERT OR REPLACE INTO server_activity(server, last_active) VALUES(:server, :last_active);");
+			SqliteCommand sqliteCommand = bot.GlobalDatabase.BuildCommand("INSERT OR REPLACE INTO server_activity(server, last_active) VALUES(:server, :last_active);");
 			sqliteCommand.Parameters.AddWithValue("server", serverId.ToString());
 			sqliteCommand.Parameters.AddWithValue("last_active", DateTime.Now);
 			await sqliteCommand.ExecuteNonQueryAsync();

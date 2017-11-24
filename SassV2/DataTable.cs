@@ -243,8 +243,13 @@ namespace SassV2
 			if(_createdDbs.Contains(db))
 				return;
 
+			var tableExistsCmd = db.BuildCommand($"SELECT name FROM sqlite_master WHERE type='table' AND name='{TableName}';");
+			var tableExists = (await tableExistsCmd.ExecuteReaderAsync()).HasRows;
 			var maxVersion = _fields.Select((f) => f.GetCustomAttribute<SqliteFieldAttribute>().Version).Max();
 			var version = await DataMigration.GetTableVersion(db, TableName);
+			// guess it existed before we had a migration for it...
+			if(!version.HasValue && tableExists)
+				version = 1;
 			if(version.HasValue && version.Value < maxVersion)
 			{
 				var newColumns = _fields

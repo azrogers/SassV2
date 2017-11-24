@@ -1,0 +1,34 @@
+﻿@{
+	Layout = "_layout.html";
+}
+
+<h2>Quote Management</h2>
+<p class="back-button">
+    <a href="/admin/server/@ViewBag.ServerId">back</a>
+</p>
+
+<form action="/admin/quotes/@ViewBag.ServerId" method="post" onsubmit="confirm('Are you sure you want to delete these quotes?');">
+    @foreach(var quote in ViewBag.Quotes)
+    {
+    <div class="admin-quote @(quote.SoftDeleted ? "soft-deleted-quote" : "")">
+        <input type="checkbox" value="@quote.Id" name="quote_delete[]">
+        #@quote.Id: "@quote.Body" - @quote.Author, @quote.Source
+    </div>
+    }
+    <p>
+        You have two options here:
+        <ul>
+            <li>
+                <strong>Soft delete</strong> will prevent quotes from showing up in the random quote selection, but will still keep the quote
+                in the database. If you soft delete a quote that's already been soft deleted, it will un-soft-delete it.
+            </li>
+            <li>
+                <strong>Hard delete</strong> will get rid of the quote. No backsies.
+            </li>
+        </ul>
+    </p>
+    <p>
+        <input type="submit" name="soft_delete" value="Soft Delete">
+        <input type="submit" name="hard_delete" value="Hard Delete">
+    </p>
+</form>
