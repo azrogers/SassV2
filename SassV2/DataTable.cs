@@ -89,6 +89,8 @@ namespace SassV2
 				await CreateTable(db);
 			}
 
+			_logger.Debug("executing sql statement: " + cmd.CommandText);
+
 			var list = new List<T>();
 			var sqliteDataReader = await cmd.ExecuteReaderAsync();
 			while(sqliteDataReader.Read())

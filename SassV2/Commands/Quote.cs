@@ -145,6 +145,22 @@ namespace SassV2.Commands
 		{
 			await ReplyAsync(_bot.Config.URL + "quotes/" + Context.Guild.Id);
 		}
+
+		[SassCommand("delete quote", "Delete a specific quote.", "delete quote <id>", "Quote")]
+		[Command("delete quote")]
+		[RequireContext(ContextType.Guild)]
+		public async Task DeleteQuote(long quoteId)
+		{
+			if(!(Context.User as IGuildUser).IsAdmin(_bot))
+			{
+				await ReplyAsync("You're not allowed to use this command.");
+				return;
+			}
+
+			var db = _bot.RelDatabase(Context.Guild.Id);
+			await Quote.DeleteQuote(db, quoteId);
+			await ReplyAsync("Deleted quote. Moved above quotes down - quote IDs changed.");
+		}
 	}
 
 	[SqliteTable("quotes")]
@@ -156,17 +172,47 @@ namespace SassV2.Commands
 		public string Author;
 		[SqliteField("source", DataType.Text)]
 		public string Source;
+		[SqliteField("soft_deleted", DataType.Integer, Version = 2)]
+		public bool SoftDeleted = false;
 
 		/// <summary>
 		/// Returns a random quote from the database.
 		/// </summary>
 		public static async Task<Quote> RandomQuote(RelationalDatabase db)
 		{
-			var cmd = db.BuildCommand("SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1;");
+			var cmd = db.BuildCommand("SELECT * FROM quotes WHERE IFNULL(soft_deleted, 0)=0 ORDER BY RANDOM() LIMIT 1;");
 			var quotes = await AllFromCommand(db, cmd);
 			if(!quotes.Any())
 				return null;
 			return quotes.First();
+		}
+
+		/// <summary>
+		/// Delete the specified quote.
+		/// </summary>
+		public static async Task DeleteQuote(RelationalDatabase db, long id)
+		{
+			await db.BuildAndExecute("BEGIN TRANSACTION;");
+
+			// do the deletion
+			var cmd = db.BuildCommand("DELETE FROM quotes WHERE id = :id;");
+			cmd.Parameters.AddWithValue("id", id);
+			await cmd.ExecuteNonQueryAsync();
+			
+			var findQuoteCmd = db.BuildCommand("SELECT `id` FROM quotes WHERE id > :id;");
+			findQuoteCmd.Parameters.AddWithValue("id", id);
+			var reader = await findQuoteCmd.ExecuteReaderAsync();
+
+			// go through every quote with an id > this one and bring their IDs down
+			long num = id;
+			while(reader.Read())
+			{
+				await db.BuildAndExecute($"UPDATE quotes SET id={num} WHERE id={reader.GetInt64(0)};");
+				num += 1;
+			}
+			await db.BuildAndExecute($"UPDATE SQLITE_SEQUENCE SET seq = {num - 1} WHERE name = 'quotes';");
+			// commit
+			await db.BuildAndExecute("END TRANSACTION;");
 		}
 
 		public Quote(RelationalDatabase db) : base(db)
