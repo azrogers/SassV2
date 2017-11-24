@@ -1,25 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
-using Microsoft.Data.Sqlite;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SassV2.Commands
 {
 	public class QuoteCommand : ModuleBase<SocketCommandContext>
 	{
-		private const string CREATE_STATEMENT = @"
-			CREATE TABLE IF NOT EXISTS quotes (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				quote TEXT,
-				author TEXT,
-				source TEXT
-			);
-		";
-
 		private DiscordBot _bot;
 
 		public QuoteCommand(DiscordBot bot)
@@ -28,9 +15,9 @@ namespace SassV2.Commands
 		}
 
 		[SassCommand(
-			name: "add quote", 
-			desc: "Adds a quote to SASS.", 
-			usage: "add quote \"<quote>\" \"<author>\" \"<source>\"", 
+			name: "add quote",
+			desc: "Adds a quote to SASS.",
+			usage: "add quote \"<quote>\" \"<author>\" \"<source>\"",
 			example: "add quote \"Mess with the best, die like the rest.\" \"Dade Murphy\" \"Hackers\"",
 			category: "Quote")]
 		[Command("add quote")]
@@ -38,7 +25,6 @@ namespace SassV2.Commands
 		public async Task AddQuote([Remainder] string args)
 		{
 			var db = _bot.RelDatabase(Context.Guild.Id);
-			await InitializeDatabase(db);
 			var parts = Util.SplitQuotedString(args);
 			if(parts.Length < 2)
 			{
@@ -46,7 +32,7 @@ namespace SassV2.Commands
 				return;
 			}
 
-			var quote = parts[0];
+			var body = parts[0];
 			var author = parts[1];
 			var source = "Source Unknown";
 			if(parts.Length > 2)
@@ -54,71 +40,58 @@ namespace SassV2.Commands
 				source = parts[2];
 			}
 
-			var cmd = db.BuildCommand("INSERT INTO quotes (quote,author,source) VALUES(:quote,:author,:source); select last_insert_rowid();");
-			cmd.Parameters.AddWithValue("quote", quote);
-			cmd.Parameters.AddWithValue("author", author);
-			cmd.Parameters.AddWithValue("source", source);
-			var lastId = (long)(await cmd.ExecuteScalarAsync());
+			var quote = new Quote(db)
+			{
+				Body = body,
+				Source = source,
+				Author = author
+			};
+			await quote.Save();
 
-			await ReplyAsync("Quote #" + lastId + " added.");
+			await ReplyAsync("Quote #" + quote.Id + " added.");
 		}
 
 		[SassCommand(
-			name: "quote", 
-			desc: "Get a quote from SASS.", 
-			usage: "quote\nquote <id>", 
+			name: "quote",
+			desc: "Get a quote from SASS.",
+			usage: "quote\nquote <id>",
 			example: "quote 1",
 			category: "Quote")]
 		[Command("quote")]
 		[RequireContext(ContextType.Guild)]
-		public async Task GetQuote(long id)
+		public async Task GetQuote(long id = -1)
 		{
-			await InitializeDatabase(_bot.RelDatabase(Context.Guild.Id));
+			Quote quote;
 
-			SqliteCommand command;
-			long quoteId;
+			var db = _bot.RelDatabase(Context.Guild.Id);
 			if(id == -1)
 			{
-				command = _bot.RelDatabase(Context.Guild.Id).BuildCommand("SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1;");
+				quote = await Quote.RandomQuote(db);
 			}
 			else
 			{
-				command = _bot.RelDatabase(Context.Guild.Id).BuildCommand("SELECT * FROM quotes WHERE id = :id;");
-				command.Parameters.AddWithValue("id", id);
+				quote = await Quote.TryLoad(db, id);
 			}
 
-			var reader = await command.ExecuteReaderAsync();
-			if(!reader.HasRows)
+			if(quote == null)
 			{
 				await ReplyAsync("No quotes found.");
 				return;
 			}
-			reader.Read();
 
-			quoteId = reader.GetInt64(0);
-			var quote = reader.GetString(1);
-			var author = reader.GetString(2);
-			var source = reader.GetString(3);
 			var sourceBody = "";
-			if(source != "Source Unknown")
+			if(quote.Source != "Source Unknown")
 			{
-				sourceBody = $" ({source})";
+				sourceBody = $" ({quote.Source})";
 			}
 
-			await ReplyAsync($"\"{quote}\"\n\t\t- *{author}{sourceBody}, #{quoteId}*");
-		}
-
-		[Command("quote")]
-		[RequireContext(ContextType.Guild)]
-		public async Task GetQuote()
-		{
-			await GetQuote(-1);
+			await ReplyAsync($"\"{quote.Body}\"\n\t\t- *{quote.Author}{sourceBody}, #{quote.Id}*");
 		}
 
 		[SassCommand(
-			name: "edit quote", 
-			desc: "Change a part of a quote. This requires admin permissions.", 
-			usage: "edit quote <id> (body|author|source) \"value\"", 
+			name: "edit quote",
+			desc: "Change a part of a quote. This requires admin permissions.",
+			usage: "edit quote <id> (body|author|source) \"value\"",
 			example: "edit quote 1 source \"Hackers (1995, Iain Softley)\"",
 			category: "Quote")]
 		[Command("edit quote")]
@@ -131,32 +104,40 @@ namespace SassV2.Commands
 				return;
 			}
 
-			await InitializeDatabase(_bot.RelDatabase(Context.User.Id));
-			
-			if(field != "body" && field != "author" && field != "source")
+			var db = _bot.RelDatabase(Context.Guild.Id);
+			var quote = await Quote.TryLoad(db, quoteId);
+			if(quote == null)
 			{
-				await ReplyAsync("Field must be body, author, or source.");
+				await ReplyAsync("The specified quote doesn't exist.");
 				return;
 			}
 
 			if(field == "body")
 			{
-				field = "quote";
+				quote.Body = args.Trim();
+			}
+			else if(field == "author")
+			{
+				quote.Author = args.Trim();
+			}
+			else if(field == "source")
+			{
+				quote.Source = args.Trim();
+			}
+			else
+			{
+				await ReplyAsync("Field must be one of 'body', 'author', or 'source'.");
+				return;
 			}
 
-			var cmd = _bot.RelDatabase(Context.Guild.Id).BuildCommand($"UPDATE quotes SET {field} = :value WHERE id = :id;");
-			cmd.Parameters.AddWithValue("field", field);
-			cmd.Parameters.AddWithValue("value", args.Trim('"'));
-			cmd.Parameters.AddWithValue("id", quoteId);
-
-			await cmd.ExecuteNonQueryAsync();
+			await quote.Save();
 			await ReplyAsync("ok");
 		}
 
 		[SassCommand(
-			name: "quotes", 
-			desc: "List all quotes.", 
-			usage: "quotes", 
+			name: "quotes",
+			desc: "List all quotes.",
+			usage: "quotes",
 			category: "Quote")]
 		[Command("quotes")]
 		[RequireContext(ContextType.Guild)]
@@ -164,11 +145,39 @@ namespace SassV2.Commands
 		{
 			await ReplyAsync(_bot.Config.URL + "quotes/" + Context.Guild.Id);
 		}
+	}
 
-		public async static Task InitializeDatabase(RelationalDatabase db)
+	[SqliteTable("quotes")]
+	public class Quote : DataTable<Quote>
+	{
+		[SqliteField("quote", DataType.Text)]
+		public string Body;
+		[SqliteField("author", DataType.Text)]
+		public string Author;
+		[SqliteField("source", DataType.Text)]
+		public string Source;
+
+		/// <summary>
+		/// Returns a random quote from the database.
+		/// </summary>
+		public static async Task<Quote> RandomQuote(RelationalDatabase db)
 		{
-			var cmd = db.BuildCommand(CREATE_STATEMENT);
-			await cmd.ExecuteNonQueryAsync();
+			var cmd = db.BuildCommand("SELECT * FROM quotes ORDER BY RANDOM() LIMIT 1;");
+			var quotes = await AllFromCommand(db, cmd);
+			if(!quotes.Any())
+				return null;
+			return quotes.First();
+		}
+
+		public Quote(RelationalDatabase db) : base(db)
+		{
+
+		}
+
+		public Quote(RelationalDatabase db, long id) : base(db)
+		{
+			Id = id;
+			Load().Wait();
 		}
 	}
 }

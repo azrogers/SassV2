@@ -1,4 +1,5 @@
 ﻿using RazorLight;
+using RazorLight.Razor;
 using System;
 using System.Dynamic;
 using System.IO;
@@ -12,17 +13,21 @@ namespace SassV2.Web
 
 		public ViewManager()
 		{
-			_razor = new EngineFactory().ForFileSystem(Path.Combine(Directory.GetCurrentDirectory(), "Views"));
+			var project = new FileSystemRazorProject(Path.Combine(Directory.GetCurrentDirectory(), "Views"))
+			{
+				Extension = ".html"
+			};
+			_razor = new EngineFactory().Create(project);
 		}
 
 		public async Task<string> RenderView(string name, ExpandoObject values)
 		{
-			return await CompileRenderAsync<object>(name + ".cshtml", new { }, values);
+			return await CompileRenderAsync<object>(name, new { }, values);
 		}
 
 		public async Task<string> RenderView<T>(string name, T model, ExpandoObject values)
 		{
-			return await CompileRenderAsync<T>(name + ".cshtml", model, values);
+			return await CompileRenderAsync<T>(name, model, values);
 		}
 
 		// this is to work around a razorlight bug that was clearing the viewbag...

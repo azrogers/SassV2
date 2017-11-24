@@ -238,72 +238,72 @@ namespace SassV2
 		/// </summary>
 		protected static async Task CreateTable(RelationalDatabase db)
 		{
-			if(!_createdDbs.Contains(db))
+			if(_createdDbs.Contains(db))
+				return;
+
+			var maxVersion = _fields.Select((f) => f.GetCustomAttribute<SqliteFieldAttribute>().Version).Max();
+			var version = await DataMigration.GetTableVersion(db, TableName);
+			if(version.HasValue && version.Value < maxVersion)
 			{
-				var maxVersion = _fields.Select((f) => f.GetCustomAttribute<SqliteFieldAttribute>().Version).Max();
-				var version = await DataMigration.GetTableVersion(db, TableName);
-				if(version.HasValue && version.Value < maxVersion)
+				var newColumns = _fields
+					.Select(f => f.GetCustomAttribute<SqliteFieldAttribute>())
+					.Where(f => f.Version > version.Value);
+
+				// create new columns
+				await db.BuildAndExecute("SAVEPOINT migrate_point;");
+				foreach(var sqliteFieldAttribute in newColumns)
 				{
-					var newColumns = _fields
-						.Select(f => f.GetCustomAttribute<SqliteFieldAttribute>())
-						.Where(f => f.Version > version.Value);
-
-					// create new columns
-					await db.BuildAndExecute("SAVEPOINT migrate_point;");
-					foreach(var sqliteFieldAttribute in newColumns)
-					{
-						string text = $"ALTER TABLE {TableName} ADD COLUMN {sqliteFieldAttribute.FieldName} {sqliteFieldAttribute.Type.ToString().ToUpper()}";
-						_logger.Debug("executing sql statement: " + text);
-						await db.BuildAndExecute(text);
-					}
-
-					// update migration version
-					await db.BuildAndExecute("RELEASE migrate_point;");
-					await DataMigration.UpdateVersion(db, TableName, maxVersion);
-					_createdDbs.Add(db);
-
-					// create indexes on new object
-					await ((DataTable<T>)Activator.CreateInstance(typeof(T), new object[]
-					{
-						db
-					})).CreateIndexes(db, maxVersion);
+					string text = $"ALTER TABLE {TableName} ADD COLUMN {sqliteFieldAttribute.FieldName} {sqliteFieldAttribute.Type.ToString().ToUpper()}";
+					_logger.Debug("executing sql statement: " + text);
+					await db.BuildAndExecute(text);
 				}
-				else
+
+				// update migration version
+				await db.BuildAndExecute("RELEASE migrate_point;");
+				await DataMigration.UpdateVersion(db, TableName, maxVersion);
+				_createdDbs.Add(db);
+
+				// create indexes on new object
+				await ((DataTable<T>)Activator.CreateInstance(typeof(T), new object[]
 				{
-					var fieldText = new List<string>
+					db
+				})).CreateIndexes(db, maxVersion);
+			}
+			else
+			{
+				var fieldText = new List<string>
+				{
+					"id INTEGER PRIMARY KEY"
+				};
+				var indexes = new List<string>();
+				var fields = _fields;
+				for(int i = 0; i < fields.Length; i++)
+				{
+					var customAttribute = fields[i].GetCustomAttribute<SqliteFieldAttribute>();
+					fieldText.Add(customAttribute.FieldName + " " + customAttribute.Type.ToString().ToUpper());
+					if(customAttribute.ForeignKeyRelationship != null)
 					{
-						"id INTEGER PRIMARY KEY"
-					};
-					var indexes = new List<string>();
-					var fields = _fields;
-					for(int i = 0; i < fields.Length; i++)
-					{
-						var customAttribute = fields[i].GetCustomAttribute<SqliteFieldAttribute>();
-						fieldText.Add(customAttribute.FieldName + " " + customAttribute.Type.ToString().ToUpper());
-						if(customAttribute.ForeignKeyRelationship != null)
-						{
-							indexes.Add($"FOREIGN KEY({customAttribute.FieldName}) REFERENCES {customAttribute.ForeignKeyRelationship}");
-						}
-						if(customAttribute.Version > maxVersion)
-						{
-							maxVersion = customAttribute.Version;
-						}
+						indexes.Add($"FOREIGN KEY({customAttribute.FieldName}) REFERENCES {customAttribute.ForeignKeyRelationship}");
 					}
-
-					// create table
-					var indexTxt = (indexes.Count > 0 ? (", " + string.Join(", ", indexes)) : "");
-					var createStmt = $"CREATE TABLE IF NOT EXISTS {TableName} ({string.Join(", ", fieldText)}{indexTxt});";
-					_logger.Debug("executing sql statement: " + createStmt);
-					await db.BuildAndExecute(createStmt);
-					await DataMigration.UpdateVersion(db, TableName, maxVersion);
-					_createdDbs.Add(db);
-
-					// create indexes
-					await ((DataTable<T>)Activator.CreateInstance(typeof(T), new object[]
+					if(customAttribute.Version > maxVersion)
 					{
-						db
-					})).CreateIndexes(db, maxVersion);
+						maxVersion = customAttribute.Version;
+					}
 				}
+
+				// create table
+				var indexTxt = (indexes.Count > 0 ? (", " + string.Join(", ", indexes)) : "");
+				var createStmt = $"CREATE TABLE IF NOT EXISTS {TableName} ({string.Join(", ", fieldText)}{indexTxt});";
+				_logger.Debug("executing sql statement: " + createStmt);
+				await db.BuildAndExecute(createStmt);
+				await DataMigration.UpdateVersion(db, TableName, maxVersion);
+				_createdDbs.Add(db);
+
+				// create indexes
+				await ((DataTable<T>)Activator.CreateInstance(typeof(T), new object[]
+				{
+					db
+				})).CreateIndexes(db, maxVersion);
 			}
 		}
 

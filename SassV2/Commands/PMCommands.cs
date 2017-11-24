@@ -66,8 +66,6 @@ namespace SassV2.Commands
 			}
 
 			var db = _bot.RelDatabase(guild.Id);
-			await QuoteCommand.InitializeDatabase(db);
-			var cmd = db.BuildCommand("INSERT INTO quotes (quote,author,source) VALUES (:body,:author,:source);");
 
 			var csv = await Util.GetURLAsync(Context.Message.Attachments.First().Url);
 			var reader = new CsvReader(new StringReader(csv));
@@ -77,11 +75,13 @@ namespace SassV2.Commands
 				var author = reader.GetField<string>(1);
 				var source = reader.GetField<string>(2);
 
-				cmd.Parameters.Clear();
-				cmd.Parameters.AddWithValue("body", body);
-				cmd.Parameters.AddWithValue("author", author);
-				cmd.Parameters.AddWithValue("source", source);
-				cmd.ExecuteNonQuery();
+				var quote = new Quote(db)
+				{
+					Body = body,
+					Author = author,
+					Source = source
+				};
+				await quote.Save();
 			}
 
 			await ReplyAsync("ok");

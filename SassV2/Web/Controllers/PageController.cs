@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Newtonsoft.Json.Linq;
 using NLog;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -115,20 +114,9 @@ namespace SassV2.Web.Controllers
 			}
 
 			var db = _bot.RelDatabase(serverId);
-			await Commands.QuoteCommand.InitializeDatabase(db);
-			var cmd = db.BuildCommand("SELECT id,quote,author,source FROM quotes;");
-			var reader = cmd.ExecuteReader();
+			var quotes = await Commands.Quote.All(db);
 
-			var quoteList = new List<Quote>();
-			while(reader.Read())
-			{
-				var id = reader.GetInt64(0);
-				var quote = reader.GetString(1);
-				var author = reader.GetString(2);
-				var source = reader.GetString(3);
-
-				quoteList.Add(new Quote { Id = id, Content = quote, Author = author, Source = source });
-			}
+			var quoteList = quotes.Select((q) => new Quote { Id = q.Id.Value, Content = q.Body, Author = q.Author, Source = q.Source });
 
 			return await ViewResponse(server, context, "quotes", quoteList, new { Title = "Quotes" });
 		}
