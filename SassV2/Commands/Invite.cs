@@ -14,7 +14,7 @@ namespace SassV2.Commands
 
 		[SassCommand(
 			name: "invite", 
-			desc: "Invite sass to your server.",
+			desc: "Invite sass to your guild.",
 			usage: "invite",
 			category: "General")]
 		[Command("invite")]

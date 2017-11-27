@@ -92,7 +92,7 @@ namespace SassV2
 
 			// hey, a command!
 			if(message.Channel is IGuildChannel)
-				await ActivityManager.UpdateActivity(services.GetService<DiscordBot>(), message.ServerId());
+				await ActivityManager.UpdateActivity(services.GetService<DiscordBot>(), message.GuildId());
 
 			var result = await _commands.ExecuteAsync(commandContext, BOT_NAME.Length + 1, services);
 			if(!result.IsSuccess)
@@ -112,7 +112,7 @@ namespace SassV2
 				var msg = Util.CommandErrorToMessage(result.Error.Value);
 				// censor string if civility is enabled
 				if(message.Channel is IGuildChannel && 
-					ServerConfig.Get(services.GetService<DiscordBot>(), message.ServerId()).Civility)
+					ServerConfig.Get(services.GetService<DiscordBot>(), message.GuildId()).Civility)
 					msg = Util.CivilizeString(msg);
 
 				await commandContext.Channel.SendMessageAsync(msg);

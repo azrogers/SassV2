@@ -27,7 +27,7 @@ namespace SassV2.Commands
 
 		[SassCommand(
 			name: "images",
-			desc: "List all images on this server.",
+			desc: "List all images in this guild.",
 			usage: "images",
 			category: "Image")]
 		[Command("images")]

@@ -143,6 +143,9 @@ namespace SassV2.Commands
 
 		private static bool _tablesCreated = false;
 
+		/// <summary>
+		/// Saves the given BioData to the given RelationalDatabase.
+		/// </summary>
 		public static async Task SaveBio(BioData bio, RelationalDatabase db)
 		{
 			var fields = bio.Fields.Where(f => !string.IsNullOrWhiteSpace(f.Value));
@@ -168,15 +171,15 @@ namespace SassV2.Commands
 				await SaveBioField(bio.Id, field, db);
 			}
 
-			// delete all previous server privacy settings
+			// delete all previous guild privacy settings
 			var clearServerCmd = db.BuildCommand("DELETE FROM bio_privacy WHERE bio = :bio;");
 			clearServerCmd.Parameters.AddWithValue("bio", bio.Id);
 			await clearServerCmd.ExecuteNonQueryAsync();
 
 			// save new ones
-			foreach(var server in bio.SharedServers.Select(k => k.Key))
+			foreach(var guild in bio.SharedGuilds.Select(k => k.Key))
 			{
-				await SaveServerPrivacy(bio.Id, server, db);
+				await SaveGuildPrivacy(bio.Id, guild, db);
 			}
 		}
 
@@ -202,11 +205,11 @@ namespace SassV2.Commands
 			await insertCmd.ExecuteNonQueryAsync();
 		}
 
-		private static async Task SaveServerPrivacy(long bio, ulong server, RelationalDatabase db)
+		private static async Task SaveGuildPrivacy(long bio, ulong guild, RelationalDatabase db)
 		{
 			var serverCmd = db.BuildCommand("INSERT INTO bio_privacy(bio, server) VALUES(:bio, :server);");
 			serverCmd.Parameters.AddWithValue("bio", bio);
-			serverCmd.Parameters.AddWithValue("server", server.ToString());
+			serverCmd.Parameters.AddWithValue("server", guild.ToString());
 			await serverCmd.ExecuteNonQueryAsync();
 		}
 
@@ -243,7 +246,10 @@ namespace SassV2.Commands
 			return bios;
 		}
 
-		public static async Task<BioData> GetBio(DiscordBot bot, ulong server, ulong user)
+		/// <summary>
+		/// Returns the bio for the given user in the given guild.
+		/// </summary>
+		public static async Task<BioData> GetBio(DiscordBot bot, ulong guild, ulong user)
 		{
 			var db = bot.GlobalDatabase;
 			await CreateTables(db);
@@ -252,13 +258,17 @@ namespace SassV2.Commands
 				INNER JOIN bio_privacy ON bio_privacy.bio = bios.id
 				WHERE bios.author = :user and bio_privacy.server = :server;");
 			bioCmd.Parameters.AddWithValue("user", user.ToString());
-			bioCmd.Parameters.AddWithValue("server", server.ToString());
+			bioCmd.Parameters.AddWithValue("server", guild.ToString());
 			var bioId = (long?)await bioCmd.ExecuteScalarAsync();
 			if(bioId.HasValue)
 				return await GetBio(bot, bioId.Value, true);
 			return null;
 		}
 
+		/// <summary>
+		/// Returns the bio for the given bio ID.
+		/// </summary>
+		/// <param name="full">Should this return all the bio fields as well?</param>
 		public static async Task<BioData> GetBio(DiscordBot bot, long id, bool full = false)
 		{
 			var db = bot.GlobalDatabase;
@@ -313,8 +323,8 @@ namespace SassV2.Commands
 			{
 				Id = id,
 				Owner = author,
-				SharedServers = servers,
-				SharedServerNames = servers.Select(s => s.Value).ToList(),
+				SharedGuilds = servers,
+				SharedGuildNames = servers.Select(s => s.Value).ToList(),
 				Fields = fields
 			};
 		}
@@ -354,12 +364,34 @@ namespace SassV2.Commands
 			}
 		}
 
+		/// <summary>
+		/// The ID of this bio.
+		/// </summary>
 		public long Id;
+
+		/// <summary>
+		/// The Discord Id of the owner of this bio.
+		/// </summary>
 		public ulong Owner;
-		public List<KeyValuePair<ulong, string>> SharedServers;
-		public List<string> SharedServerNames;
+
+		/// <summary>
+		/// The guilds this bio is shared with.
+		/// </summary>
+		public List<KeyValuePair<ulong, string>> SharedGuilds;
+
+		/// <summary>
+		/// The names of the guilds this bio is shared with.
+		/// </summary>
+		public List<string> SharedGuildNames;
+
+		/// <summary>
+		/// The fields that this bio contains.
+		/// </summary>
 		public List<BioField> Fields;
 
+		/// <summary>
+		/// Returns a formatted string version of this bio.
+		/// </summary>
 		public string GetBioString(IGuildUser user)
 		{
 			var message = $"Bio for {user.NicknameOrDefault()}:\n";
@@ -373,17 +405,57 @@ namespace SassV2.Commands
 		}
 	}
 
+	/// <summary>
+	/// A single field in a bio. For some dumb reason, fields are both containers
+	/// (they contain the value of each field) and specifications (they specify
+	/// what each field is and what it should contain). This wasn't a smart
+	/// decision on my part.
+	/// </summary>
 	public class BioField
 	{
+		/// <summary>
+		/// The name of this bio, as saved in the database.
+		/// </summary>
 		public string Name;
+
+		/// <summary>
+		/// The friendly name of the bio (printed on the bio edit page).
+		/// </summary>
 		public string FriendlyName;
+
+		/// <summary>
+		/// The name of this field as is displayed to users when a bio is viewed.
+		/// </summary>
 		public string DisplayName;
+
+		/// <summary>
+		/// Help text for this bio field.
+		/// </summary>
 		public string Info = "";
+
+		/// <summary>
+		/// The value of this bio field.
+		/// </summary>
 		public string Value = "";
+
+		/// <summary>
+		/// A function to format the value of this bio field.
+		/// </summary>
 		public Func<string, string> Formatter;
+
+		/// <summary>
+		/// Is this field multiline?
+		/// </summary>
 		public bool Multiline = false;
+
+		/// <summary>
+		/// The maximum length of this bio field.
+		/// </summary>
 		public int MaxLength = 100;
 
+		/// <summary>
+		/// Returns a new version of this bio field.
+		/// </summary>
 		public BioField Clone()
 		{
 			var newField = new BioField(Name)

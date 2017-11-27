@@ -75,7 +75,7 @@ namespace SassV2
 		/// <summary>
 		/// Extracts the ID of the guild a message was sent in.
 		/// </summary>
-		public static ulong ServerId(this IMessage msg)
+		public static ulong GuildId(this IMessage msg)
 		{
 			if(!(msg.Channel is IGuildChannel))
 				throw new InvalidCastException("Message does not come from a guild.");

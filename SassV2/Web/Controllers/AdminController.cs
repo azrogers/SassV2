@@ -180,7 +180,7 @@ namespace SassV2.Web.Controllers
 			var guild = _bot.Client.GetGuild(ulong.Parse(data["server"].ToString()));
 			var user = _bot.Client.GetUser(ulong.Parse(data["user"].ToString()));
 			var bios = await Bio.GetBios(_bot, user);
-			var bio = bios.Where(b => b.SharedServers.Any(kv => kv.Key == guild.Id)).FirstOrDefault();
+			var bio = bios.Where(b => b.SharedGuilds.Any(kv => kv.Key == guild.Id)).FirstOrDefault();
 			long bioId;
 			if(bio == null)
 			{

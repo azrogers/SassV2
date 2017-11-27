@@ -20,7 +20,7 @@ namespace SassV2.Commands
 
 		[SassCommand(
 			name: "ban",
-			desc: "Bans a user from SASS. This doesn't ban the user from your server; it only prevents them from using SASS.",
+			desc: "Bans a user from SASS. This doesn't ban the user from your guild; it only prevents them from using SASS.",
 			usage: "ban <name or mention>",
 			example: "ban @Scripted Automated Speech System",
 			category: "Administration")]
@@ -59,7 +59,7 @@ namespace SassV2.Commands
 			}
 
 			// register ban in database
-			_bot.Database(Context.Message.ServerId()).InsertObject("ban:" + target.Id, true);
+			_bot.Database(Context.Message.GuildId()).InsertObject("ban:" + target.Id, true);
 			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "ban.sure"));
 		}
 
@@ -92,7 +92,7 @@ namespace SassV2.Commands
 			}
 			
 			// delete ban
-			_bot.Database(Context.Message.ServerId()).InvalidateObject("ban:" + foundUsers.First().Id);
+			_bot.Database(Context.Message.GuildId()).InvalidateObject("ban:" + foundUsers.First().Id);
 			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "unban.sure"));
 		}
 	}

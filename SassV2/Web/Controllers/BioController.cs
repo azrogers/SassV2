@@ -72,7 +72,7 @@ namespace SassV2.Web.Controllers
 				{
 					servers = (data["servers"] as List<string>).Select(s => new KeyValuePair<ulong, string>(ulong.Parse(s), null));
 				}
-				bio.SharedServers = servers.ToList();
+				bio.SharedGuilds = servers.ToList();
 			}
 
 			await Bio.SaveBio(bio, _bot.GlobalDatabase);
@@ -105,7 +105,7 @@ namespace SassV2.Web.Controllers
 				{
 					Id = s.Id,
 					Name = s.Name,
-					Selected = bio.SharedServers.Any(kv => kv.Key == s.Id)
+					Selected = bio.SharedGuilds.Any(kv => kv.Key == s.Id)
 				}).OrderBy(s => s.Name);
 
 			return await ViewResponse(server, context, "bio/edit", bio, new { Title = "Edit Bio", Servers = serversInt });
