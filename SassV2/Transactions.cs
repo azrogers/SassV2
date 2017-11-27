@@ -9,7 +9,7 @@ namespace SassV2
 	public class BankTransaction : DataTable<BankTransaction>
 	{
 		public string DateFormatted => Timestamp.ToString("D");
-		public ulong? ServerId => DB.ServerId;
+		public ulong? ServerId => DB.GuildId;
 
 		public static Task<IEnumerable<BankTransaction>> OpenTransactionsByUser(RelationalDatabase db, ulong user)
 		{

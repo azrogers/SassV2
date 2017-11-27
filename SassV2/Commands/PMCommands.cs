@@ -19,9 +19,9 @@ namespace SassV2.Commands
 		}
 
 		[SassCommand(
-			name: "servers", 
-			desc: "list servers", 
-			usage: "servers", 
+			name: "servers",
+			desc: "list servers",
+			usage: "servers",
 			isPM: true)]
 		[Command("servers")]
 		[RequireContext(ContextType.DM)]
@@ -44,9 +44,9 @@ namespace SassV2.Commands
 		}
 
 		[SassCommand(
-			name: "import quotes", 
-			desc: "import quotes from csv attachment", 
-			usage: "sass import quotes <server> <attachment>\nattachment must be a CSV file with the columns Quote,Author,Source", 
+			name: "import quotes",
+			desc: "import quotes from csv attachment",
+			usage: "sass import quotes <server> <attachment>\nattachment must be a CSV file with the columns Quote,Author,Source",
 			hidden: true,
 			isPM: true)]
 		[Command("import quotes")]
@@ -55,13 +55,13 @@ namespace SassV2.Commands
 		{
 			if(_bot.Config.GetRole(Context.User.Id) != "admin")
 			{
-				await ReplyAsync("You're not allowed to use this command.");
+				await ReplyAsync(Locale.GetString("generic.notAdmin"));
 				return;
 			}
-			
+
 			if(!Context.Message.Attachments.Any())
 			{
-				await ReplyAsync("You need to attach a CSV file!");
+				await ReplyAsync(Locale.GetString("admin.noCSV"));
 				return;
 			}
 
@@ -94,20 +94,20 @@ namespace SassV2.Commands
 		{
 			if(!ulong.TryParse(userIdStr, out ulong userId))
 			{
-				await ReplyAsync("Invalid user ID.");
+				await ReplyAsync(Locale.GetString("admin.invalidId"));
 				return;
 			}
 
-			if (_bot.Config.GetRole(Context.User.Id) != "admin")
+			if(_bot.Config.GetRole(Context.User.Id) != "admin")
 			{
-				await ReplyAsync("You're not allowed to use this command.");
+				await ReplyAsync(Locale.GetString("generic.notAdmin"));
 				return;
 			}
 
 			var user = _bot.Client.GetUser(userId);
 			if(user == null)
 			{
-				await ReplyAsync("User not found.");
+				await ReplyAsync(Locale.GetString("generic.noUser"));
 				return;
 			}
 
@@ -118,16 +118,16 @@ namespace SassV2.Commands
 		[Command("restart")]
 		public async Task RestartBot()
 		{
-			if (_bot.Config.GetRole(Context.User.Id) != "admin")
+			if(_bot.Config.GetRole(Context.User.Id) != "admin")
 			{
-				await ReplyAsync("You're not allowed to use this command.");
+				await ReplyAsync(Locale.GetString("generic.notAdmin"));
 				return;
 			}
 
 			Environment.Exit(0);
 		}
 
-		[SassCommand("admin", 
+		[SassCommand("admin",
 			desc: "Gives access to the admin panel for your server. PM only.",
 			category: "Administration",
 			isPM: true)]
@@ -135,6 +135,20 @@ namespace SassV2.Commands
 		public async Task Admin()
 		{
 			await ReplyAsync(await AuthCodeManager.GetURL("/admin/", Context.User, _bot));
+		}
+
+		[SassCommand("reload locale", hidden: true, isPM: true)]
+		[Command("reload locale")]
+		public async Task ReloadLocale()
+		{
+			if(_bot.Config.GetRole(Context.User.Id) != "admin")
+			{
+				await ReplyAsync(Locale.GetString("generic.notAdmin"));
+				return;
+			}
+
+			Locale.ReloadLocale();
+			await ReplyAsync("locale reloaded");
 		}
 	}
 }

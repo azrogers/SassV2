@@ -10,18 +10,21 @@ namespace SassV2
 	{
 		private SqliteConnection _connection;
 		private string _path;
-		private ulong? _serverId;
+		private ulong? _guildId;
 
-		public ulong? ServerId => _serverId;
+		/// <summary>
+		/// The ID of the guild that this relational database is for.
+		/// </summary>
+		public ulong? GuildId => _guildId;
 
 		/// <summary>
 		/// Creates a relational database at the given path.
 		/// </summary>
 		/// <param name="path">The location of the database.</param>
-		public RelationalDatabase(string path, ulong? serverId)
+		public RelationalDatabase(string path, ulong? guildId)
 		{
 			_path = path;
-			_serverId = serverId;
+			_guildId = guildId;
 
 			_connection = new SqliteConnection(new SqliteConnectionStringBuilder()
 			{

@@ -12,6 +12,14 @@ namespace SassV2
 		private static JObject _localeCache;
 
 		/// <summary>
+		/// Returns a string from locale.json, with the default (English) locale.
+		/// </summary>
+		public static string GetString(string name, object args = null)
+		{
+			return GetString("eng", name, args);
+		}
+
+		/// <summary>
 		/// Returns a string from locale.json, given the name and args.
 		/// </summary>
 		/// <param name="name">The name of the locale string.</param>
@@ -19,6 +27,7 @@ namespace SassV2
 		/// <returns></returns>
 		public static string GetString(string lang, string name, object args = null)
 		{
+			// load all locale if not done
 			if(_localeCache == null)
 			{
 				_localeCache = JObject.Parse(File.ReadAllText("locale.json"));
@@ -42,11 +51,13 @@ namespace SassV2
 				return "[Missing Language]";
 			}
 
-			JToken jToken = localeLanguage[name];
+			var jToken = localeLanguage[name];
 			if(jToken == null)
 			{
 				return "[Missing Locale]";
 			}
+
+			// choose a random value from array
 			if(jToken is JArray)
 			{
 				var array = jToken.Children().Select(c => c.Value<string>()).ToArray();
@@ -54,6 +65,15 @@ namespace SassV2
 			}
 
 			return Util.FormatString(Extensions.Value<string>(jToken), args);
+		}
+
+		/// <summary>
+		/// Clears the locale cache, forcing a reload on next access.
+		/// </summary>
+		public static void ReloadLocale()
+		{
+			// this reloads locale, in a way
+			_localeCache = null;
 		}
 
 		private class LocaleLanguage

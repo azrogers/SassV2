@@ -77,6 +77,9 @@ namespace SassV2
 			_uptime.Start();
 		}
 
+		/// <summary>
+		/// Starts the Discord bot.
+		/// </summary>
 		public async Task Start()
 		{
 			_logger.Info("starting bot");
@@ -101,6 +104,8 @@ namespace SassV2
 
 			await _client.LoginAsync(TokenType.Bot, _config.Token);
 			await _client.StartAsync();
+
+			// loop FOREVER
 			await Task.Delay(-1);
 		}
 
@@ -192,8 +197,9 @@ namespace SassV2
 			}
 
 			// check if the user is banned
-			bool banned = (message.Channel is ISocketPrivateChannel ? false : Database(guild.Id).GetObject<bool>("ban:" + message.Author.Id));
+			var banned = (message.Channel is ISocketPrivateChannel ? false : Database(guild.Id).GetObject<bool>("ban:" + message.Author.Id));
 
+			// check if user is banned from SASS
 			var permissions = (message.Author as SocketGuildUser)?.GuildPermissions;
 			if(
 				message.Content.Trim().StartsWith(CommandHandler.BOT_NAME) &&
@@ -216,14 +222,17 @@ namespace SassV2
 			}
 			catch(AggregateException ex)
 			{
+				// probably not necessary anymore, but oh well
 				if(ex.InnerExceptions.Any(a => a.GetType() == typeof(Discord.Net.RateLimitedException)))
 					SendMessage(message.Channel, $"I'm being rate limited!").Forget();
+
 				if(ex.InnerExceptions.Any(a => a.GetType() == typeof(CommandException)))
 				{
 					foreach(var err in ex.InnerExceptions.Where(a => a.GetType() == typeof(CommandException)))
 						SendMessage(message.Channel, err.Message).Forget();
 					return;
 				}
+
 				await SendMessage(message.Channel, Util.MaybeBeRudeError(config));
 				_logger.Error(ex);
 				return;

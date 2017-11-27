@@ -362,6 +362,9 @@ namespace SassV2
 	/// </summary>
 	public class DataMigration
 	{
+		/// <summary>
+		/// Gets the version of a table currently set in the migrations table, or null.
+		/// </summary>
 		public static async Task<int?> GetTableVersion(RelationalDatabase db, string table)
 		{
 			if(!_createdDbs.Contains(db))
@@ -382,6 +385,9 @@ namespace SassV2
 			return sqliteDataReader.GetInt32(0);
 		}
 
+		/// <summary>
+		/// Updates the version of a table currently set in the migrations table.
+		/// </summary>
 		public static async Task UpdateVersion(RelationalDatabase db, string table, long newVersion)
 		{
 			if(!_createdDbs.Contains(db))
@@ -396,6 +402,9 @@ namespace SassV2
 			await sqliteCommand.ExecuteNonQueryAsync();
 		}
 
+		/// <summary>
+		/// Creates the migrations table.
+		/// </summary>
 		private static async Task CreateTable(RelationalDatabase db)
 		{
 			await db.BuildAndExecute("CREATE TABLE IF NOT EXISTS migrations (\r\n\t\t\t\ttable_name TEXT,\r\n\t\t\t\tversion INTEGER);");
@@ -406,39 +415,73 @@ namespace SassV2
 		private static Logger _logger = LogManager.GetCurrentClassLogger();
 	}
 
+	/// <summary>
+	/// All supported SQLite datatypes.
+	/// </summary>
 	public enum DataType
 	{
 		Text,
 		Integer,
 		Real,
+
+		/// <summary>
+		/// NOT ACTUALLY SUPPORTED, DON'T USE.
+		/// </summary>
 		Blob
 	}
 
+	/// <summary>
+	/// Attribute placed on fields that should be synced to SQLite.
+	/// </summary>
 	public class SqliteFieldAttribute : Attribute
 	{
+		/// <summary>
+		/// The name of the field in SQLite.
+		/// </summary>
+		public string FieldName;
+
+		/// <summary>
+		/// The datatype stored in SQLite.
+		/// </summary>
+		public DataType Type;
+
+		/// <summary>
+		/// The foreign key relationship of this field, if any.
+		/// </summary>
+		public string ForeignKeyRelationship;
+
+		/// <summary>
+		/// The version of this field. Set one higher than the last version to create a migration.
+		/// </summary>
+		public long Version = 1L;
+
 		public SqliteFieldAttribute(string name, DataType type, string fk = null)
 		{
 			FieldName = name;
 			Type = type;
 			ForeignKeyRelationship = fk;
 		}
-
-		public string FieldName;
-		public DataType Type;
-		public string ForeignKeyRelationship;
-		public long Version = 1L;
 	}
 
+	/// <summary>
+	/// Attribute to be placed on classes that should be SQLite tables.
+	/// </summary>
 	public class SqliteTableAttribute : Attribute
 	{
+		/// <summary>
+		/// The name of this SQLite table.
+		/// </summary>
+		public string TableName;
+
 		public SqliteTableAttribute(string name)
 		{
 			TableName = name;
 		}
-
-		public string TableName;
 	}
 
+	/// <summary>
+	/// Exception thrown when data isn't found in SQLite.
+	/// </summary>
 	public class NotFoundException : Exception
 	{
 		public NotFoundException(string msg) : base(msg)

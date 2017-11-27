@@ -19,7 +19,7 @@ namespace SassV2
 
 		static void Main(string[] args)
 		{
-			NLog.LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration("NLog.Config", false);
+			LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration("NLog.Config", false);
 			Config config = new Config("config.json");
 			DiscordBot bot = new DiscordBot(config);
 

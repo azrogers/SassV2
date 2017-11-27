@@ -49,7 +49,7 @@ namespace SassV2.Web.Controllers
 			};
 
 			await t.Save();
-			await BankTransactionIndex.RegisterServer(_bot.GlobalDatabase, db.ServerId.Value, user.Id);
+			await BankTransactionIndex.RegisterServer(_bot.GlobalDatabase, db.GuildId.Value, user.Id);
 			await CreateTransactionRecords(data, db, t);
 			await db.BuildAndExecute("END TRANSACTION;");
 			return Redirect(server, context, string.Format("/bank/view/{0}/{1}", t.ServerId, t.Id));
@@ -534,7 +534,7 @@ namespace SassV2.Web.Controllers
 					Amount = -decimal.Parse(amounts[i])
 				};
 				await bal.Save();
-				await BankTransactionIndex.RegisterServer(_bot.GlobalDatabase, db.ServerId.Value, bal.DiscordUserId);
+				await BankTransactionIndex.RegisterServer(_bot.GlobalDatabase, db.GuildId.Value, bal.DiscordUserId);
 				await new BankBalanceRecord(db)
 				{
 					Amount = bal.Amount,

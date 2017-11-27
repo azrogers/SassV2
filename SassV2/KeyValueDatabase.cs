@@ -8,11 +8,17 @@ namespace SassV2
 {
 	/// <summary>
 	/// A key-value database offers a simple key-value store backed by SQLite.
+	/// Why key-values? Because SassV1 was in Node.js and used LevelDB for all
+	/// its storage. New features have used the relational capabilities of SQLite
+	/// but all the old features haven't been ported (and probably don't need to be)
 	/// </summary>
 	public class KeyValueDatabase
 	{
 		private SqliteConnection _connection;
 
+		/// <summary>
+		/// Creates a new key-value database at the given path (or opens an existing one).
+		/// </summary>
 		public KeyValueDatabase(string path)
 		{
 			_connection = new SqliteConnection(new SqliteConnectionStringBuilder()

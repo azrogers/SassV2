@@ -1,5 +1,7 @@
 ﻿{
   "eng": {
+    "admin.invalidId": "invalid user ID",
+    "admin.noCSV": "you need to attach a CSV file",
     "ascii.noFont": "give me a font, yo.",
     "ascii.noText": "give me some text, yo.",
     "ascii.badFont": "that's not a font.",
@@ -36,6 +38,7 @@
     "imgur.needsubreddit": "specify a subreddit",
     "imgur.notfound": "subreddit not found",
     "generic.notAdmin": "you need to be admin",
+    "generic.noUser":  "user not found",
     "unban.notAdmin": "fuck off",
     "unban.noneFound": "nobody found.",
     "unban.moreFound": "you're going to need to be more specific than that.",
