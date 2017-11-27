@@ -1,12 +1,10 @@
 ﻿using Discord;
 using Discord.Commands;
-using Newtonsoft.Json.Linq;
 using NLog;
 using SassV2.Commands;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
@@ -18,8 +16,6 @@ namespace SassV2
 {
 	public class Util
 	{
-		private static JObject _localeCache;
-
 		/// <summary>
 		/// Fills template placeholders with random words.
 		/// </summary>
@@ -165,48 +161,8 @@ namespace SassV2
 		}
 
 		/// <summary>
-		/// Returns a string from locale.json, given the name and args.
+		/// Be rude? Maybe? Only if it's OK.
 		/// </summary>
-		/// <param name="name">The name of the locale string.</param>
-		/// <param name="args">The arguments.</param>
-		/// <returns></returns>
-		public static string Locale(string lang, string name, object args = null)
-		{
-			if(_localeCache == null)
-			{
-				_localeCache = JObject.Parse(File.ReadAllText("locale.json"));
-				_languages = new Dictionary<string, LocaleLanguage>();
-				foreach(var item in _localeCache)
-				{
-					if(item.Value["_base"] != null)
-					{
-						_languages[item.Key] = new LocaleLanguage(_languages[item.Value["_base"].Value<string>()], item.Value);
-					}
-					else
-					{
-						_languages[item.Key] = new LocaleLanguage(item.Value);
-					}
-				}
-			}
-			LocaleLanguage localeLanguage = _languages.ContainsKey(lang) ? _languages[lang] : null;
-			if(localeLanguage == null)
-			{
-				return "[Missing Language]";
-			}
-			JToken jToken = localeLanguage[name];
-			if(jToken == null)
-			{
-				return "[Missing Locale]";
-			}
-			if(jToken is JArray)
-			{
-				var array = jToken.Children().Select(c => c.Value<string>()).ToArray();
-				return array[new Random().Next(array.Length)];
-			}
-			return FormatString(Extensions.Value<string>(jToken), args);
-		}
-
-
 		public static string MaybeBeRudeError(ServerConfig config)
 		{
 			if(config != null && config.Civility)
@@ -216,7 +172,11 @@ namespace SassV2
 			return AssembleRudeErrorMessage();
 		}
 
-
+		/// <summary>
+		/// Place the values in args into the named placeholders in str.
+		/// </summary>
+		/// <param name="str">The string that contains placeholders in the form {name}.</param>
+		/// <param name="args">An object that contains the properly named values.</param>
 		public static string FormatString(string str, object args)
 		{
 			var argsDict = new Dictionary<string, string>();
@@ -250,11 +210,9 @@ namespace SassV2
 			return kv;
 		}
 
-		public static async Task<string> GetURL(string url)
-		{
-			return await new HttpClient().GetStringAsync(url);
-		}
-
+		/// <summary>
+		/// Asynchronously gets the data a URL.
+		/// </summary>
 		public async static Task<string> GetURLAsync(string url)
 		{
 			using(var httpClient = new HttpClient())
@@ -264,25 +222,72 @@ namespace SassV2
 			}
 		}
 
+		/// <summary>
+		/// Splits a string by spaces, preserving quoted bits (like the command line does).
+		/// </summary>
+		/// <param name="input">An input string, like 'A "B C" D"</param>
+		/// <returns>The split output, like ["A", "B C", "D"]</returns>
 		public static string[] SplitQuotedString(string input)
 		{
-			return Regex.Matches(input, @"[\""].*?[\""]|[^ ]+")
-				.Cast<Match>()
-				.Select(m => m.Value.Trim('"'))
-				.ToArray();
+			// this used to be regex based but it turns out it didn't work that well...
+			input = Regex.Replace(input, "[“”]", "\"");
+
+			var list = new List<string>();
+			var inString = false;
+			var stringStartChar = ' ';
+			var word = "";
+			for(var i = 0; i < input.Length; i++)
+			{
+				if(!inString && (input[i] == '"' || input[i] == '\''))
+				{
+					if(word.Trim().Length > 0)
+					{
+						list.AddRange(word.Trim().Split(' '));
+					}
+
+					word = "";
+					stringStartChar = input[i];
+					inString = true;
+				}
+				else if(inString && input[i] == stringStartChar)
+				{
+					list.Add(word.Trim());
+					word = "";
+					inString = false;
+				}
+				else
+				{
+					word += input[i].ToString();
+				}
+			}
+
+			// add last word if not finished already
+			if(word.Length > 0)
+			{
+				list.AddRange(word.Trim().Split(' '));
+			}
+
+			return list.ToArray();
 		}
 
+		/// <summary>
+		/// Parses a double from the input, supporting k, M, and B modifiers.
+		/// Taken from the Rant source.
+		/// </summary>
 		public static bool ParseDouble(string value, out double number)
 		{
 			number = 0;
 			if(string.IsNullOrWhiteSpace(value)) return false;
+
 			value = value.Trim();
 			if(!Char.IsLetter(value[value.Length - 1]))
 				return Double.TryParse(value, out number);
-			char power = value[value.Length - 1];
+
+			var power = value[value.Length - 1];
 			value = value.Substring(0, value.Length - 1);
 			if(string.IsNullOrWhiteSpace(value)) return false;
 			if(!Double.TryParse(value, out var n)) return false;
+
 			switch(power)
 			{
 				case 'k': // Thousand
@@ -299,6 +304,9 @@ namespace SassV2
 			}
 		}
 
+		/// <summary>
+		/// Convert a Discord.Net LogSeverity to an NLog LogLevel.
+		/// </summary>
 		public static LogLevel SeverityToLevel(LogSeverity s)
 		{
 			switch(s)
@@ -318,6 +326,9 @@ namespace SassV2
 			}
 		}
 
+		/// <summary>
+		/// Convert a Discord.Net CommandError to a user-friendly message.
+		/// </summary>
 		public static string CommandErrorToMessage(CommandError error)
 		{
 			switch(error)
@@ -340,13 +351,16 @@ namespace SassV2
 			}
 		}
 
+		/// <summary>
+		/// Converts an anonymous object to an ExpandoObject for use with RazorLight ViewBags.
+		/// </summary>
 		public static ExpandoObject ViewBagFromAnonObject(object anon)
 		{
 			return AnonymousObjectToDictionary<object>(anon).ToExpando();
 		}
 
 		/// <summary>
-		/// Crypto-random string
+		/// Crypto-random string, 32 bytes (256 bits)
 		/// </summary>
 		public static string RandomString()
 		{
@@ -360,7 +374,7 @@ namespace SassV2
 		}
 
 		/// <summary>
-		/// Searches messages.
+		/// Searches messages. I don't think this works.
 		/// </summary>
 		public static async Task<string> SearchMessages(IGuild guild, string token, DateTime from, DateTime to)
 		{
@@ -470,42 +484,6 @@ namespace SassV2
 			return string.Join(", ", Util.TakeAllButLast<string>(values)) + " and " + values.Last<string>();
 		}
 
-		private static Dictionary<string, LocaleLanguage> _languages;
-
-		private class LocaleLanguage
-		{
-			private LocaleLanguage _base;
-			private JToken _values;
-
-			public JToken this[string key]
-			{
-				get
-				{
-					if(_values[key] != null)
-					{
-						return _values[key];
-					}
-					if(_base != null)
-					{
-						return _base[key];
-					}
-					return null;
-				}
-			}
-
-			public LocaleLanguage(JToken values)
-			{
-				this._base = null;
-				this._values = values;
-			}
-
-			public LocaleLanguage(LocaleLanguage baseLang, JToken values)
-			{
-				_base = baseLang;
-				_values = values;
-			}
-		}
-
 		/// <summary>
 		/// Replaces newlines with HTML line breaks.
 		/// </summary>
@@ -538,18 +516,7 @@ namespace SassV2
 		{
 			var rand = new Random();
 			var list = new List<char>();
-			char[] sourceChars = new char[]
-			{
-				'^',
-				'#',
-				'@',
-				'&',
-				'*',
-				'-',
-				'%',
-				'!',
-				'~'
-			};
+			var sourceChars = new char[] { '^', '#', '@', '&', '*', '-', '%', '!', '~' };
 
 			int num = 0;
 			for(int i = 0; i < length; i++)

@@ -50,7 +50,7 @@ namespace SassV2.Commands
 			var match = _forRegex.Match(args.Trim().ToLower());
 			if(!match.Success || match.Groups.Count < 4)
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "images.nonsense"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "images.nonsense"));
 				return;
 			}
 
@@ -58,7 +58,7 @@ namespace SassV2.Commands
 			string image = _bot.Database(Context.Guild.Id).GetObject<string>("image:" + thing);
 			if(image == null)
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "images.noimage", new { thing = thing }));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "images.noimage", new { thing = thing }));
 				return;
 			}
 
@@ -78,14 +78,14 @@ namespace SassV2.Commands
 			var match = _forRegex.Match(args.Trim());
 			if(!match.Success || match.Groups.Count < 4)
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "images.nonsense"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "images.nonsense"));
 				return;
 			}
 
 			var parts = match.Groups[3].Value.Split(' ');
 			if(parts.Length < 2 && !Context.Message.Attachments.Any())
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "images.needparts"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "images.needparts"));
 				return;
 			}
 
@@ -96,7 +96,7 @@ namespace SassV2.Commands
 				url = await UploadImage(url, _bot.Config.ImgurClientId);
 				if(url == null)
 				{
-					await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "images.cantmove"));
+					await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "images.cantmove"));
 					return;
 				}
 				urlMatch = _urlRegex.Match(url);
@@ -111,7 +111,7 @@ namespace SassV2.Commands
 
 			_bot.Database(Context.Guild.Id).InsertObject<string>("image:" + thing, finalUrl);
 
-			await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "images.set"));
+			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "images.set"));
 		}
 
 		// upload to imgur if they weren't smart enough to do it themselves

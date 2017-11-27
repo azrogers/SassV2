@@ -19,7 +19,7 @@ namespace SassV2.Commands
 		[Command("42nd digit of pi")]
 		public async Task ConroPi()
 		{
-			await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "dumb.pi"));
+			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "dumb.pi"));
 		}
 
 		[SassCommand(
@@ -37,7 +37,7 @@ namespace SassV2.Commands
 		[Command("thanks")]
 		public async Task Thanks()
 		{
-			await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "dumb.thanks"));
+			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "dumb.thanks"));
 		}
 
 		[SassCommand(
@@ -58,11 +58,11 @@ namespace SassV2.Commands
 		{
 			if(Context.User.Id == 101100871227543552)
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "dumb.ilyjenelle"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "dumb.ilyjenelle"));
 			}
 			else
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "dumb.ily"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "dumb.ily"));
 			}
 		}
 	}

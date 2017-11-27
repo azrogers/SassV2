@@ -30,7 +30,7 @@ namespace SassV2.Commands
 		{
 			if(!(Context.Message.Author as IGuildUser).IsAdmin(_bot))
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "ban.notAdmin"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "ban.notAdmin"));
 				return;
 			}
 
@@ -39,13 +39,13 @@ namespace SassV2.Commands
 			if(!foundUsers.Any())
 			{
 				// found 0 people
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "ban.noneFound"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "ban.noneFound"));
 				return;
 			}
 			if(foundUsers.Count() > 1)
 			{
 				// found more than one person
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "ban.moreFound"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "ban.moreFound"));
 				return;
 			}
 
@@ -54,13 +54,13 @@ namespace SassV2.Commands
 			// can't ban an admin!
 			if(targetPermissions.Administrator || _bot.Config.GetRole(target.Id) == "admin")
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "ban.foundAdmin"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "ban.foundAdmin"));
 				return;
 			}
 
 			// register ban in database
 			_bot.Database(Context.Message.ServerId()).InsertObject("ban:" + target.Id, true);
-			await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "ban.sure"));
+			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "ban.sure"));
 		}
 
 		[SassCommand(
@@ -75,25 +75,25 @@ namespace SassV2.Commands
 		{
 			if(!(Context.User as IGuildUser).IsAdmin(_bot))
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "unban.notAdmin"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "unban.notAdmin"));
 				return;
 			}
 
 			var foundUsers = await Util.FindWithName(args, Context.Message);
 			if(!foundUsers.Any())
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "unban.noneFound"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "unban.noneFound"));
 				return;
 			}
 			if(foundUsers.Count() > 1)
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "unban.moreFound"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "unban.moreFound"));
 				return;
 			}
 			
 			// delete ban
 			_bot.Database(Context.Message.ServerId()).InvalidateObject("ban:" + foundUsers.First().Id);
-			await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "unban.sure"));
+			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "unban.sure"));
 		}
 	}
 }

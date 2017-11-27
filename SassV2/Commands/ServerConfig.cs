@@ -77,7 +77,7 @@ namespace SassV2.Commands
 		{
 			if(!(Context.Message.Author as IGuildUser).IsAdmin(_bot))
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "generic.notAdmin"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "generic.notAdmin"));
 				return;
 			}
 

@@ -37,7 +37,7 @@ namespace SassV2.Commands
 			if(!_fonts.ContainsKey(font))
 			{
 
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "ascii.badFont"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "ascii.badFont"));
 				return;
 			}
 

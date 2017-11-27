@@ -41,7 +41,7 @@ namespace SassV2.Commands
 				var page = info["query"]["pages"][pageKey];
 				if(page["missing"] != null)
 				{
-					await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "define.nothing"));
+					await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "define.nothing"));
 					return;
 				}
 
@@ -65,7 +65,7 @@ namespace SassV2.Commands
 				return;
 			}
 
-			await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "define.nothing"));
+			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "define.nothing"));
 		}
 
 		private async Task<string> DefineDisambg(string args)
@@ -89,13 +89,13 @@ namespace SassV2.Commands
 
 			if(!names.Any())
 			{
-				return Util.Locale(_bot.Language(Context.Guild?.Id), "define.nothing");
+				return Locale.GetString(_bot.Language(Context.Guild?.Id), "define.nothing");
 			}
 
 			// too many to disambiguate
 			if(names.Count > 20)
 			{
-				return Util.Locale(_bot.Language(Context.Guild?.Id), "define.ambiguous");
+				return Locale.GetString(_bot.Language(Context.Guild?.Id), "define.ambiguous");
 			}
 
 			// string concat
@@ -105,7 +105,7 @@ namespace SassV2.Commands
 				str += names[i] + ", ";
 			}
 			str += "or " + names.Last();
-			return Util.Locale(_bot.Language(Context.Guild?.Id), "define.dym", new { options = str });
+			return Locale.GetString(_bot.Language(Context.Guild?.Id), "define.dym", new { options = str });
 		}
 	}
 }

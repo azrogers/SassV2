@@ -101,6 +101,7 @@ namespace SassV2
 				if(result.Error.Value == CommandError.Exception)
 					_logger.Error(result.ErrorReason);
 
+				// if they got it wrong, help them out a bit instead of just telling them they did it wrong.
 				if(result.Error.Value == CommandError.BadArgCount)
 				{
 					var helpLink = HelpCommand.GetHelpLink(services.GetService<DiscordBot>(), message.Content.Substring(BOT_NAME.Length + 1));
@@ -109,8 +110,11 @@ namespace SassV2
 				}
 
 				var msg = Util.CommandErrorToMessage(result.Error.Value);
-				if(message.Channel is IGuildChannel && ServerConfig.Get(services.GetService<DiscordBot>(), message.ServerId()).Civility)
+				// censor string if civility is enabled
+				if(message.Channel is IGuildChannel && 
+					ServerConfig.Get(services.GetService<DiscordBot>(), message.ServerId()).Civility)
 					msg = Util.CivilizeString(msg);
+
 				await commandContext.Channel.SendMessageAsync(msg);
 			}
 		}

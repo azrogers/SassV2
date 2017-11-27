@@ -200,7 +200,7 @@ namespace SassV2
 				banned &&
 				(!permissions.HasValue || !permissions.Value.Administrator) && Config.GetRole(message.Author.Id) != "admin")
 			{
-				await SendMessage(message.Channel as ISocketMessageChannel, Util.Locale(Language(guild?.Id), "error.banned"));
+				await SendMessage(message.Channel as ISocketMessageChannel, Locale.GetString(Language(guild?.Id), "error.banned"));
 				return;
 			}
 
