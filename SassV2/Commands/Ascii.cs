@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-/*
 namespace SassV2.Commands
 {
 	/// <summary>
@@ -58,4 +57,3 @@ namespace SassV2.Commands
 		}
 	}
 }
-*/

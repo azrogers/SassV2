@@ -23,6 +23,7 @@ namespace SassV2.Commands
 		public async Task WelcomeCommand()
 		{
 			var welcome = _bot.Database(Context.Guild.Id).GetObject<string>("welcome");
+			// no welcome message
 			if(welcome == default(string))
 			{
 				await ReplyAsync("No welcome message has been set for this server. If you're an admin, use `sass welcome edit`.");
@@ -47,23 +48,26 @@ namespace SassV2.Commands
 				return;
 			}
 
+			// no channel
 			if(!Context.Message.MentionedChannels.Any() && !message.StartsWith("pm"))
 			{
 				await ReplyAsync("You need to mention a channel or use 'pm'.");
 				return;
 			}
 
+			var db = _bot.Database(Context.Guild.Id);
+			// set channel
 			if(message.StartsWith("pm"))
 			{
-				_bot.Database(Context.Guild.Id).InsertObject<string>("welcome_channel", "pm");
+				db.InsertObject("welcome_channel", "pm");
 			}
 			else
 			{
 				var channel = Context.Message.MentionedChannels.First();
-				_bot.Database(Context.Guild.Id).InsertObject<ulong>("welcome_channel", channel.Id);
+				db.InsertObject("welcome_channel", channel.Id);
 			}
 
-			_bot.Database(Context.Guild.Id).InsertObject<string>("welcome", message.Substring(message.IndexOf(" ")));
+			db.InsertObject("welcome", message.Substring(message.IndexOf(" ")));
 			await ReplyAsync("Welcome message set.");
 		}
 

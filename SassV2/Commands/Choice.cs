@@ -27,7 +27,7 @@ namespace SassV2.Commands
 		{
 			if(args.ToLower().Trim() == "meme" || args.ToLower().Trim() == "memes")
 			{
-				await ReplyAsync(Util.Locale(_bot.Language(Context.Guild?.Id), "choice.memes"));
+				await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "choice.memes"));
 			}
 
 			var parts = Util.SplitQuotedString(args);

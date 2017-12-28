@@ -25,6 +25,7 @@ namespace SassV2
 		private CommandService _commands;
 		private SassCommandAttribute[] _commandAttributes;
 		private Logger _logger;
+		private Dictionary<string, SassCommandAttribute> _commandMap;
 
 		/// <summary>
 		/// Attributes on every SASS command.
@@ -75,6 +76,14 @@ namespace SassV2
 			}
 
 			_commandAttributes = attributes.ToArray();
+			_commandMap = new Dictionary<string, SassCommandAttribute>();
+			foreach(var cmd in _commandAttributes)
+			{
+				foreach(var name in cmd.Names)
+				{
+					_commandMap[name.ToLower()] = cmd;
+				}
+			}
 		}
 
 		/// <summary>
@@ -111,12 +120,31 @@ namespace SassV2
 
 				var msg = Util.CommandErrorToMessage(result.Error.Value);
 				// censor string if civility is enabled
-				if(message.Channel is IGuildChannel && 
+				if(message.Channel is IGuildChannel &&
 					ServerConfig.Get(services.GetService<DiscordBot>(), message.GuildId()).Civility)
 					msg = Util.CivilizeString(msg);
 
 				await commandContext.Channel.SendMessageAsync(msg);
 			}
+		}
+
+		/// <summary>
+		/// Finds the best command match for the input text.
+		/// </summary>
+		public SassCommandAttribute FindBestMatch(string text)
+		{
+			text = text.ToLower();
+
+			var result =
+				_commandMap.Keys
+				.Where(n => text.StartsWith(n))
+				.OrderByDescending(n => n.Length)
+				.FirstOrDefault();
+
+			if(result == default(string))
+				return null;
+
+			return _commandMap[result];
 		}
 	}
 

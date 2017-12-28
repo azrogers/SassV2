@@ -38,6 +38,7 @@ namespace SassV2.Web.Controllers
 				return await Error(server, context, "No stack posted.");
 			}
 
+			// backup existing requests
 			if(File.Exists("requests.txt"))
 			{
 				File.WriteAllText("requests-bkp.txt", File.ReadAllText("requests.txt"));
@@ -77,6 +78,7 @@ namespace SassV2.Web.Controllers
 				return await ForbiddenError(server, context);
 			}
 
+			// find discord server with this id
 			var guild = _bot.Client.GetGuild(serverId);
 			if(guild == null)
 			{
@@ -85,12 +87,14 @@ namespace SassV2.Web.Controllers
 
 			var db = _bot.RelDatabase(serverId);
 
+			// read in quotes to delete from form
 			var postData = context.RequestFormDataDictionary();
 			var hardDelete = postData.ContainsKey("hard_delete");
 			var quotes = Util.ReadFormArray(postData, "quote_delete");
 			if(!quotes.Any())
 				return await Error(server, context, "No quotes provided.");
 
+			// delete each quote
 			foreach(var quote in quotes)
 			{
 				var quoteId = long.Parse(quote);
@@ -171,19 +175,23 @@ namespace SassV2.Web.Controllers
 				return await ForbiddenError(server, context);
 			}
 
+			// get post data
 			var data = context.RequestFormDataDictionary();
 			if(!data.ContainsKey("user") || !data.ContainsKey("server"))
 			{
 				return await Error(server, context, "That's not right.");
 			}
 
+			// find bio shared with this server
 			var guild = _bot.Client.GetGuild(ulong.Parse(data["server"].ToString()));
 			var user = _bot.Client.GetUser(ulong.Parse(data["user"].ToString()));
 			var bios = await Bio.GetBios(_bot, user);
 			var bio = bios.Where(b => b.SharedGuilds.Any(kv => kv.Key == guild.Id)).FirstOrDefault();
+
 			long bioId;
 			if(bio == null)
 			{
+				// no bio for this server
 				bioId = await Bio.CreateBio(user, _bot.GlobalDatabase);
 			}
 			else
@@ -202,10 +210,12 @@ namespace SassV2.Web.Controllers
 				return await ForbiddenError(server, context);
 			}
 
+			// get a list of servers this user is admin of
 			var user = AuthManager.GetUser(server, context, _bot);
 			var servers = _bot.GuildsWithUserAsAdmin(user)
 				.OrderBy(g => g.Name);
 
+			// put discord servers into server models
 			var serverModels = new List<ServerModel>();
 			foreach(var dServer in servers)
 			{

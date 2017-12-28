@@ -1,5 +1,4 @@
 ﻿using Discord.Commands;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SassV2.Commands
@@ -30,16 +29,19 @@ namespace SassV2.Commands
 			await ReplyAsync(_bot.Config.URL + "docs/");
 		}
 
+		/// <summary>
+		/// Returns a link to the documentation of the given command.
+		/// </summary>
 		public static string GetHelpLink(DiscordBot bot, string command)
 		{
 			command = command.ToLower().Trim();
-			var attr = bot.CommandHandler.CommandAttributes.Where(c => c.Names.Contains(command)).FirstOrDefault();
+			var attr = bot.CommandHandler.FindBestMatch(command);
 			if(attr == null)
 			{
 				return "Command not found.";
 			}
 
-			return $"{bot.Config.URL}docs/categories/{attr.Category.ToLower()}#{Util.ToSnakeCase(command)}";
+			return $"{bot.Config.URL}docs/categories/{attr.Category.ToLower()}#{attr.SnakeName}";
 		}
 	}
 }

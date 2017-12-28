@@ -25,6 +25,7 @@ namespace SassV2.Commands
 		[Command("config")]
 		public async Task GetConfigItems()
 		{
+			// find all public fields of the server config object
 			var fields = typeof(ServerConfig).GetFields().Where((f) => f.IsPublic);
 			await ReplyAsync("Possible config options are: " + string.Join(", ", fields.Select((f) => Util.ToSnakeCase(f.Name))));
 		}
@@ -40,9 +41,12 @@ namespace SassV2.Commands
 		[RequireContext(ContextType.Guild)]
 		public async Task GetConfig(string key)
 		{
+			// read in config from database
 			var config = _bot.Database(Context.Guild.Id).GetOrCreateObject("config:server", () => new ServerConfig());
+			// find public fields
 			var fields = typeof(ServerConfig).GetFields().Where((f) => f.IsPublic);
 
+			// find field user has specified
 			var keyNameReal = "";
 			FieldInfo fieldReal = null;
 			foreach(var field in fields)
@@ -55,6 +59,7 @@ namespace SassV2.Commands
 				}
 			}
 
+			// no key found
 			if(keyNameReal == "")
 			{
 				await ReplyAsync($"Unknown config option '{key}'.");
@@ -81,9 +86,11 @@ namespace SassV2.Commands
 				return;
 			}
 
+			// retrieve config object
 			var config = _bot.Database(Context.Guild.Id).GetOrCreateObject("config:server", () => new ServerConfig());
 			var fields = typeof(ServerConfig).GetFields().Where((f) => f.IsPublic);
 
+			// find field
 			var keyNameReal = "";
 			FieldInfo fieldReal = null;
 			foreach(var field in fields)
@@ -102,6 +109,7 @@ namespace SassV2.Commands
 				return;
 			}
 
+			// cast properly - these are all that's supported right now
 			object newValue = null;
 			if(fieldReal.FieldType == typeof(bool))
 			{
@@ -120,6 +128,7 @@ namespace SassV2.Commands
 				newValue = fieldReal.GetValue(config);
 			}
 
+			// set the value and put it back in the database
 			fieldReal.SetValue(config, newValue);
 			_bot.Database(Context.Guild.Id).InsertObject("config:server", config);
 			await ReplyAsync($"Set '{key}' to {newValue.ToString()}.");
@@ -129,6 +138,7 @@ namespace SassV2.Commands
 	public class ServerConfig
 	{
 		public bool Civility = false;
+		public bool RudeMention = false;
 
 		public static ServerConfig Get(DiscordBot bot, ulong serverId)
 		{

@@ -180,11 +180,12 @@ namespace SassV2
 
 			var guild = (message.Channel as SocketGuildChannel)?.Guild;
 			var config = guild == null ? null : Commands.ServerConfig.Get(this, guild.Id);
+
 			// if they mention sass, send a rude message
 			if(message.MentionedUsers.Any(u => u.Id == _client.CurrentUser.Id) && message.MentionedUsers.Count < 4)
 			{
-				if(config.Civility)
-					await SendMessage(message.Channel, "no thanks");
+				if(!config.RudeMention || config.Civility)
+					await SendMessage(message.Channel, "To use commands, prefix them with `sass`. If you don't know any commands, try `sass help`.");
 				else
 					await SendMessage(message.Channel, Util.AssembleRudeMessage());
 				return;

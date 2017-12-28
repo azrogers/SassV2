@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -414,9 +415,28 @@ namespace SassV2
 		/// <summary>
 		/// Converts a string to snake case.
 		/// </summary>
-		public static string ToSnakeCase(string str)
+		/// <remarks>Borrowed from the Rant source at Rant/Core/Utilities/Util.cs line 318.</remarks>
+		public static string ToSnakeCase(string camelName)
 		{
-			return str.ToLower().Replace(" ", "_");
+			var name = camelName.Trim();
+			if(string.IsNullOrWhiteSpace(name)) return name;
+			if(name.Length == 1) return name.ToLower();
+
+			bool a, b;
+			var sb = new StringBuilder();
+			var last = false;
+			for(int i = 0; i < name.Length - 1; i++)
+			{
+				a = char.IsUpper(name[i]);
+				b = char.IsUpper(name[i + 1]);
+				if(last && a && !b) sb.Append('_');
+				sb.Append(char.ToLower(name[i]));
+				if(!a && b) sb.Append('_');
+				last = a;
+			}
+
+			sb.Append(char.ToLower(name[name.Length - 1]));
+			return sb.ToString();
 		}
 
 		/// <summary>
