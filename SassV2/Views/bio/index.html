@@ -9,7 +9,7 @@
 	<ul>
 		@foreach(var bio in ViewBag.Bios)
 		{
-			<li><a href="/bio/edit/@bio.Id">Bio shared with @(string.Join(", ", @bio.SharedServerNames))</a></li>
+			<li><a href="/bio/edit/@bio.Id">Bio shared with @(string.Join(", ", @bio.SharedGuilds))</a></li>
 		}
 	</ul>
 }

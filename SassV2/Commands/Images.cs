@@ -109,7 +109,7 @@ namespace SassV2.Commands
 				string.Join(" ", parts.Take(parts.Count() - 1))).ToLower();
 			var finalUrl = "http://i.imgur.com/" + imageId + "." + extension;
 
-			_bot.Database(Context.Guild.Id).InsertObject<string>("image:" + thing, finalUrl);
+			_bot.Database(Context.Guild.Id).InsertObject("image:" + thing, finalUrl);
 
 			await ReplyAsync(Locale.GetString(_bot.Language(Context.Guild?.Id), "images.set"));
 		}

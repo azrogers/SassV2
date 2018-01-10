@@ -158,26 +158,32 @@ namespace SassV2
 		/// Name(s) that can be used to call this command.
 		/// </summary>
 		public string[] Names;
+
 		/// <summary>
 		/// What this command does.
 		/// </summary>
 		public string Description;
+
 		/// <summary>
 		/// How to make it do something.
 		/// </summary>
 		public string Usage;
+
 		/// <summary>
 		/// What type of command is this?
 		/// </summary>
 		public string Category;
+
 		/// <summary>
 		/// An example of using this command.
 		/// </summary>
 		public string Example;
+
 		/// <summary>
 		/// Should this command be shown on the help page?
 		/// </summary>
 		public bool Hidden;
+
 		/// <summary>
 		/// Is this a PM-only function?
 		/// </summary>
@@ -187,14 +193,16 @@ namespace SassV2
 		/// Convert the first name of this command to snake case.
 		/// </summary>
 		public string SnakeName => Util.ToSnakeCase(Names[0]);
+
 		/// <summary>
 		/// Return all names of this command as snake case.
 		/// </summary>
 		public IEnumerable<string> SnakeNames => Names.Select(n => Util.ToSnakeCase(n));
+
 		/// <summary>
 		/// Format the usage instructions for the web.
 		/// </summary>
-		public string WebUsage => Util.NewLineToLineBreak(Usage?.Replace("<", "&lt;")?.Replace(">", "&gt;") ?? Names[0]);
+		public string WebUsage => Util.NewLineToLineBreak(Util.SanitizeHTML(Usage) ?? Names[0]);
 
 		public SassCommandAttribute(
 			string[] names,

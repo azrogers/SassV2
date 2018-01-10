@@ -124,16 +124,16 @@ namespace SassV2
 		{
 			var users = await (message.Channel as IGuildChannel).Guild.GetUsersAsync();
 
-			Regex mentionRegex = new Regex(@"<@(\d+)>");
+			var mentionRegex = new Regex(@"<@(\d+)>");
 			if(mentionRegex.IsMatch(name))
 			{
-				Match match = mentionRegex.Match(name);
-				string id = match.Groups[1].Value;
+				var match = mentionRegex.Match(name);
+				var id = match.Groups[1].Value;
 				return users.Where(u => u.Id.ToString() == id);
 			}
 
-			string userToFind = name.ToLower().Trim();
-			bool exactly = userToFind.Substring(0, 1) == "!";
+			var userToFind = name.ToLower().Trim();
+			var exactly = userToFind.Substring(0, 1) == "!";
 			if(exactly)
 				userToFind = userToFind.Substring(1);
 
@@ -152,6 +152,8 @@ namespace SassV2
 		/// <returns>The sanitized version of the string.</returns>
 		public static string SanitizeHTML(string unsafeString)
 		{
+			if(unsafeString == null) return null;
+
 			return
 				unsafeString
 				.Replace("&", "&amp;")
@@ -316,12 +318,11 @@ namespace SassV2
 					return LogLevel.Debug;
 				case LogSeverity.Error:
 					return LogLevel.Error;
-				case LogSeverity.Info:
-					return LogLevel.Info;
 				case LogSeverity.Verbose:
 					return LogLevel.Trace;
 				case LogSeverity.Warning:
 					return LogLevel.Warn;
+				case LogSeverity.Info:
 				default:
 					return LogLevel.Info;
 			}
@@ -444,7 +445,7 @@ namespace SassV2
 		/// </summary>
 		public static DateTime FromUnixTime(ulong unixTime)
 		{
-			DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 			return dateTime.AddSeconds(unixTime);
 		}
 
@@ -453,7 +454,7 @@ namespace SassV2
 		/// </summary>
 		public static DateTime FromUnixTime(long unixTime)
 		{
-			DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 			return dateTime.AddSeconds((double)unixTime);
 		}
 
@@ -462,10 +463,10 @@ namespace SassV2
 		/// </summary>
 		public static IEnumerable<T> TakeAllButLast<T>(IEnumerable<T> source)
 		{
-			IEnumerator<T> it = source.GetEnumerator();
-			bool hasRemainingItems = false;
-			bool flag = true;
-			T t = default(T);
+			var it = source.GetEnumerator();
+			var hasRemainingItems = false;
+			var flag = true;
+			var t = default(T);
 			do
 			{
 				hasRemainingItems = it.MoveNext();
@@ -478,8 +479,7 @@ namespace SassV2
 					t = it.Current;
 					flag = false;
 				}
-			}
-			while(hasRemainingItems);
+			} while(hasRemainingItems);
 			yield break;
 		}
 
@@ -488,20 +488,17 @@ namespace SassV2
 		/// </summary>
 		public static string NaturalArrayJoin(IEnumerable<string> values)
 		{
-			int num = values.Count<string>();
-			if(num == 0)
+			switch(values.Count())
 			{
-				return "";
+				case 0:
+					return "";
+				case 1:
+					return values.First();
+				case 2:
+					return $"{values.First()} and {values.Last()}";
+				default:
+					return string.Join(", ", TakeAllButLast(values)) + " and " + values.Last();
 			}
-			if(num == 1)
-			{
-				return values.First<string>();
-			}
-			if(num == 2)
-			{
-				return string.Format("{0} and {1}", values.ElementAt(0), values.ElementAt(1));
-			}
-			return string.Join(", ", Util.TakeAllButLast<string>(values)) + " and " + values.Last<string>();
 		}
 
 		/// <summary>
@@ -538,19 +535,23 @@ namespace SassV2
 			var list = new List<char>();
 			var sourceChars = new char[] { '^', '#', '@', '&', '*', '-', '%', '!', '~' };
 
-			int num = 0;
+			var num = 0;
 			for(int i = 0; i < length; i++)
 			{
+				// shuffle the source char array every time we've gone through it once
 				if(num == 0)
 				{
-					sourceChars = sourceChars.OrderBy(ch => rand.Next()).ToArray<char>();
+					sourceChars = sourceChars.OrderBy(ch => rand.Next()).ToArray();
 					num = sourceChars.Length;
 				}
-				char c = sourceChars[num - 1];
+
+				// escape asterisks, for discord use
+				var c = sourceChars[num - 1];
 				if(c == '*')
 				{
 					list.Add('\\');
 				}
+
 				list.Add(c);
 				num--;
 			}
