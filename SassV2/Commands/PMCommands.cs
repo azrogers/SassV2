@@ -1,6 +1,7 @@
 ﻿using CsvHelper;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using SassV2.Web;
 using System;
 using System.IO;
@@ -149,6 +150,33 @@ namespace SassV2.Commands
 
 			Locale.ReloadLocale();
 			await ReplyAsync("locale reloaded");
+		}
+
+		[SassCommand("puppet message", hidden: true, isPM: true)]
+		[Command("puppet message")]
+		public async Task PuppetChannels(string channelIdStr, [Remainder] string message)
+		{
+			if(_bot.Config.GetRole(Context.User.Id) != "admin")
+			{
+				await ReplyAsync(Locale.GetString("generic.notAdmin"));
+				return;
+			}
+
+			if(!ulong.TryParse(channelIdStr, out ulong channelId))
+			{
+				await ReplyAsync(Locale.GetString("admin.invalidId"));
+				return;
+			}
+
+			var channel = _bot.Client.GetChannel(channelId) as ISocketMessageChannel;
+			if(channel == null)
+			{
+				await ReplyAsync("Channel not found.");
+				return;
+			}
+
+			await channel.SendMessageAsync(message);
+			await ReplyAsync("Message sent.");
 		}
 	}
 }
