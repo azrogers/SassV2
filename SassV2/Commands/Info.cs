@@ -1,6 +1,6 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Newtonsoft.Json.Linq;
+using NLog;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -11,11 +11,12 @@ namespace SassV2.Commands
 	{
 		private Regex _titleRegex = new Regex("<a.+?>(.+?)</a>");
 		private Regex _htmlRegex = new Regex("<.*?>", RegexOptions.Compiled);
+		private ILogger _logger = LogManager.GetCurrentClassLogger();
 
 		[SassCommand(
-			name: "info", 
-			desc: "Get some info on something.", 
-			usage: "info <something>", 
+			name: "info",
+			desc: "Get some info on something.",
+			usage: "info <something>",
 			example: "info National Treasure Film",
 			category: "Useful")]
 		[Command("info")]
@@ -44,7 +45,29 @@ namespace SassV2.Commands
 				var items = data["Infobox"]["content"] as JArray;
 				foreach(var item in items)
 				{
-					infoboxInfo += "**" + item["label"].Value<string>() + "**: " + item["value"].Value<string>() + "\n";
+					var dataType = item["data_type"].Value<string>();
+					switch(dataType)
+					{
+						case "string":
+							infoboxInfo += "**" + item["label"].Value<string>() + ":** " + item["value"].Value<string>() + "\n";
+							break;
+						case "imdb_id":
+							infoboxInfo += $"**IMDb:** <https://www.imdb.com/title/{item["value"].Value<string>()}/>\n";
+							break;
+						case "rotten_tomatoes":
+							infoboxInfo += $"**Rotten Tomatoes:** <https://www.rottentomatoes.com/{item["value"].Value<string>()}/>\n";
+							break;
+						case "netflix_id":
+							infoboxInfo += $"**Netflix:** <https://www.netflix.com/title/{item["value"].Value<string>()}>\n";
+							break;
+						case "instance":
+							// no idea how we're supposed to handle this one
+							break;
+						default:
+							// unknown data type
+							_logger.Info("Unknown DuckDuckGo data type: " + dataType + ", query: " + args);
+							break;
+					}
 				}
 				infoboxInfo = infoboxInfo.Trim();
 			}
@@ -64,7 +87,7 @@ namespace SassV2.Commands
 					var title = titleMatch.Groups[1].Value;
 					var rest = _htmlRegex.Replace(topicResult.Substring(titleMatch.Length).Trim(), string.Empty);
 
-					infoboxInfo += $"**{title}**: {rest}\n";
+					infoboxInfo += $"**{title}:** {rest}\n";
 					count++;
 					if(count > 10 || infoboxInfo.Length > 1500) break;
 				}
@@ -78,7 +101,7 @@ namespace SassV2.Commands
 
 {infoboxInfo}".TrimEnd() + $@"
 
-*Read more: {data["AbstractURL"].Value<string>()}*";
+*Read more: <{data["AbstractURL"].Value<string>()}>*";
 
 			await ReplyAsync(response);
 		}

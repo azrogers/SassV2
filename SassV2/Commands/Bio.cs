@@ -324,7 +324,6 @@ namespace SassV2.Commands
 				Id = id,
 				Owner = author,
 				SharedGuilds = servers,
-				SharedGuildNames = servers.Select(s => s.Value).ToList(),
 				Fields = fields
 			};
 		}
@@ -382,7 +381,7 @@ namespace SassV2.Commands
 		/// <summary>
 		/// The names of the guilds this bio is shared with.
 		/// </summary>
-		public List<string> SharedGuildNames;
+		public IEnumerable<string> SharedGuildNames => SharedGuilds.Select(g => g.Value).OrderBy(g => g);
 
 		/// <summary>
 		/// The fields that this bio contains.

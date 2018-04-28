@@ -9,11 +9,11 @@ namespace SassV2.Commands
 	{
 		[Command("random")]
 		[SassCommand(
-			"random",
-			"generates random number(s) in the given range",
-			"random <start> <end> [number]",
-			"Useful",
-			"random 1 20")]
+			name: "random",
+			desc: "generates random number(s) in the given range",
+			usage: "random <start> <end> [number]",
+			category: "Useful",
+			example: "random 1 20")]
 		public async Task Random(double start, double end, int num = 1)
 		{
 			if(end < start)

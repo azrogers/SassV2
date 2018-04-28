@@ -494,8 +494,8 @@ namespace SassV2.Commands
 			}
 
 			// look for units sorted by levenshtein distance
-			var closestUnits = _unitAliases.Keys.OrderBy(k => LevenshteinDistance(k, input));
-			if(LevenshteinDistance(closestUnits.First(), input) < 4)
+			var closestUnits = _unitAliases.Keys.OrderBy(k => Util.LevenshteinDistance(k, input));
+			if(Util.LevenshteinDistance(closestUnits.First(), input) < 4)
 			{
 				return _unitAliases[closestUnits.First()];
 			}
@@ -519,8 +519,8 @@ namespace SassV2.Commands
 				}
 			}
 
-			var closestCurrencies = _currencyNames.Keys.OrderBy(k => LevenshteinDistance(k, input));
-			if(LevenshteinDistance(closestCurrencies.First(), input) < 4)
+			var closestCurrencies = _currencyNames.Keys.OrderBy(k => Util.LevenshteinDistance(k, input));
+			if(Util.LevenshteinDistance(closestCurrencies.First(), input) < 4)
 			{
 				return _currencyNames[closestCurrencies.First()];
 			}
@@ -534,37 +534,13 @@ namespace SassV2.Commands
 				return _timezoneNames[input];
 			}
 
-			var closestTimezones = _timezoneNames.Keys.OrderBy(k => LevenshteinDistance(k, input));
-			if(LevenshteinDistance(closestTimezones.First(), input) < 4)
+			var closestTimezones = _timezoneNames.Keys.OrderBy(k => Util.LevenshteinDistance(k, input));
+			if(Util.LevenshteinDistance(closestTimezones.First(), input) < 4)
 			{
 				return _timezoneNames[closestTimezones.First()];
 			}
 
 			return null;
-		}
-
-		private int LevenshteinDistance(string a, string b)
-		{
-			if(string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b)) return 0;
-
-			int lengthA = a.Length;
-			int lengthB = b.Length;
-			var distances = new int[lengthA + 1, lengthB + 1];
-			for(int i = 0; i <= lengthA; distances[i, 0] = i++) { }
-			for(int j = 0; j <= lengthB; distances[0, j] = j++) { }
-
-			for(int i = 1; i <= lengthA; i++)
-			{
-				for(int j = 1; j <= lengthB; j++)
-				{
-					int cost = b[j - 1] == a[i - 1] ? 0 : 1;
-					distances[i, j] = Math.Min(
-						Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
-						distances[i - 1, j - 1] + cost
-					);
-				}
-			}
-			return distances[lengthA, lengthB];
 		}
 
 		// add a unit from the json object

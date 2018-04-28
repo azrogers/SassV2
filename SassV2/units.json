@@ -2255,40 +2255,62 @@
 		}
 	],
 	"crypto": [
-	  {
-		"code": "BTC",
-		"name": "Bitcoin"
-	  },
-	  {
-		"code": "LTC",
-		"name": "Litecoin",
-		"market": "btc_ltc"
-	  },
-	  {
-		"code": "NXT",
-		"name": "Nxt",
-		"market": "btc_nxt"
-	  },
-	  {
-		"code": "DOGE",
-		"name": "Dogecoin",
-		"market": "btc_doge"
-	  },
-	  {
-		"code": "PPC",
-		"name": "Peercoin",
-		"market": "btc_ppc"
-	  },
-	  {
-		"code": "NMC",
-		"name": "Namecoin",
-		"market": "btc_nmc"
-	  },
-	  {
-		"code": "ETH",
-		"name": "Ethereum",
-		"market": "btc_eth"
-	  }
+		{
+			"code": "XBT",
+			"name": "Bitcoin"
+		},
+		{
+			"code": "BCH",
+			"name": "Bitcoin Cash"
+		},
+		{
+			"code": "DASH",
+			"name": "Dash"
+		},
+		{
+			"code": "EOS",
+			"name": "EOS"
+		},
+		{
+			"code": "ETC",
+			"name": "Ethereum Classic"
+		},
+		{
+			"code": "ETH",
+			"name": "Ethereum"
+		},
+		{
+			"code": "GNO",
+			"name": "Gnosis"
+		},
+		{
+			"code": "LTC",
+			"name": "Litecoin"
+		},
+		{
+			"code": "REP",
+			"name": "Augur"
+		},
+		{
+			"code": "USDT",
+			"name": "Tether"
+		},
+		{
+			"code": "XLM",
+			"name": "Stellar"
+		},
+		{
+			"code": "XMR",
+			"name": "Monero"
+		},
+		{
+			"code": "XRP",
+			"name": "Ripple"
+		},
+		{
+			"code": "ZEC",
+			"name": "Zcash"
+		}
 	],
 	"other": [
 	  {
