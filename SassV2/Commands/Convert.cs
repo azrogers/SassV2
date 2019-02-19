@@ -80,7 +80,7 @@ namespace SassV2.Commands
 
 		// convert timezones (EST, PST, EDT, etc)
 		[SassCommand(
-			names: new string[] { "convert timezone", "timezone convert" },
+			names: new string[] { "convert timezone", "timezone convert", "convert time", "time convert" },
 			desc: "Convert one time to another time in a different timezone.",
 			usage: "convert timezone <time> <timezone> (to|in|at|as|=) <timezone>",
 			example: "convert timezone 5am EST to GMT",

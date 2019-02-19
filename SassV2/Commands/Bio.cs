@@ -112,21 +112,47 @@ namespace SassV2.Commands
 
 	public static class Bio
 	{
-		public static List<BioField> Fields => _fields;
-
-		private static List<BioField> _fields = new List<BioField>()
+		/// <summary>
+		/// All the fields in bios.
+		/// </summary>
+		public static List<BioField> Fields { get; } = new List<BioField>()
 		{
 			new BioField("real_name", "Real Name"),
+			new BioField("pronouns", "Pronouns"),
 			new BioField("bio", "Bio", "Who dis?") { Formatter = (v) => $"```{v}```", Multiline = true, MaxLength = 500 },
 			new BioField("email", "Email"),
 			new BioField("paypal", "PayPal Email"),
-			new BioField("steam_id", "Steam ID", "Steam", "Find it at <a href='http://steamid.co/' target='_blank'>steamid.co</a>. Use the Steam 64 ID.") {
+			new BioField(
+				"steam_id",
+				"Steam ID",
+				"Steam",
+				"Find it at <a href='http://steamid.co/' target='_blank'>steamid.co</a>. Use the Steam 64 ID.") {
 				Formatter = (v) => $"<https://steamcommunity.com/profiles/{v}>"
 			},
 			new BioField("twitter", "Twitter Username", "Twitter", "") {
 				Formatter = (v) => $"<https://twitter.com/{v}>"
 			},
-			new BioField("facebook", "Facebook Username", "Facebook", "The part that comes after the facebook.com/ on your Facebook page.") {
+			new BioField(
+				"mastodon",
+				"Mastodon Username",
+				"Mastodon",
+				"In the form @username@instance.tld") {
+				Formatter = (v) =>
+				{
+					var parts = v.Split("@");
+					if(parts.Length < 3)
+					{
+						return v;
+					}
+
+					return $"<https://{v[1]}/@{v[2]}>";
+				}
+			},
+			new BioField(
+				"facebook",
+				"Facebook Username",
+				"Facebook",
+				"The part that comes after the facebook.com/ on your Facebook page.") {
 				Formatter = (v) => $"<https://facebook.com/{v}>"
 			},
 			new BioField("snapchat", "Snapchat Username"),
@@ -151,7 +177,7 @@ namespace SassV2.Commands
 			var fields = bio.Fields.Where(f => !string.IsNullOrWhiteSpace(f.Value));
 
 			// find fields that we won't be touching and delete any entries of them for this bio
-			var fieldsNotUpdating = _fields.Where(f => !fields.Any(f2 => f2.Name == f.Name));
+			var fieldsNotUpdating = Fields.Where(f => !fields.Any(f2 => f2.Name == f.Name));
 			foreach(var field in fieldsNotUpdating)
 			{
 				var delCmd = db.BuildCommand("DELETE FROM bio_entries WHERE key = :key AND bio = :bio");
@@ -289,7 +315,7 @@ namespace SassV2.Commands
 				}
 			}
 
-			var fieldSpecs = new List<BioField>(_fields.Select(f => f.Clone()));
+			var fieldSpecs = new List<BioField>(Fields.Select(f => f.Clone()));
 			var fields = new List<BioField>();
 			if(full)
 			{
@@ -464,24 +490,37 @@ namespace SassV2.Commands
 				Info = Info,
 				Value = Value,
 				Formatter = Formatter,
-				Multiline = Multiline
+				Multiline = Multiline,
+				MaxLength = MaxLength
 			};
 
 			return newField;
 		}
 
+		/// <summary>
+		/// Create a new BioField with the given name.
+		/// </summary>
 		public BioField(string name)
 			: this(name, name, name, "")
 		{ }
 
+		/// <summary>
+		/// Create a new BioField with the given name and friendly name.
+		/// </summary>
 		public BioField(string name, string friendlyName)
 			: this(name, friendlyName, friendlyName, "")
 		{ }
 
+		/// <summary>
+		/// Create a new BioField with the given name, friendly name, and info text.
+		/// </summary>
 		public BioField(string name, string friendlyName, string info)
 			: this(name, friendlyName, friendlyName, info)
 		{ }
 
+		/// <summary>
+		/// Create a new BioField with the given name, friendly name, info text, and display name.
+		/// </summary>
 		public BioField(string name, string friendlyName, string displayName, string info)
 		{
 			Name = name;
