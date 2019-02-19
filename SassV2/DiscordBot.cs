@@ -14,28 +14,24 @@ namespace SassV2
 {
 	public class DiscordBot
 	{
-		private DiscordSocketClient _client;
+		private readonly ServiceProvider _services;
 		private Logger _logger;
-		private Config _config;
-		private CommandHandler _commandHandler;
-		private RelationalDatabase _globalDatabase;
 		private Dictionary<ulong, KeyValueDatabase> _serverDatabases;
 		private Dictionary<ulong, RelationalDatabase> _serverRelationalDatabases;
-		private ServiceProvider _services;
 		private Stopwatch _uptime;
 
 		/// <summary>
 		/// Bot configuration from JSON file.
 		/// </summary>
-		public Config Config => _config;
+		public Config Config { get; }
 		/// <summary>
 		/// Registers and executes commands.
 		/// </summary>
-		public CommandHandler CommandHandler => _commandHandler;
+		public CommandHandler CommandHandler { get; }
 		/// <summary>
 		/// Connected Discord client.
 		/// </summary>
-		public DiscordSocketClient Client => _client;
+		public DiscordSocketClient Client { get; }
 		/// <summary>
 		/// All servers the bot is connected to.
 		/// </summary>
@@ -43,12 +39,15 @@ namespace SassV2
 		/// <summary>
 		/// The global database storing non-server-specific data.
 		/// </summary>
-		public RelationalDatabase GlobalDatabase => _globalDatabase;
+		public RelationalDatabase GlobalDatabase { get; private set; }
 		/// <summary>
 		/// Time since bot started.
 		/// </summary>
 		public TimeSpan Uptime => _uptime.Elapsed;
 
+		/// <summary>
+		/// A static reference to the logger.
+		/// </summary>
 		public static Logger StaticLogger;
 
 		public DiscordBot(Config config)
@@ -58,9 +57,9 @@ namespace SassV2
 			{
 				LogLevel = LogSeverity.Verbose
 			};
-			_client = new DiscordSocketClient(discordConfig);
-			_config = config;
-			_commandHandler = new CommandHandler();
+			Client = new DiscordSocketClient(discordConfig);
+			Config = config;
+			CommandHandler = new CommandHandler();
 			_serverDatabases = new Dictionary<ulong, KeyValueDatabase>();
 			_serverRelationalDatabases = new Dictionary<ulong, RelationalDatabase>();
 			if(!Directory.Exists("Servers"))
@@ -83,27 +82,30 @@ namespace SassV2
 		public async Task Start()
 		{
 			_logger.Info("starting bot");
-			_globalDatabase = new RelationalDatabase("global.db", null);
-			await _globalDatabase.Open();
+			GlobalDatabase = new RelationalDatabase("global.db", null);
+			await GlobalDatabase.Open();
 			await ActivityManager.Initialize(this);
 
-			await _commandHandler.InitCommands();
+			await CommandHandler.InitCommands();
 
-			_client.Log += (m) => Task.Run(() =>
+			Client.Log += (m) => Task.Run(() =>
 			{
 				_logger.Log(Util.SeverityToLevel(m.Severity), m.Message);
 			});
-			_client.GuildAvailable += OnGuildAvailable;
-			_client.MessageReceived += OnMessageReceived;
-			_client.UserJoined += UserJoined;
-			_client.Disconnected += Disconnected;
-			_client.Ready += () => Task.Run(() =>
+			Client.GuildAvailable += OnGuildAvailable;
+			Client.MessageReceived += OnMessageReceived;
+			Client.UserJoined += UserJoined;
+			Client.Disconnected += Disconnected;
+			Client.Ready += () => Task.Run(() =>
 			{
 				_logger.Info("client ready");
 			});
 
-			await _client.LoginAsync(TokenType.Bot, _config.Token);
-			await _client.StartAsync();
+			await Client.LoginAsync(TokenType.Bot, Config.Token);
+			await Client.StartAsync();
+
+			// update emotes on launch
+			await EmoteManager.Update();
 
 			// loop FOREVER
 			await Task.Delay(-1);
@@ -132,26 +134,17 @@ namespace SassV2
 		/// </summary>
 		/// <param name="serverId">The server ID.</param>
 		/// <returns>The database for the given server.</returns>
-		public KeyValueDatabase Database(ulong serverId)
-		{
-			return _serverDatabases[serverId];
-		}
+		public KeyValueDatabase Database(ulong serverId) => _serverDatabases[serverId];
 
 		/// <summary>
 		/// Returns the relational database for the given server ID.
 		/// </summary>
-		public RelationalDatabase RelDatabase(ulong serverId)
-		{
-			return _serverRelationalDatabases[serverId];
-		}
+		public RelationalDatabase RelDatabase(ulong serverId) => _serverRelationalDatabases[serverId];
 
 		/// <summary>
 		/// Returns the current locale language for this server.
 		/// </summary>
-		public string Language(ulong serverId)
-		{
-			return Commands.ServerConfig.Get(this, serverId).Civility ? "eng-nice" : "eng";
-		}
+		public string Language(ulong serverId) => Commands.ServerConfig.Get(this, serverId).Civility ? "eng-nice" : "eng";
 
 		/// <summary>
 		/// Returns the current locale language for this server.
@@ -159,20 +152,26 @@ namespace SassV2
 		public string Language(ulong? serverId)
 		{
 			if(serverId.HasValue)
+			{
 				return Language(serverId.Value);
+			}
+
 			return "eng";
 		}
 
 		private async Task OnMessageReceived(SocketMessage message)
 		{
 			// ignore messages we send
-			if(message.Author.Id == _client.CurrentUser.Id) return;
+			if(message.Author.Id == Client.CurrentUser.Id)
+			{
+				return;
+			}
 
 			if(message.Channel is ISocketPrivateChannel)
 			{
 				_logger.Debug("message from " + message.Author.Username + ": " + message.Content);
 			}
-			else if(_config.DebugServers.Contains((message.Channel as IGuildChannel).GuildId.ToString()))
+			else if(Config.DebugServers.Contains((message.Channel as IGuildChannel).GuildId.ToString()))
 			{
 				var channel = (message.Channel as IGuildChannel);
 				_logger.Debug($"message on #{channel.Name} ({channel.Guild.Name}) from {message.Author.Username}: {message.Content}");
@@ -182,12 +181,17 @@ namespace SassV2
 			var config = guild == null ? null : Commands.ServerConfig.Get(this, guild.Id);
 
 			// if they mention sass, send a rude message
-			if(message.MentionedUsers.Any(u => u.Id == _client.CurrentUser.Id) && message.MentionedUsers.Count < 4)
+			if(message.MentionedUsers.Any(u => u.Id == Client.CurrentUser.Id) && message.MentionedUsers.Count < 4)
 			{
 				if(!config.RudeMention || config.Civility)
+				{
 					await SendMessage(message.Channel, "To use commands, prefix them with `sass`. If you don't know any commands, try `sass help`.");
+				}
 				else
+				{
 					await SendMessage(message.Channel, Util.AssembleRudeMessage());
+				}
+
 				return;
 			}
 
@@ -213,7 +217,7 @@ namespace SassV2
 
 			try
 			{
-				await _commandHandler.HandleCommand(_services, message);
+				await CommandHandler.HandleCommand(_services, message);
 			}
 			// a command exception is one that the user should know about
 			catch(CommandException commandEx)
@@ -225,12 +229,17 @@ namespace SassV2
 			{
 				// probably not necessary anymore, but oh well
 				if(ex.InnerExceptions.Any(a => a.GetType() == typeof(Discord.Net.RateLimitedException)))
+				{
 					SendMessage(message.Channel, $"I'm being rate limited!").Forget();
+				}
 
 				if(ex.InnerExceptions.Any(a => a.GetType() == typeof(CommandException)))
 				{
 					foreach(var err in ex.InnerExceptions.Where(a => a.GetType() == typeof(CommandException)))
+					{
 						SendMessage(message.Channel, err.Message).Forget();
+					}
+
 					return;
 				}
 
@@ -247,16 +256,16 @@ namespace SassV2
 			}
 		}
 
-		private Task Disconnected(Exception arg)
-		{
-			return Task.Run(() =>
-			{
-				if(arg != null)
-					_logger.Error(arg);
-				_logger.Warn("Rebooting");
-				Environment.Exit(1);
-			});
-		}
+		private Task Disconnected(Exception arg) => Task.Run(() =>
+															  {
+																  if(arg != null)
+																  {
+																	  _logger.Error(arg);
+																  }
+
+																  _logger.Warn("Rebooting");
+																  Environment.Exit(1);
+															  });
 
 		private async Task UserJoined(SocketUser user)
 		{
@@ -264,7 +273,9 @@ namespace SassV2
 			var guild = (user as IGuildUser).Guild;
 			var welcome = Database(guild.Id).GetObject<string>("welcome");
 			if(welcome == default(string))
+			{
 				return;
+			}
 
 			var message = Util.FormatString(welcome, new
 			{
@@ -282,7 +293,10 @@ namespace SassV2
 			{
 				var welcomeChannel = await guild.GetChannelAsync(ulong.Parse(channelId));
 				if(welcomeChannel == null)
+				{
 					return;
+				}
+
 				await SendMessage(welcomeChannel as ISocketMessageChannel, message);
 			}
 		}

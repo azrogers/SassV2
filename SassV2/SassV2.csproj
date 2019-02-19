@@ -11,11 +11,18 @@
 
   <ItemGroup>
     <Compile Remove="calvinhobbes\**" />
+    <Compile Remove="emotes\**" />
+    <Compile Remove="Servers\**" />
     <EmbeddedResource Remove="calvinhobbes\**" />
+    <EmbeddedResource Remove="emotes\**" />
+    <EmbeddedResource Remove="Servers\**" />
     <None Remove="calvinhobbes\**" />
+    <None Remove="emotes\**" />
+    <None Remove="Servers\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AngleSharp" Version="0.11.0" />
     <PackageReference Include="ChatterBotApi" Version="1.0.0" />
     <PackageReference Include="CoreCLR-NCalc" Version="2.2.33" />
     <PackageReference Include="CsvHelper" Version="6.0.0" />
@@ -25,6 +32,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
     <PackageReference Include="NLog" Version="5.0.0-beta11" />
     <PackageReference Include="RazorLight" Version="2.0.0-alpha3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0006" />
     <PackageReference Include="System.Reactive" Version="4.0.0-preview00001" />
     <PackageReference Include="System.Threading.Timer" Version="4.3.0" />
   </ItemGroup>

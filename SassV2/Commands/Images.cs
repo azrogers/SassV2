@@ -91,6 +91,7 @@ namespace SassV2.Commands
 
 			var url = (Context.Message.Attachments.Any() ? Context.Message.Attachments.First().Url : parts.Last());
 			var urlMatch = _urlRegex.Match(url);
+			// if not imgur, upload to imgur
 			if(!urlMatch.Success || urlMatch.Length < 4)
 			{
 				url = await UploadImage(url, _bot.Config.ImgurClientId);

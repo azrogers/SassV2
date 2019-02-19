@@ -46,7 +46,7 @@ namespace SassV2.Commands
 		[SassCommand(
 			name: "roll",
 			desc: "performs a dice roll",
-			usage: "roll <roll in the from NdX, where N is the number of dice and X is the number of sides.",
+			usage: "roll <roll in the from NdX, where N is the number of dice and X is the number of sides>",
 			category: "Useful",
 			example: "roll 2d6")]
 		public async Task Roll(string roll)

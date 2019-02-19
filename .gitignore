@@ -248,3 +248,5 @@ config.json
 SassV2/Servers
 global.db
 SassV2/calvinhobbes
+SassV2/emotes
+SassV2/emotes.json
