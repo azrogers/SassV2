@@ -15,7 +15,8 @@ namespace SassV2.Commands
 			name: "emote",
 			desc: "returns an SA emote with an optional size",
 			usage: "emotes <name> [size between 1 and 2000]",
-			example: "emotes ironicat"
+			example: "emotes ironicat",
+			category: "Spam"
 		)]
 		public async Task GetEmote(string name, int size = 200)
 		{

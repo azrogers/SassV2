@@ -2,14 +2,13 @@
 using Newtonsoft.Json;
 using NLog;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using SixLabors.ImageSharp.Processing.Processors.Transforms;
-using SixLabors.ImageSharp.Processing.Processors.Quantization;
 
 namespace SassV2
 {
@@ -48,8 +47,9 @@ namespace SassV2
 				// resize height, keeping aspect ratio
 				var h = (image.Height / image.Width) * size;
 				image.Mutate(x => x.Resize(size, h, KnownResamplers.Box));
-				var ext = Path.GetExtension(_emotes[name]);
-				if(ext == ".gif")
+				var ext = ".gif";
+				// save as gif if animated
+				if(image.Frames.Count > 1)
 				{
 					var encoder = new GifEncoder()
 					{
@@ -61,6 +61,7 @@ namespace SassV2
 				}
 				else
 				{
+					ext = ".png";
 					image.SaveAsPng(stream);
 				}
 
