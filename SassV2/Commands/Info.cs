@@ -9,6 +9,7 @@ namespace SassV2.Commands
 {
 	public class InfoCommand : ModuleBase<SocketCommandContext>
 	{
+		private const int MAX_CHARS = 2000;
 		private Regex _titleRegex = new Regex("<a.+?>(.+?)</a>");
 		private Regex _htmlRegex = new Regex("<.*?>", RegexOptions.Compiled);
 		private ILogger _logger = LogManager.GetCurrentClassLogger();
@@ -60,6 +61,12 @@ namespace SassV2.Commands
 						case "netflix_id":
 							infoboxInfo += $"**Netflix:** <https://www.netflix.com/title/{item["value"].Value<string>()}>\n";
 							break;
+						case "facebook_profile":
+							infoboxInfo += $"**Facebook:** <https://facebook.com/{item["value"].Value<string>()}>\n";
+							break;
+						case "twitter_profile":
+							infoboxInfo += $"**Twitter:** <https://twitter.com/{item["value"].Value<string>()}>\n";
+							break;
 						case "instance":
 							// no idea how we're supposed to handle this one
 							break;
@@ -89,19 +96,25 @@ namespace SassV2.Commands
 
 					infoboxInfo += $"**{title}:** {rest}\n";
 					count++;
-					if(count > 10 || infoboxInfo.Length > 1500) break;
+					if(count > 10 || infoboxInfo.Length > 1500)
+					{
+						break;
+					}
 				}
 				infoboxInfo = infoboxInfo.Trim();
 			}
+
+			var wikipedia = $"\n\n*Read more: <{data["AbstractURL"].Value<string>()}>*";
 
 			var response = $@"
 **{data["Heading"].Value<string>()}**
 
 {body}".Trim() + $@"
 
-{infoboxInfo}".TrimEnd() + $@"
+{infoboxInfo}".TrimEnd();
 
-*Read more: <{data["AbstractURL"].Value<string>()}>*";
+			// limit body to max number of lines that fit + read more
+			response = Util.SmartMaxLength(response, MAX_CHARS - wikipedia.Length) + wikipedia;
 
 			await ReplyAsync(response);
 		}

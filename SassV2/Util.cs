@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace SassV2
 {
-	public class Util
+	public static class Util
 	{
 		/// <summary>
 		/// Fills template placeholders with random words.
@@ -25,8 +24,8 @@ namespace SassV2
 		/// <returns>The template, filled with random words.</returns>
 		public static string FillTemplate(string template, string[] words)
 		{
-			Random rand = new Random();
-			Regex templateRegex = new Regex(@"\{(\d+)\}");
+			var rand = new Random();
+			var templateRegex = new Regex(@"\{(\d+)\}");
 			return templateRegex.Replace(template, (match) =>
 			{
 				return words[rand.Next(words.Length)];
@@ -80,7 +79,10 @@ namespace SassV2
 		/// <returns>The number in ordinal form.</returns>
 		public static string CardinalToOrdinal(int num)
 		{
-			if(num <= 0) return num.ToString();
+			if(num <= 0)
+			{
+				return num.ToString();
+			}
 
 			switch(num % 100)
 			{
@@ -110,7 +112,11 @@ namespace SassV2
 		/// <returns>The capitalized string.</returns>
 		public static string Capitalize(string input)
 		{
-			if(string.IsNullOrEmpty(input)) return "";
+			if(string.IsNullOrEmpty(input))
+			{
+				return "";
+			}
+
 			return input.First().ToString().ToUpper() + string.Join("", input.Skip(1));
 		}
 
@@ -135,12 +141,17 @@ namespace SassV2
 			var userToFind = name.ToLower().Trim();
 			var exactly = userToFind.Substring(0, 1) == "!";
 			if(exactly)
+			{
 				userToFind = userToFind.Substring(1);
+			}
 
 			return users.Where(u =>
 			{
 				if(exactly)
+				{
 					return u.NicknameOrDefault().ToLower() == userToFind;
+				}
+
 				return u.NicknameOrDefault().ToLower().IndexOf(userToFind, StringComparison.CurrentCulture) != -1;
 			});
 		}
@@ -152,7 +163,10 @@ namespace SassV2
 		/// <returns>The sanitized version of the string.</returns>
 		public static string SanitizeHTML(string unsafeString)
 		{
-			if(unsafeString == null) return null;
+			if(unsafeString == null)
+			{
+				return null;
+			}
 
 			return
 				unsafeString
@@ -188,7 +202,7 @@ namespace SassV2
 				argsDict = AnonymousObjectToDictionary<string>(args);
 			}
 
-			Regex templateRegex = new Regex(@"\{(\w+)\}");
+			var templateRegex = new Regex(@"\{(\w+)\}");
 			return templateRegex.Replace(str, (match) =>
 			{
 				var key = match.Groups[1].Value;
@@ -206,7 +220,7 @@ namespace SassV2
 			var type = anon.GetType();
 			var props = type.GetProperties();
 			var kv = new Dictionary<string, T>();
-			foreach(PropertyInfo prop in props)
+			foreach(var prop in props)
 			{
 				kv[prop.Name] = (T)prop.GetValue(anon, null);
 			}
@@ -216,7 +230,7 @@ namespace SassV2
 		/// <summary>
 		/// Asynchronously gets the data a URL.
 		/// </summary>
-		public async static Task<string> GetURLAsync(string url)
+		public static async Task<string> GetURLAsync(string url)
 		{
 			using(var httpClient = new HttpClient())
 			{
@@ -280,16 +294,28 @@ namespace SassV2
 		public static bool ParseDouble(string value, out double number)
 		{
 			number = 0;
-			if(string.IsNullOrWhiteSpace(value)) return false;
+			if(string.IsNullOrWhiteSpace(value))
+			{
+				return false;
+			}
 
 			value = value.Trim();
-			if(!Char.IsLetter(value[value.Length - 1]))
-				return Double.TryParse(value, out number);
+			if(!char.IsLetter(value[value.Length - 1]))
+			{
+				return double.TryParse(value, out number);
+			}
 
 			var power = value[value.Length - 1];
 			value = value.Substring(0, value.Length - 1);
-			if(string.IsNullOrWhiteSpace(value)) return false;
-			if(!Double.TryParse(value, out var n)) return false;
+			if(string.IsNullOrWhiteSpace(value))
+			{
+				return false;
+			}
+
+			if(!double.TryParse(value, out var n))
+			{
+				return false;
+			}
 
 			switch(power)
 			{
@@ -356,10 +382,7 @@ namespace SassV2
 		/// <summary>
 		/// Converts an anonymous object to an ExpandoObject for use with RazorLight ViewBags.
 		/// </summary>
-		public static ExpandoObject ViewBagFromAnonObject(object anon)
-		{
-			return AnonymousObjectToDictionary<object>(anon).ToExpando();
-		}
+		public static ExpandoObject ViewBagFromAnonObject(object anon) => AnonymousObjectToDictionary<object>(anon).ToExpando();
 
 		/// <summary>
 		/// Crypto-random string, 32 bytes (256 bits)
@@ -413,7 +436,9 @@ namespace SassV2
 					message = $"Page {pageAmount}:\n" + line;
 				}
 				else
+				{
 					message += "\n" + line;
+				}
 			}
 
 			yield return message;
@@ -427,19 +452,34 @@ namespace SassV2
 		public static string ToSnakeCase(string camelName)
 		{
 			var name = camelName.Trim();
-			if(string.IsNullOrWhiteSpace(name)) return name;
-			if(name.Length == 1) return name.ToLower();
+			if(string.IsNullOrWhiteSpace(name))
+			{
+				return name;
+			}
+
+			if(name.Length == 1)
+			{
+				return name.ToLower();
+			}
 
 			bool a, b;
 			var sb = new StringBuilder();
 			var last = false;
-			for(int i = 0; i < name.Length - 1; i++)
+			for(var i = 0; i < name.Length - 1; i++)
 			{
 				a = char.IsUpper(name[i]);
 				b = char.IsUpper(name[i + 1]);
-				if(last && a && !b) sb.Append('_');
+				if(last && a && !b)
+				{
+					sb.Append('_');
+				}
+
 				sb.Append(char.ToLower(name[i]));
-				if(!a && b) sb.Append('_');
+				if(!a && b)
+				{
+					sb.Append('_');
+				}
+
 				last = a;
 			}
 
@@ -462,7 +502,7 @@ namespace SassV2
 		public static DateTime FromUnixTime(long unixTime)
 		{
 			var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-			return dateTime.AddSeconds((double)unixTime);
+			return dateTime.AddSeconds(unixTime);
 		}
 
 		/// <summary>
@@ -511,10 +551,7 @@ namespace SassV2
 		/// <summary>
 		/// Replaces newlines with HTML line breaks.
 		/// </summary>
-		public static string NewLineToLineBreak(string str)
-		{
-			return str.Replace("\n", "<br>");
-		}
+		public static string NewLineToLineBreak(string str) => str.Replace("\n", "<br>");
 
 		/// <summary>
 		/// Parses a bool input.
@@ -528,10 +565,7 @@ namespace SassV2
 		/// <summary>
 		/// Replaces swear words in a string with censorship.
 		/// </summary>
-		public static string CivilizeString(string str)
-		{
-			return new Regex("(shit|fuck|heck|hell|piss|dick|cock)").Replace(str, (Match m) => GenerateCensorship(m.Groups[1].Length));
-		}
+		public static string CivilizeString(string str) => new Regex("(shit|fuck|heck|hell|piss|dick|cock)").Replace(str, (Match m) => GenerateCensorship(m.Groups[1].Length));
 
 		/// <summary>
 		/// Generates a string to replace a swear word.
@@ -543,7 +577,7 @@ namespace SassV2
 			var sourceChars = new char[] { '^', '#', '@', '&', '*', '-', '%', '!', '~' };
 
 			var num = 0;
-			for(int i = 0; i < length; i++)
+			for(var i = 0; i < length; i++)
 			{
 				// shuffle the source char array every time we've gone through it once
 				if(num == 0)
@@ -590,19 +624,22 @@ namespace SassV2
 		/// </summary>
 		public static int LevenshteinDistance(string a, string b)
 		{
-			if(string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b)) return 0;
-
-			int lengthA = a.Length;
-			int lengthB = b.Length;
-			var distances = new int[lengthA + 1, lengthB + 1];
-			for(int i = 0; i <= lengthA; distances[i, 0] = i++) { }
-			for(int j = 0; j <= lengthB; distances[0, j] = j++) { }
-
-			for(int i = 1; i <= lengthA; i++)
+			if(string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
 			{
-				for(int j = 1; j <= lengthB; j++)
+				return 0;
+			}
+
+			var lengthA = a.Length;
+			var lengthB = b.Length;
+			var distances = new int[lengthA + 1, lengthB + 1];
+			for(var i = 0; i <= lengthA; distances[i, 0] = i++) { }
+			for(var j = 0; j <= lengthB; distances[0, j] = j++) { }
+
+			for(var i = 1; i <= lengthA; i++)
+			{
+				for(var j = 1; j <= lengthB; j++)
 				{
-					int cost = b[j - 1] == a[i - 1] ? 0 : 1;
+					var cost = b[j - 1] == a[i - 1] ? 0 : 1;
 					distances[i, j] = Math.Min(
 						Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
 						distances[i - 1, j - 1] + cost
@@ -610,6 +647,41 @@ namespace SassV2
 				}
 			}
 			return distances[lengthA, lengthB];
+		}
+
+		/// <summary>
+		/// Limits a string to the given number of characters, splitting on newlines.
+		/// </summary>
+		public static string SmartMaxLength(string str, int n)
+		{
+			if(n < 1)
+			{
+				return "";
+			}
+
+			var lines = str.Split('\n');
+			// first line longer than max length, don't even bother
+			if(lines[0].Length > n)
+			{
+				return lines[0].Substring(0, n - 3) + "...";
+			}
+
+			var validLines = new List<string>();
+			var currentLen = 0;
+			for(var i = 0; i < lines.Length; i++)
+			{
+				var line = lines[i];
+				if(currentLen + line.Length + 1 >= n)
+				{
+					break;
+				}
+
+				validLines.Add(line);
+				// add an extra char for newline
+				currentLen += line.Length + 1;
+			}
+
+			return string.Join('\n', validLines);
 		}
 	}
 }
