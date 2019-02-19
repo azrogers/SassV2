@@ -12,10 +12,7 @@ namespace SassV2.Commands
 	{
 		private DiscordBot _bot;
 
-		public BioCommand(DiscordBot bot)
-		{
-			_bot = bot;
-		}
+		public BioCommand(DiscordBot bot) => _bot = bot;
 
 		[SassCommand(
 			name: "edit bio",
@@ -41,7 +38,7 @@ namespace SassV2.Commands
 		[RequireContext(ContextType.Guild)]
 		public async Task ShowBio([Remainder] string args)
 		{
-			IEnumerable<IUser> users = await Util.FindWithName(args, Context.Message);
+			var users = await Util.FindWithName(args, Context.Message);
 
 			if(!users.Any())
 			{
@@ -287,7 +284,10 @@ namespace SassV2.Commands
 			bioCmd.Parameters.AddWithValue("server", guild.ToString());
 			var bioId = (long?)await bioCmd.ExecuteScalarAsync();
 			if(bioId.HasValue)
+			{
 				return await GetBio(bot, bioId.Value, true);
+			}
+
 			return null;
 		}
 
@@ -328,7 +328,10 @@ namespace SassV2.Commands
 					var value = reader.GetString(1);
 					var spec = fieldSpecs.Where(f => f.Name == key).First();
 					if(spec == null)
+					{
 						continue;
+					}
+
 					fieldSpecs.Remove(spec);
 					var newField = new BioField(spec.Name, spec.FriendlyName, spec.DisplayName, spec.Info)
 					{
@@ -356,7 +359,10 @@ namespace SassV2.Commands
 
 		internal static async Task CreateTables(RelationalDatabase db)
 		{
-			if(_tablesCreated) return;
+			if(_tablesCreated)
+			{
+				return;
+			}
 
 			await db.BuildAndExecute(@"CREATE TABLE IF NOT EXISTS bios (id INTEGER PRIMARY KEY, author TEXT);");
 			await db.BuildAndExecute("CREATE INDEX IF NOT EXISTS bios_author ON bios(author);");
@@ -379,15 +385,9 @@ namespace SassV2.Commands
 
 	public class BioData
 	{
-		public BioField this[string key]
-		{
-			get
-			{
-				return (from f in this.Fields
-						where f.Name == key
-						select f).FirstOrDefault<BioField>();
-			}
-		}
+		public BioField this[string key] => (from f in Fields
+											 where f.Name == key
+											 select f).FirstOrDefault<BioField>();
 
 		/// <summary>
 		/// The ID of this bio.
@@ -422,7 +422,11 @@ namespace SassV2.Commands
 			var message = $"Bio for {user.NicknameOrDefault()}:\n";
 			foreach(var field in Fields)
 			{
-				if(string.IsNullOrWhiteSpace(field.Value)) continue;
+				if(string.IsNullOrWhiteSpace(field.Value))
+				{
+					continue;
+				}
+
 				message += $"\t{field.DisplayName}: {field.Formatter(field.Value)}\n";
 			}
 

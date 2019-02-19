@@ -42,31 +42,42 @@ namespace SassV2.Web.Controllers
 				return await ForbiddenError(server, context);
 			}
 
+			// find appropriate bio
 			var user = AuthManager.GetUser(server, context, _bot);
 			var bio = await Bio.GetBio(_bot, id, true);
 			if(bio == null)
 			{
 				return await Error(server, context, "The specified bio doesn't exist!");
 			}
+			// don't let users edit other people's bios unless they're an admin
 			else if(bio.Owner != user.Id && _bot.Config.GetRole(user.Id) != "admin")
 			{
 				return await ForbiddenError(server, context);
 			}
 
+			// read data from post
 			var data = context.RequestFormDataDictionary();
 			foreach(var field in bio.Fields)
 			{
 				if(!data.ContainsKey(field.Name) || string.IsNullOrWhiteSpace(data[field.Name].ToString()))
+				{
+					// if it's blank, they deleted it
+					field.Value = null;
 					continue;
+				}
+
 				field.Value = data[field.Name].ToString();
 			}
 
+			// read privacy setting
 			if(data.ContainsKey("servers"))
 			{
 				IEnumerable<KeyValuePair<ulong, string>> servers;
 				if(data["servers"] is string)
 				{
-					servers = new KeyValuePair<ulong, string>[] { new KeyValuePair<ulong, string>(ulong.Parse(data["servers"].ToString()), null) };
+					servers = new KeyValuePair<ulong, string>[] {
+						new KeyValuePair<ulong, string>(ulong.Parse(data["servers"].ToString()), null)
+					};
 				}
 				else
 				{
