@@ -14,10 +14,7 @@ namespace SassV2.Commands
 	{
 		private DiscordBot _bot;
 
-		public PMCommands(DiscordBot bot)
-		{
-			_bot = bot;
-		}
+		public PMCommands(DiscordBot bot) => _bot = bot;
 
 		[SassCommand(
 			name: "servers",
@@ -93,7 +90,7 @@ namespace SassV2.Commands
 		[RequireContext(ContextType.DM)]
 		public async Task ImpersonateUser([Remainder] string userIdStr)
 		{
-			if(!ulong.TryParse(userIdStr, out ulong userId))
+			if(!ulong.TryParse(userIdStr, out var userId))
 			{
 				await ReplyAsync(Locale.GetString("admin.invalidId"));
 				return;
@@ -133,10 +130,7 @@ namespace SassV2.Commands
 			category: "Administration",
 			isPM: true)]
 		[Command("admin")]
-		public async Task Admin()
-		{
-			await ReplyAsync(await AuthCodeManager.GetURL("/admin/", Context.User, _bot));
-		}
+		public async Task Admin() => await ReplyAsync(await AuthCodeManager.GetURL("/admin/", Context.User, _bot));
 
 		[SassCommand("reload locale", hidden: true, isPM: true)]
 		[Command("reload locale")]
@@ -152,6 +146,9 @@ namespace SassV2.Commands
 			await ReplyAsync("locale reloaded");
 		}
 
+		/// <summary>
+		/// Allows a message to be send as SASS.
+		/// </summary>
 		[SassCommand("puppet message", hidden: true, isPM: true)]
 		[Command("puppet message")]
 		public async Task PuppetChannels(string channelIdStr, [Remainder] string message)
@@ -162,7 +159,7 @@ namespace SassV2.Commands
 				return;
 			}
 
-			if(!ulong.TryParse(channelIdStr, out ulong channelId))
+			if(!ulong.TryParse(channelIdStr, out var channelId))
 			{
 				await ReplyAsync(Locale.GetString("admin.invalidId"));
 				return;
@@ -177,6 +174,31 @@ namespace SassV2.Commands
 
 			await channel.SendMessageAsync(message);
 			await ReplyAsync("Message sent.");
+		}
+
+		[SassCommand(
+			"create civ hook",
+			desc: "creates a webhook for a given channel for civ VI cloud games.",
+			usage: "create civ hook",
+			category: "Administration")]
+		[Command("create civ hook")]
+		public async Task CreateWebhook(string channelIdStr)
+		{
+			if(!ulong.TryParse(channelIdStr, out var channelId))
+			{
+				await ReplyAsync(Locale.GetString("admin.invalidId"));
+				return;
+			}
+
+			var channel = _bot.Client.GetChannel(channelId) as IGuildChannel;
+			if(channel == null)
+			{
+				await ReplyAsync("Channel not found.");
+				return;
+			}
+
+			var id = _bot.CivHook.CreateWebhook(channel.GuildId, channelId);
+			await ReplyAsync("Hook URL: " + _bot.Config.URL + $"hook/civ/{channel.GuildId}/{id}");
 		}
 	}
 }

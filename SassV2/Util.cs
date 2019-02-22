@@ -387,11 +387,11 @@ namespace SassV2
 		/// <summary>
 		/// Crypto-random string, 32 bytes (256 bits)
 		/// </summary>
-		public static string RandomString(bool base64 = true)
+		public static string RandomString(bool base64 = true, int numBytes = 32)
 		{
 			using(var rng = RandomNumberGenerator.Create())
 			{
-				var tokenData = new byte[32];
+				var tokenData = new byte[numBytes];
 				rng.GetBytes(tokenData);
 
 				if(base64)

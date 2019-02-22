@@ -18,6 +18,7 @@ namespace SassV2
 		private Logger _logger;
 		private Dictionary<ulong, KeyValueDatabase> _serverDatabases;
 		private Dictionary<ulong, RelationalDatabase> _serverRelationalDatabases;
+		private Dictionary<ulong, SteamNameManager> _steamNameManagers;
 		private Stopwatch _uptime;
 
 		/// <summary>
@@ -32,6 +33,10 @@ namespace SassV2
 		/// Connected Discord client.
 		/// </summary>
 		public DiscordSocketClient Client { get; }
+		/// <summary>
+		/// The Civ 6 hook manager.
+		/// </summary>
+		public CivHook CivHook { get; }
 		/// <summary>
 		/// All servers the bot is connected to.
 		/// </summary>
@@ -59,9 +64,11 @@ namespace SassV2
 			};
 			Client = new DiscordSocketClient(discordConfig);
 			Config = config;
+			CivHook = new CivHook(this);
 			CommandHandler = new CommandHandler();
 			_serverDatabases = new Dictionary<ulong, KeyValueDatabase>();
 			_serverRelationalDatabases = new Dictionary<ulong, RelationalDatabase>();
+			_steamNameManagers = new Dictionary<ulong, SteamNameManager>();
 			if(!Directory.Exists("Servers"))
 			{
 				Directory.CreateDirectory("Servers");
@@ -126,6 +133,8 @@ namespace SassV2
 			_serverRelationalDatabases[guild.Id] = new RelationalDatabase(Path.Combine(dbPath, "relational.db"), guild.Id);
 			await _serverRelationalDatabases[guild.Id].Open();
 
+			_steamNameManagers[guild.Id] = new SteamNameManager(guild, this);
+
 			_logger.Info("joined " + guild.Name + " (" + guild.Id + ")");
 		}
 
@@ -140,6 +149,11 @@ namespace SassV2
 		/// Returns the relational database for the given server ID.
 		/// </summary>
 		public RelationalDatabase RelDatabase(ulong serverId) => _serverRelationalDatabases[serverId];
+
+		/// <summary>
+		/// Returns the Steam name manager for this server.
+		/// </summary>
+		public SteamNameManager SteamNames(ulong serverId) => _steamNameManagers[serverId];
 
 		/// <summary>
 		/// Returns the current locale language for this server.

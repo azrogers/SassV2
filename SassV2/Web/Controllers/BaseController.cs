@@ -1,5 +1,7 @@
-﻿using NLog;
+﻿using Newtonsoft.Json;
+using NLog;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
 using Unosquare.Labs.EmbedIO.Modules;
@@ -10,9 +12,14 @@ namespace SassV2.Web.Controllers
 	{
 		private ViewManager _viewManager;
 
-		public BaseController(ViewManager viewManager)
+		public BaseController(ViewManager viewManager) => _viewManager = viewManager;
+
+		protected bool JsonResponse(WebServer server, HttpListenerContext context, object json)
 		{
-			_viewManager = viewManager;
+			var buffer = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(json));
+			context.Response.ContentType = "application/json";
+			context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+			return true;
 		}
 
 		protected bool Redirect(WebServer server, HttpListenerContext context, string path)
@@ -39,10 +46,7 @@ namespace SassV2.Web.Controllers
 			return true;
 		}
 
-		protected Task<bool> Error(WebServer server, HttpListenerContext context, string message)
-		{
-			return ViewResponse(server, context, "error", new { Title = "Error!", Message = message });
-		}
+		protected Task<bool> Error(WebServer server, HttpListenerContext context, string message) => ViewResponse(server, context, "error", new { Title = "Error!", Message = message });
 
 		protected Task<bool> ForbiddenError(WebServer server, HttpListenerContext context)
 		{

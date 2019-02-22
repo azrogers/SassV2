@@ -48,6 +48,11 @@ namespace SassV2
 		/// </summary>
 		public string CurrencyLayerKey;
 
+		/// <summary>
+		/// API key for the Steam web API.
+		/// </summary>
+		public string SteamAPIKey;
+
 		public Config(string configFile)
 		{
 			var file = JObject.Parse(File.ReadAllText(configFile));
@@ -57,6 +62,7 @@ namespace SassV2
 			ClientID = ReadKey<string>(file, "client_id");
 			ImgurClientId = ReadKey<string>(file, "imgur_client_id");
 			CurrencyLayerKey = ReadKey<string>(file, "currency_layer");
+			SteamAPIKey = ReadKey<string>(file, "steam_api");
 
 			// read roles
 			foreach(JProperty prop in file["roles"].ToObject<JObject>().Properties())

@@ -385,9 +385,12 @@ namespace SassV2.Commands
 
 	public class BioData
 	{
+		/// <summary>
+		/// Returns the given field on this bio, if it exists.
+		/// </summary>
 		public BioField this[string key] => (from f in Fields
 											 where f.Name == key
-											 select f).FirstOrDefault<BioField>();
+											 select f).FirstOrDefault();
 
 		/// <summary>
 		/// The ID of this bio.
