@@ -39,8 +39,10 @@ namespace SassV2.Web.Controllers
 		[WebApiHandler(HttpVerbs.Post, "^/hook/civ/{urlId}/{hookId}")]
 		public async Task<bool> CivWebHookCallback(WebServer server, HttpListenerContext context, string urlId, string hookId)
 		{
+			_logger.Info($"civ web hook: {urlId}, {hookId}");
 			if(!ulong.TryParse(urlId, out var serverId) || !_bot.ServerIds.Contains(serverId))
 			{
+				_logger.Error("Hook failed: invalid server");
 				return JsonResponse(server, context, new
 				{
 					status = "error",
@@ -52,6 +54,7 @@ namespace SassV2.Web.Controllers
 			var body = context.RequestBody();
 			if(body == null)
 			{
+				_logger.Error("Hook failed: no body");
 				return JsonResponse(server, context, new
 				{
 					status = "error",
@@ -67,6 +70,7 @@ namespace SassV2.Web.Controllers
 			}
 			catch(Newtonsoft.Json.JsonReaderException)
 			{
+				_logger.Error("Hook failed: invalid json");
 				return JsonResponse(server, context, new
 				{
 					status = "error",
@@ -81,6 +85,7 @@ namespace SassV2.Web.Controllers
 
 			if(gameName == null || playerName == null || turnNum == null)
 			{
+				_logger.Error("Hook failed: missing value1, value2, or value3");
 				return JsonResponse(server, context, new
 				{
 					status = "error",
@@ -90,6 +95,7 @@ namespace SassV2.Web.Controllers
 
 			if(!int.TryParse(turnNum, out var turn))
 			{
+				_logger.Error("Hook failed: turn number not int");
 				return JsonResponse(server, context, new
 				{
 					status = "error",
@@ -98,9 +104,17 @@ namespace SassV2.Web.Controllers
 			}
 
 			// send update
+			_logger.Info("Hook sending reminder.");
 			await _bot.CivHook.SendReminder(serverId, hookId, gameName, playerName, turn);
 
 			return JsonResponse(server, context, new { status = "OK" });
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "^/hook/civ/{urlId}/{hookId}")]
+		public bool DummyHook(WebServer server, HttpListenerContext context, string urlId, string hookId)
+		{
+			_logger.Info("Dummy GET route hit.");
+			return JsonResponse(server, context, new { status = "error", message = "use POST" });
 		}
 
 		// handle callback from auth gateway

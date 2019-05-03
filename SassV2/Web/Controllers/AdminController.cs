@@ -129,6 +129,64 @@ namespace SassV2.Web.Controllers
 			return await ViewResponse(server, context, "admin/quotes", new { Title = "List Quotes", Quotes = quotes, ServerId = serverId });
 		}
 
+		[WebApiHandler(HttpVerbs.Post, "/admin/images/{serverId}")]
+		public async Task<bool> DeleteImages(WebServer server, HttpListenerContext context, ulong serverId)
+		{
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			// find discord server with this id
+			var guild = _bot.Client.GetGuild(serverId);
+			if(guild == null)
+			{
+				return await Error(server, context, "Server not found.");
+			}
+
+			var db = _bot.Database(serverId);
+
+			// read in quotes to delete from form
+			var postData = context.RequestFormDataDictionary();
+			var images = Util.ReadFormArray(postData, "image_delete");
+			if(!images.Any())
+			{
+				return await Error(server, context, "No images provided.");
+			}
+
+			// delete each quote
+			foreach(var image in images)
+			{
+				if(!image.StartsWith("image:"))
+				{
+					continue;
+				}
+
+				db.InvalidateObject(image);
+			}
+
+			return await ListImagesAdmin(server, context, serverId);
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/admin/images/{serverId}")]
+		public async Task<bool> ListImagesAdmin(WebServer server, HttpListenerContext context, ulong serverId)
+		{
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var guild = _bot.Client.GetGuild(serverId);
+			if(guild == null)
+			{
+				return await Error(server, context, "Server not found.");
+			}
+
+			var imageKeyValues = _bot.Database(serverId).GetKeysOfNamespace<string>("image");
+			var images = imageKeyValues.OrderBy(k => k.Key);
+			return await ViewResponse(server, context, "admin/images", new { Title = "List Images", Images = images, ServerId = serverId });
+		}
+
 		// leave a server
 		[WebApiHandler(HttpVerbs.Post, "/admin/leave/{serverId}")]
 		public async Task<bool> LeaveServer(WebServer server, HttpListenerContext context, ulong serverId)

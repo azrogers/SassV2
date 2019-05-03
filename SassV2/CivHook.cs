@@ -72,6 +72,7 @@ namespace SassV2
 				message = $"{gameName}, turn #{turnNumber}: {discordUser.Mention} is up.";
 			}
 
+			_logger.Info("Sending message for hook.");
 			// send message
 			await channel.SendMessageAsync(message);
 

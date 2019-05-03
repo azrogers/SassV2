@@ -1,0 +1,21 @@
+﻿@{
+	Layout = "_layout.html";
+}
+
+<h2>Image Management</h2>
+<p class="back-button">
+	<a href="/admin/server/@ViewBag.ServerId">back</a>
+</p>
+
+<form action="/admin/images/@ViewBag.ServerId" method="post" onsubmit="confirm('Are you sure you want to delete these images?');">
+	@foreach(var image in ViewBag.Images)
+	{
+	<div class="admin-image">
+		<input type="checkbox" value="@image.Key" name="image_delete[]" />
+		@image.Key.Substring(6) - <a href="@image.Value" target="_blank">@image.Value</a>
+	</div>
+	}
+	<p>
+		<input type="submit" name="delete" value="Hard Delete" />
+	</p>
+</form>

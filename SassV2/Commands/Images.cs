@@ -17,7 +17,7 @@ namespace SassV2.Commands
 	public class Images : ModuleBase<SocketCommandContext>
 	{
 		private Regex _forRegex = new Regex(@"(for\s|)(\s+)?(.+?)$");
-		private Regex _urlRegex = new Regex(@"(i\.)?imgur\.com\/(.+?)\.(jpg|png|gif|jpeg)", RegexOptions.IgnoreCase);
+		private Regex _urlRegex = new Regex(@"(i\.)?imgur\.com\/(.+?)\.(jpg|png|gif|jpeg|mp4|webm|gifv)", RegexOptions.IgnoreCase);
 		private DiscordBot _bot;
 
 		public Images(DiscordBot bot)
