@@ -130,6 +130,7 @@ namespace SassV2.Commands
 			category: "Administration",
 			isPM: true)]
 		[Command("admin")]
+		[RequireContext(ContextType.DM)]
 		public async Task Admin() => await ReplyAsync(await AuthCodeManager.GetURL("/admin/", Context.User, _bot));
 
 		[SassCommand("reload locale", hidden: true, isPM: true)]

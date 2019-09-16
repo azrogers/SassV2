@@ -605,7 +605,7 @@ namespace SassV2
 		/// </summary>
 		public static List<string> ReadFormArray(Dictionary<string, object> dir, string name)
 		{
-			if(!dir.ContainsKey(name))
+			if(dir == null || !dir.ContainsKey(name))
 			{
 				return new List<string>();
 			}

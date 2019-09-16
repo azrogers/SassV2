@@ -1,0 +1,23 @@
+﻿@{
+	Layout = "_layout.html";
+}
+
+<h2>Manage Roles</h2>
+
+<p>
+	Servers you're in that have roles managed by SASS:
+</p>
+
+@if(ViewBag.Servers.Length > 0)
+{
+<ul>
+	@foreach(var server in ViewBag.Servers)
+	{
+	<li><a href="/roles/manage/@server.Id">@server.Name</a></li>
+	}
+</ul>
+}
+else
+{
+<p>You aren't in any servers that have roles managed by SASS.</p>
+}

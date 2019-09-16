@@ -6,11 +6,11 @@ namespace SassV2.Commands
 	/// <summary>
 	/// These commands should not exist.
 	/// </summary>
-	public class Dumb : ModuleBase<SocketCommandContext>
+	public class Pointless : ModuleBase<SocketCommandContext>
 	{
 		private DiscordBot _bot;
 
-		public Dumb(DiscordBot bot)
+		public Pointless(DiscordBot bot)
 		{
 			_bot = bot;
 		}

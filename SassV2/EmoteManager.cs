@@ -18,7 +18,6 @@ namespace SassV2
 		private const string EMOTES_URL = "https://forums.somethingawful.com/misc.php?action=showsmilies";
 		private const string EMOTES_DIR = "emotes";
 		private const string CACHE_FILE = "emotes.json";
-		private const int DEFAULT_SIZE = 400;
 
 		// a concurrent dictionary acting as a hashmap storing the list of emotes
 		private static Dictionary<string, string> _emotes = new Dictionary<string, string>();
@@ -217,6 +216,7 @@ namespace SassV2
 				return null;
 			}
 
+			// use palette to resize gif
 			startInfo.Arguments = $"-i \"{src}\" -i \"{destPalette}\" -lavfi \"{filter} [x]; [x][1:v] paletteuse\" \"{dest}\"";
 			Process.Start(startInfo).WaitForExit();
 

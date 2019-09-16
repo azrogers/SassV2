@@ -61,7 +61,9 @@ namespace SassV2.Web.Controllers
 			dynamicViewBag.Session = context.GetSession(server);
 			dynamicViewBag.Title = viewBagEo.ContainsKey("Title") ? dynamicViewBag.Title : "";
 			var content = await _viewManager.RenderView(name, dynamicViewBag);
-			return UtilExtension.HtmlResponse(context, content);
+			var response = UtilExtension.HtmlResponse(context, content);
+			context.GetSession(server).Data.TryRemove("internal_message_flash", out var _);
+			return response;
 		}
 
 		protected async Task<bool> ViewResponse<T>(WebServer server, HttpListenerContext context, string name, T model, object viewbag)
@@ -71,7 +73,14 @@ namespace SassV2.Web.Controllers
 			dynamicViewBag.Session = context.GetSession(server);
 			dynamicViewBag.Title = viewBagEo.ContainsKey("Title") ? dynamicViewBag.Title : "";
 			var content = await _viewManager.RenderView<T>(name, model, dynamicViewBag);
-			return UtilExtension.HtmlResponse(context, content);
+			var response = UtilExtension.HtmlResponse(context, content);
+			context.GetSession(server).Data.TryRemove("internal_message_flash", out var _);
+			return response;
+		}
+
+		protected void SetFlashMessage(WebServer server, HttpListenerContext context, string message)
+		{
+			context.GetSession(server).Data.TryAdd("internal_message_flash", message);
 		}
 	}
 }

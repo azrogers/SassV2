@@ -1,0 +1,26 @@
+﻿@{
+	Layout = "_layout.html";
+}
+
+<h2>Manage Roles for @ViewBag.ServerName</h2>
+<p>
+	<a href="/roles/manage">back</a>
+</p>
+
+<p>
+	Pick the roles which you would like to be a member of:
+</p>
+
+<form action="/roles/manage/@ViewBag.ServerId" method="post">
+	@foreach(var role in ViewBag.Roles)
+	{
+	<div class="user-role-edit">
+		<input type="checkbox" value="@role.Id" name="roles[]" checked="@role.IsMember">
+		@role.Name
+	</div>
+	}
+
+	<p>
+		<input type="submit" value="Set Roles">
+	</p>
+</form>

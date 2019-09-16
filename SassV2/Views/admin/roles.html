@@ -1,0 +1,34 @@
+﻿@{
+	Layout = "_layout.html";
+}
+
+<h2>Role Management</h2>
+<p class="back-button">
+	<a href="/admin/server/@ViewBag.ServerId">back</a>
+</p>
+
+<p>
+	Choose the roles that SASS will manage on this server:
+</p>
+
+@if(!ViewBag.CanEdit)
+{
+<p>
+	<strong><em>You haven't given SASS the 'Manage Roles' permission yet! Please do this before managing roles.</em></strong>
+</p>
+}
+else
+{
+<form action="/admin/roles/@ViewBag.ServerId" method="post" onsubmit="confirm('Are you sure you want SASS to manage these roles?');">
+	@foreach(var role in ViewBag.Roles)
+	{
+	<div class="admin-role">
+		<input type="checkbox" value="@role.Id" name="role_managed[]" checked="@(role.IsManaged)">
+		@role.Name
+	</div>
+	}
+	<p>
+		<input type="submit" value="Submit">
+	</p>
+</form>
+}

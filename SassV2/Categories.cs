@@ -27,16 +27,16 @@ namespace SassV2
 				File.ReadAllText("Doc/category/bio.md")
 			},
 			{
-				"Pointless",
-				"These commands aren't really that useful."
-			},
-			{
 				"General",
 				"These are commands that don't fit into any other category."
 			},
 			{
 				"Image",
 				File.ReadAllText("Doc/category/image.md")
+			},
+			{
+				"Pointless",
+				"These commands aren't really that useful."
 			},
 			{
 				"Quote",

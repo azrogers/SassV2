@@ -43,8 +43,14 @@
             </div>
         }
 	</div>
-    <div class="container">
-        @RenderBody()
-    </div>
+	<div class="container">
+		@if(ViewBag.Session.Data.ContainsKey("internal_message_flash"))
+		{
+		<p class="message-flash">
+			<strong><em>@ViewBag.Session.Data["internal_message_flash"]</em></strong>
+		</p>
+		}
+		@RenderBody()
+	</div>
 </body>
 </html>

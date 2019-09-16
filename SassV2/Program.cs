@@ -37,6 +37,10 @@ namespace SassV2
 			{
 				return new BioController(bot, viewManager);
 			});
+			server.Module<WebApiModule>().RegisterController(() => 
+			{
+				return new RolesController(bot, viewManager);
+			});
 			server.Module<WebApiModule>().RegisterController(() =>
 			{
 				return new DocsController(bot, viewManager);

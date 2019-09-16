@@ -202,6 +202,98 @@ namespace SassV2.Web.Controllers
 			return Redirect(server, context, "/admin");
 		}
 
+		[WebApiHandler(HttpVerbs.Post, "/admin/roles/{serverId}")]
+		public async Task<bool> SetManagedRoles(WebServer server, HttpListenerContext context, ulong serverId)
+		{
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var guild = _bot.Client.GetGuild(serverId);
+			if(guild == null)
+			{
+				return await Error(server, context, "Server not found.");
+			}
+
+			var db = _bot.Database(serverId);
+
+			// read in quotes to delete from form
+			var postData = context.RequestFormDataDictionary();
+			var managedStr = Util.ReadFormArray(postData, "role_managed");
+			var managed = new HashSet<ulong>();
+
+			foreach(var str in managedStr)
+			{
+				// not a valid id
+				if(!ulong.TryParse(str, out var roleId))
+				{
+					continue;
+				}
+
+				// role doesn't exist in this guild
+				if(guild.GetRole(roleId) == null)
+				{
+					continue;
+				}
+
+				managed.Add(roleId);
+			}
+
+			db.InsertObject("roles:managed", managed.ToArray());
+			return await ViewRoles(server, context, serverId);
+		}
+
+		[WebApiHandler(HttpVerbs.Get, "/admin/roles/{serverId}")]
+		public async Task<bool> ViewRoles(WebServer server, HttpListenerContext context, ulong serverId)
+		{
+			if(!AuthManager.IsAdminOfServer(server, context, _bot, serverId))
+			{
+				return await ForbiddenError(server, context);
+			}
+
+			var guild = _bot.Client.GetGuild(serverId);
+			var permissions = guild.CurrentUser.GuildPermissions;
+
+			// can't manage roles, don't go any further
+			if(!permissions.ManageRoles)
+			{
+				return await ViewResponse(server, context, "admin/roles", new
+				{
+					Title = guild.Name + " Roles",
+					Roles = new RoleModel[] { },
+					CanEdit = false,
+					ServerId = serverId
+				});
+			}
+
+			var db = _bot.Database(serverId);
+			var managedRoles = new HashSet<ulong>(db.GetOrCreateObject("roles:managed", () => new ulong[] { }));
+
+			// find the highest role that we have
+			var myRole =
+				guild.CurrentUser.Roles
+				.Where(r => r.Permissions.ManageRoles)
+				.OrderByDescending(r => r.Position)
+				.First();
+
+			// find all roles we can manage (position lower than our role)
+			var roles =
+				guild.Roles
+				.Where(r => r.Position < myRole.Position && !r.IsEveryone)
+				.OrderByDescending(r => r.Position)
+				.Select(r => new RoleModel { IsManaged = managedRoles.Contains(r.Id), Name = r.Name, Id = r.Id })
+				.ToArray();
+
+			return await ViewResponse(server, context, "admin/roles", new
+			{
+				title = guild.Name + " Roles",
+				Roles = roles,
+				CanEdit = true,
+				ServerId = serverId
+			});
+		}
+
 		// print a server's info
 		[WebApiHandler(HttpVerbs.Get, "/admin/server/{serverId}")]
 		public async Task<bool> ServerPage(WebServer server, HttpListenerContext context, ulong serverId)
@@ -299,6 +391,13 @@ namespace SassV2.Web.Controllers
 			public ulong Id;
 			public string Name;
 			public bool HasActivity;
+		}
+
+		public class RoleModel
+		{
+			public ulong Id;
+			public string Name;
+			public bool IsManaged;
 		}
 	}
 }
