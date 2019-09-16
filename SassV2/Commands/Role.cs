@@ -15,6 +15,7 @@ namespace SassV2.Commands
 		[SassCommand(
 			name: "roles manage",
 			desc: "links you to the admin page for SASS roles",
+			usage: "roles manage",
 			category: "Administration"
 		)]
 		[RequireContext(ContextType.Guild)]
@@ -36,6 +37,7 @@ namespace SassV2.Commands
 		[SassCommand(
 			name: "roles",
 			desc: "links you to the page to manage your roles",
+			usage: "roles",
 			category: "Useful")]
 		public async Task Roles()
 		{
