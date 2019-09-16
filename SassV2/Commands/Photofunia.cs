@@ -16,7 +16,7 @@ namespace SassV2.Commands
 			desc: "Generates an eighties photofunia image. Each quoted part is a seperate line, so you can leave out one or two to make a one or two line image.", 
 			usage: "photofunia \"top text\" \"middle text\" \"bottom text\"", 
 			example: "photofunia \"Disappointed\" \"but not\" \"surprised\"",
-			category: "Dumb")]
+			category: "Pointless")]
 		[Command("photofunia")]
 		public async Task PhotofuniaCommand([Remainder] string args)
 		{

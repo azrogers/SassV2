@@ -27,7 +27,7 @@ namespace SassV2
 				File.ReadAllText("Doc/category/bio.md")
 			},
 			{
-				"Dumb",
+				"Pointless",
 				"These commands aren't really that useful."
 			},
 			{
@@ -42,13 +42,6 @@ namespace SassV2
 				"Quote",
 				File.ReadAllText("Doc/category/quote.md")
 			},
-// in dev
-#if !RELEASE
-			{
-				"Sniper",
-				File.ReadAllText("Doc/category/sniper.md")
-			},
-#endif
 			{
 				"Spam",
 				"These commands aren't very useful and will probably do more harm than good, in the long run. That's why the [[ban]] command exists."

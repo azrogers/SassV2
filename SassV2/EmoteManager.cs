@@ -6,6 +6,7 @@ using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -44,6 +45,16 @@ namespace SassV2
 			var stream = new MemoryStream();
 			using(var image = Image.Load(Path.Combine(EMOTES_DIR, _emotes[name])))
 			{
+				// if this is a gif, attempt to scale it with ffmpeg if possible
+				if(image.Frames.Count > 1)
+				{
+					var result = ScaleFfmpeg(name, size);
+					if(result != null)
+					{
+						return (Util.RandomString(false) + ".gif", result);
+					}
+				}
+
 				// resize height, keeping aspect ratio
 				var h = (image.Height / image.Width) * size;
 				image.Mutate(x => x.Resize(size, h, KnownResamplers.Box));
@@ -175,6 +186,71 @@ namespace SassV2
 			}
 
 			return emoteUrls;
+		}
+
+		private static byte[] ScaleFfmpeg(string name, int size)
+		{
+			var src = Path.Combine(EMOTES_DIR, _emotes[name]);
+			var rand = Util.RandomString(false);
+			var dest = Path.Combine(Path.GetTempPath(), rand + ".gif");
+			var destPalette = Path.Combine(Path.GetTempPath(), rand + ".png");
+
+			// no ffmpeg, fallback to imagesharp
+			var ffmpeg = FindFfmpeg();
+			if(ffmpeg == null)
+			{
+				return null;
+			}
+
+			var filter = $"scale={size}:-1:flags=neighbor";
+
+			var startInfo = new ProcessStartInfo();
+			startInfo.FileName = ffmpeg;
+
+			// generate palette
+			startInfo.Arguments = $"-i \"{src}\" -vf \"{filter},palettegen\" \"{destPalette}\"";
+			Process.Start(startInfo).WaitForExit();
+
+			if(!File.Exists(destPalette))
+			{
+				_logger.Error("FFMPEG failed to gen palette");
+				return null;
+			}
+
+			startInfo.Arguments = $"-i \"{src}\" -i \"{destPalette}\" -lavfi \"{filter} [x]; [x][1:v] paletteuse\" \"{dest}\"";
+			Process.Start(startInfo).WaitForExit();
+
+			if(!File.Exists(dest))
+			{
+				File.Delete(destPalette);
+				_logger.Error("FFMPEG failed to create gif");
+				return null;
+			}
+
+			var data = File.ReadAllBytes(dest);
+			File.Delete(destPalette);
+			File.Delete(dest);
+			return data;
+		}
+
+		private static string FindFfmpeg()
+		{
+			// look through all paths in the path variable to find ffmpeg
+			var values = System.Environment.GetEnvironmentVariable("PATH");
+			foreach(var path in values.Split(Path.PathSeparator))
+			{
+				var full = Path.Combine(path, "ffmpeg");
+				if(File.Exists(full))
+				{
+					return full;
+				}
+				else if(File.Exists(full + ".exe"))
+				{
+					return full + ".exe";
+				}
+			}
+
+			return null;
 		}
 	}
 }

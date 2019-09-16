@@ -17,7 +17,7 @@ namespace SassV2.Commands
 		[SassCommand(
 			name: "crypto list coins",
 			desc: "lists the coins SASS supports getting information on",
-			category: "Dumb"
+			category: "Pointless"
 		)]
 		public async Task ListCoins()
 		{
@@ -35,7 +35,7 @@ namespace SassV2.Commands
 			name: "crypto get price",
 			desc: "get the price of a cryptocurrency on Kraken",
 			usage: "crypto get price <currency code or name>",
-			category: "Dumb",
+			category: "Pointless",
 			example: "crypto get price bitcoin"
 		)]
 		public async Task GetPrice([Remainder] string args = "")

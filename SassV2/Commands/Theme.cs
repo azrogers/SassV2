@@ -18,7 +18,7 @@ namespace SassV2.Commands
 			name: "theme", 
 			desc: "Gets the theme for the current chat room.", 
 			usage: "theme", 
-			category: "Dumb")]
+			category: "Pointless")]
 		[Command("theme")]
 		public async Task Theme()
 		{
@@ -37,7 +37,7 @@ namespace SassV2.Commands
 			desc: "Sets the theme for the current chat room.", 
 			usage: "set theme <youtube URL>", 
 			example: "set theme https://www.youtube.com/watch?v=hkI3RymKUJo",
-			category: "Dumb")]
+			category: "Pointless")]
 		[Command("set theme")]
 		public async Task SetTheme(string url)
 		{

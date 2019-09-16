@@ -44,7 +44,7 @@ namespace SassV2.Commands
 			name: "seinfeld",
 			desc: "The Seinfeld theme.",
 			usage: "seinfeld",
-			category: "Dumb")]
+			category: "Pointless")]
 		[Command("seinfeld")]
 		public async Task Seinfeld()
 		{

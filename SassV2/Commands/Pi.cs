@@ -12,7 +12,7 @@ namespace SassV2.Commands
 			desc: "Gets the nth digit of pi, up to the millionth.", 
 			usage: "pi <number>", 
 			example: "pi 1000",
-			category: "Dumb")]
+			category: "Pointless")]
 		[Command("pi")]
 		public async Task Pi(int number)
 		{
